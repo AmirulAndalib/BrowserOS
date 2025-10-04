@@ -1,0 +1,71 @@
+---
+title: "Gemini"
+description: "Configure BrowserOS with Google's Gemini AI model"
+---
+
+# Gemini
+
+Google's Gemini is a powerful multimodal AI model that can understand and generate text, analyze images, and process various types of content.
+
+## Prerequisites
+
+Before configuring Gemini with BrowserOS, you'll need:
+- A Google Cloud account
+- Gemini API access
+- Your API key from Google AI Studio
+
+## Getting your API Key
+
+1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Sign in with your Google account
+3. Click "Create API Key"
+4. Copy your API key and keep it secure
+
+## Configuration
+
+### Step 1: Open BrowserOS Settings
+
+1. Launch BrowserOS
+2. Click on the settings icon in the toolbar
+3. Navigate to "AI Configuration"
+
+### Step 2: Add Gemini
+
+1. Select "Add AI Provider"
+2. Choose "Gemini" from the list
+3. Enter your API key
+4. Select your preferred model:
+   - **Gemini Pro**: Best for general tasks
+   - **Gemini Pro Vision**: For multimodal tasks with images
+   - **Gemini Ultra**: Most capable model (when available)
+
+### Step 3: Test Connection
+
+Click "Test Connection" to verify your API key is working correctly.
+
+## Usage
+
+Once configured, you can:
+- Use Gemini in split-view for document summarization
+- Create agents with natural language instructions
+- Analyze images and screenshots
+- Generate content and code
+
+## Pricing
+
+Gemini API pricing varies by model and usage. Check the [official pricing page](https://ai.google.dev/pricing) for current rates.
+
+## Troubleshooting
+
+### Invalid API Key
+- Ensure you've copied the entire API key
+- Verify the key hasn't expired
+- Check that Gemini API is enabled in your Google Cloud project
+
+### Rate Limiting
+- Gemini has usage quotas
+- Consider upgrading your plan if you hit limits frequently
+
+## Security Note
+
+Your API key is stored locally on your device and is never sent to BrowserOS servers. All API calls are made directly from your browser to Google's servers.

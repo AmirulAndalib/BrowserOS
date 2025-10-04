@@ -1,0 +1,106 @@
+---
+title: "Claude"
+description: "Configure BrowserOS with Anthropic's Claude AI assistant"
+---
+
+# Claude
+
+Claude is Anthropic's helpful, harmless, and honest AI assistant. It excels at analysis, writing, math, coding, and following complex instructions.
+
+## Prerequisites
+
+Before configuring Claude with BrowserOS, you'll need:
+- An Anthropic account
+- Claude API access
+- Your API key from the Anthropic Console
+
+## Getting your API Key
+
+1. Visit [Anthropic Console](https://console.anthropic.com/)
+2. Sign in or create an account
+3. Navigate to "API Keys" in your account settings
+4. Click "Create Key"
+5. Copy your API key and store it securely
+
+## Configuration
+
+### Step 1: Open BrowserOS Settings
+
+1. Launch BrowserOS
+2. Click on the settings icon in the toolbar
+3. Navigate to "AI Configuration"
+
+### Step 2: Add Claude
+
+1. Select "Add AI Provider"
+2. Choose "Claude" from the list
+3. Enter your API key
+4. Select your preferred model:
+   - **Claude 3 Opus**: Most capable, best for complex tasks
+   - **Claude 3 Sonnet**: Balanced performance and cost
+   - **Claude 3 Haiku**: Fastest, most cost-effective
+   - **Claude 2.1**: Previous generation, 200K context window
+
+### Step 3: Configure Options
+
+- **Max Tokens**: Set the maximum response length (default: 4096)
+- **Temperature**: Adjust creativity (0.0 to 1.0, default: 0.7)
+- **System Prompt**: Optional custom instructions for all interactions
+
+### Step 4: Test Connection
+
+Click "Test Connection" to verify your configuration.
+
+## Usage
+
+Once configured, you can:
+- Use Claude for code reviews and debugging
+- Generate detailed documentation
+- Analyze complex documents
+- Create sophisticated automation agents
+- Get help with research and analysis
+
+## Features
+
+### Context Window
+- Claude 3 models support up to 200K tokens
+- Perfect for analyzing long documents or codebases
+
+### Vision Capabilities
+- Claude 3 models can analyze images
+- Upload screenshots for UI/UX feedback
+- Extract text from images
+
+## Pricing
+
+Claude API pricing is based on tokens used:
+- Input tokens: Charged per million tokens
+- Output tokens: Charged per million tokens
+- Check [Anthropic's pricing](https://www.anthropic.com/api#pricing) for current rates
+
+## Best Practices
+
+1. **Use appropriate models**: Choose Haiku for simple tasks, Opus for complex reasoning
+2. **Manage context**: Clear conversation history when switching topics
+3. **Prompt engineering**: Be specific and provide examples for best results
+
+## Troubleshooting
+
+### API Key Issues
+- Ensure your API key starts with "sk-ant-"
+- Verify your account has API access enabled
+- Check that your API key hasn't been revoked
+
+### Rate Limits
+- Monitor your usage in the Anthropic Console
+- Consider upgrading your plan for higher limits
+- Implement retry logic for rate limit errors
+
+### Response Quality
+- Adjust temperature for more/less creative responses
+- Use system prompts to guide behavior
+- Provide clear, detailed instructions
+
+## Security Note
+
+Your API key is stored locally and encrypted. All API calls are made directly from your browser to Anthropic's servers, ensuring your data privacy.

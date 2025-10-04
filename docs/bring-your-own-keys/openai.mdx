@@ -1,0 +1,147 @@
+---
+title: "OpenAI"
+description: "Configure BrowserOS with OpenAI's GPT models"
+---
+
+# OpenAI
+
+OpenAI provides access to GPT-4, GPT-3.5, and other powerful AI models that can help with a wide range of tasks from coding to creative writing.
+
+## Prerequisites
+
+Before configuring OpenAI with BrowserOS, you'll need:
+- An OpenAI account
+- API access enabled
+- Your API key from the OpenAI platform
+
+## Getting your API Key
+
+1. Visit [OpenAI Platform](https://platform.openai.com/)
+2. Sign in to your account
+3. Navigate to "API keys" in the sidebar
+4. Click "Create new secret key"
+5. Name your key (e.g., "BrowserOS")
+6. Copy and securely store the key immediately (it won't be shown again)
+
+## Configuration
+
+### Step 1: Open BrowserOS Settings
+
+1. Launch BrowserOS
+2. Click on the settings icon in the toolbar
+3. Navigate to "AI Configuration"
+
+### Step 2: Add OpenAI
+
+1. Select "Add AI Provider"
+2. Choose "OpenAI" from the list
+3. Enter your API key
+4. Select your preferred model:
+   - **GPT-4 Turbo**: Latest and most capable (128K context)
+   - **GPT-4**: Original GPT-4 model
+   - **GPT-3.5 Turbo**: Fast and cost-effective
+   - **GPT-4 Vision**: For image analysis tasks
+
+### Step 3: Configure Parameters
+
+- **Max Tokens**: Maximum response length (default: 4096)
+- **Temperature**: Controls randomness (0.0-2.0, default: 0.7)
+- **Top P**: Alternative to temperature for sampling (0.0-1.0)
+- **Frequency Penalty**: Reduce repetition (-2.0 to 2.0)
+- **Presence Penalty**: Encourage topic diversity (-2.0 to 2.0)
+
+### Step 4: Test Connection
+
+Click "Test Connection" to verify your API key and settings.
+
+## Usage
+
+Once configured, you can:
+- Generate and refactor code
+- Create detailed technical documentation
+- Analyze and summarize documents
+- Build automation agents with natural language
+- Get coding assistance and debugging help
+
+## Advanced Features
+
+### Function Calling
+- Enable structured outputs for agent creation
+- Define custom functions for automated tasks
+- Integrate with external APIs
+
+### Fine-tuning Support
+If you have fine-tuned models:
+1. Enter your custom model ID
+2. Select "Custom Model" from the model dropdown
+3. Input your fine-tuned model name
+
+### Assistants API
+- Use OpenAI Assistants for persistent conversations
+- Enable code interpreter for data analysis
+- Access file search capabilities
+
+## Pricing
+
+OpenAI uses a pay-per-token pricing model:
+- **GPT-4 Turbo**: $0.01/1K input, $0.03/1K output tokens
+- **GPT-3.5 Turbo**: $0.0005/1K input, $0.0015/1K output tokens
+- Check [OpenAI pricing](https://openai.com/pricing) for current rates
+
+## Usage Limits
+
+### Rate Limits
+- Vary based on your account tier
+- Monitor usage in the OpenAI dashboard
+- Consider batching requests for efficiency
+
+### Token Limits
+- GPT-4 Turbo: 128,000 tokens
+- GPT-4: 8,192 or 32,768 tokens
+- GPT-3.5 Turbo: 16,385 tokens
+
+## Best Practices
+
+1. **Model Selection**:
+   - Use GPT-3.5 Turbo for simple, fast tasks
+   - Choose GPT-4 for complex reasoning
+   - Use GPT-4 Vision for image-related tasks
+
+2. **Cost Optimization**:
+   - Set appropriate max token limits
+   - Use streaming for long responses
+   - Cache common queries locally
+
+3. **Prompt Engineering**:
+   - Be specific and detailed
+   - Use system messages for consistent behavior
+   - Provide examples for complex tasks
+
+## Troubleshooting
+
+### Invalid API Key
+- Ensure the key starts with "sk-"
+- Verify the key hasn't been deleted or rotated
+- Check that billing is set up on your OpenAI account
+
+### Rate Limiting
+```
+Error: Rate limit exceeded
+```
+- Wait for the cooldown period
+- Upgrade your OpenAI plan
+- Implement exponential backoff
+
+### Billing Issues
+- Add payment method to OpenAI account
+- Check usage limits haven't been exceeded
+- Monitor costs in the OpenAI dashboard
+
+### Model Access
+- GPT-4 requires specific account access
+- Some models may have waitlists
+- Verify model availability in your region
+
+## Security Note
+
+Your API key is encrypted and stored locally. All requests are sent directly to OpenAI's servers via HTTPS, ensuring data security and privacy.

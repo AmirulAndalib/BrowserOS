@@ -1,0 +1,199 @@
+---
+title: "LLM Setup Guide"
+description: "Set up AI models to power your BrowserOS experience"
+---
+
+# LLM Setup Guide
+
+BrowserOS supports both local AI models for complete privacy and cloud-based models for maximum capability. Choose the setup that best fits your needs.
+
+## Choose Your AI Setup
+
+<CardGroup cols={2}>
+  <Card
+    title="Local LLMs"
+    icon="server"
+    href="/local-LLMs/ollama"
+  >
+    Run AI models locally for complete privacy. Your data never leaves your machine.
+  </Card>
+  <Card
+    title="Bring Your Own Keys"
+    icon="key"
+    href="/bring-your-own-keys/gemini"
+  >
+    Connect to cloud AI providers using your own API keys for powerful capabilities.
+  </Card>
+</CardGroup>
+
+## Why Configure AI?
+
+BrowserOS is an AI-powered browser that turns your words into actions. With AI configured, you can:
+
+- **Build agents with natural language** - Automate any task from scraping websites to filling out forms just by describing what you want
+- **Use AI in split-view** - Open ChatGPT, Gemini, Claude or Grok in a side panel while browsing
+- **Install MCP servers** - Connect to Gmail, Calendar, Docs, Sheets, Notion and more
+- **Search by meaning** - Find bookmarks and history semantically, not just by keywords
+- **Automate work tasks** - Let AI handle repetitive tasks while you focus on what matters
+
+## Local AI Models
+
+Running models locally gives you complete control and privacy. Your data stays on your machine, and there are no usage costs or API limits.
+
+### Available Local Options
+
+<CardGroup cols={3}>
+  <Card
+    title="Ollama"
+    icon="robot"
+    href="/local-LLMs/ollama"
+  >
+    Popular tool for running open-source models locally with easy model management
+  </Card>
+  <Card
+    title="LM Studio"
+    icon="desktop"
+    href="/local-LLMs/lm-studio"
+  >
+    User-friendly GUI for downloading and managing local language models
+  </Card>
+  <Card
+    title="GPT-OSS"
+    icon="brain"
+    href="/local-LLMs/gpt-oss"
+  >
+    OpenAI's open-source GPT model optimized for local execution
+  </Card>
+</CardGroup>
+
+### Benefits of Local Models
+
+- ✅ **Complete privacy** - Your data never leaves your device
+- ✅ **No API costs** - Run unlimited queries for free
+- ✅ **No rate limits** - Process as much as your hardware allows
+- ✅ **Offline capable** - Works without internet connection
+- ✅ **Company-safe** - Perfect for sensitive business data
+
+### Recommended Models
+
+For best results with local models, we recommend:
+- **Llama 3.1** - Great balance of speed and capability
+- **Mistral** - Fast and efficient for most tasks
+- **CodeLlama** - Optimized for coding tasks
+- **Phi-3** - Lightweight but capable
+
+## Cloud AI Providers
+
+Connect to powerful cloud models using your own API keys. Get access to the latest models with maximum capability.
+
+### Available Cloud Providers
+
+<CardGroup cols={3}>
+  <Card
+    title="Gemini"
+    icon="gem"
+    href="/bring-your-own-keys/gemini"
+  >
+    Google's multimodal AI with vision capabilities and large context windows
+  </Card>
+  <Card
+    title="Claude"
+    icon="message-square"
+    href="/bring-your-own-keys/claude"
+  >
+    Anthropic's helpful assistant with 200K token context and strong reasoning
+  </Card>
+  <Card
+    title="OpenAI"
+    icon="openai"
+    href="/bring-your-own-keys/openai"
+  >
+    GPT-4 and GPT-3.5 models with function calling and vision support
+  </Card>
+</CardGroup>
+
+### Benefits of Cloud Models
+
+- ⚡ **Latest models** - Access to GPT-4, Claude 3, Gemini Pro
+- 📝 **Larger context** - Handle documents up to 200K tokens
+- 👁️ **Vision capabilities** - Analyze images and screenshots
+- 🔧 **No setup required** - Just add your API key and go
+- 🚀 **Maximum performance** - Leverage powerful cloud infrastructure
+
+### Security & Privacy
+
+When using cloud providers:
+- API keys are stored locally and encrypted
+- Requests go directly from your browser to the provider
+- BrowserOS servers never see your data or keys
+- You control what data gets sent to cloud models
+
+## Quick Setup Guide
+
+### For Local Models (Recommended for Privacy)
+
+1. **Install Ollama** (easiest option)
+   ```bash
+   # macOS/Linux
+   curl -fsSL https://ollama.com/install.sh | sh
+
+   # Windows - Download from ollama.com
+   ```
+
+2. **Download a model**
+   ```bash
+   ollama pull llama3.1
+   ```
+
+3. **Configure in BrowserOS**
+   - Open BrowserOS settings
+   - Navigate to AI Configuration
+   - Select "Ollama" and it will auto-detect
+
+### For Cloud Models
+
+1. **Get an API key**
+   - [OpenAI](https://platform.openai.com/api-keys)
+   - [Anthropic Claude](https://console.anthropic.com/)
+   - [Google Gemini](https://makersuite.google.com/app/apikey)
+
+2. **Add to BrowserOS**
+   - Open BrowserOS settings
+   - Navigate to AI Configuration
+   - Select your provider and enter the key
+
+## Switching Between Models
+
+You can configure multiple AI providers and switch between them:
+- Use local models for sensitive work data
+- Switch to cloud models for complex tasks
+- Set different models for different features
+
+## Need Help?
+
+<CardGroup cols={2}>
+  <Card
+    title="Join our Discord"
+    icon="discord"
+    href="https://discord.gg/YKwjt5vuKr"
+  >
+    Get help from the community and team
+  </Card>
+  <Card
+    title="Documentation"
+    icon="book"
+    href="/index"
+  >
+    Browse our complete documentation
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+Once you've configured AI, explore what BrowserOS can do:
+- Create your first automation agent
+- Try the split-view AI assistant
+- Install MCP servers for your tools
+- Set up the AI highlighter
+
+Ready to get started? Choose your preferred setup above and follow the guide!
