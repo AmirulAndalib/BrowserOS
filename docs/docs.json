@@ -105,9 +105,10 @@
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/browseros",
-      "github": "https://github.com/BrowserOS/BrowserOS",
-      "discord": "https://discord.gg/YKwjt5vuKr"
+      "x": "https://x.com/browseros_ai",
+      "github": "https://github.com/BrowserOS-ai/BrowserOS",
+      "discord": "https://discord.gg/YKwjt5vuKr",
+      "slack": "http://dub.sh/browseros-slack"
     }
   }
 }
