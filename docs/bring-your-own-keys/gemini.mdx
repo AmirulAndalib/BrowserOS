@@ -1,71 +1,47 @@
 ---
 title: "Gemini"
-description: "Configure BrowserOS with Google's Gemini AI model"
+description: "Configure BrowserOS to use Google's Gemini AI model"
 ---
 
-# Gemini
+Gemini 2.5 Flash is fast, powerful, and free. Google AI Studio gives you 20 requests per minute at no cost - perfect for BrowserOS.
 
-Google's Gemini is a powerful multimodal AI model that can understand and generate text, analyze images, and process various types of content.
+## Get your API key
 
-## Prerequisites
+### Step 1: Go to Google AI Studio
 
-Before configuring Gemini with BrowserOS, you'll need:
-- A Google Cloud account
-- Gemini API access
-- Your API key from Google AI Studio
+Visit [aistudio.google.com](https://aistudio.google.com) and click **Get API key** in the left sidebar.
 
-## Getting your API Key
+![google-ai-studio.png](/docs/images/google-ai-studio.png)
 
-1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Sign in with your Google account
-3. Click "Create API Key"
-4. Copy your API key and keep it secure
+### Step 2: Create a new project
 
-## Configuration
+Click **Create API key**, then name your project and click **Create key**.
 
-### Step 1: Open BrowserOS Settings
+![create-new-project.png](/docs/images/create-new-project.png)
 
-1. Launch BrowserOS
-2. Click on the settings icon in the toolbar
-3. Navigate to "AI Configuration"
+### Step 3: Copy your API key
 
-### Step 2: Add Gemini
+Your key will appear in the list. Click on it to copy.
 
-1. Select "Add AI Provider"
-2. Choose "Gemini" from the list
-3. Enter your API key
-4. Select your preferred model:
-   - **Gemini Pro**: Best for general tasks
-   - **Gemini Pro Vision**: For multimodal tasks with images
-   - **Gemini Ultra**: Most capable model (when available)
+![copy-key.png](/docs/images/copy-key.png)
 
-### Step 3: Test Connection
+## Configure BrowserOS
 
-Click "Test Connection" to verify your API key is working correctly.
+### Step 1: Open LLM settings
 
-## Usage
+Click the settings icon in BrowserOS, then click **USE** on the Gemini card.
 
-Once configured, you can:
-- Use Gemini in split-view for document summarization
-- Create agents with natural language instructions
-- Analyze images and screenshots
-- Generate content and code
+![SCR-20251006-mkpi.png](/docs/images/SCR-20251006-mkpi.png)
 
-## Pricing
+### Step 2: Configure your provider
 
-Gemini API pricing varies by model and usage. Check the [official pricing page](https://ai.google.dev/pricing) for current rates.
+In the provider configuration:
+1. Set **Model ID** to `gemini-2.5-flash`
+2. Paste your API key in the **API Key** field
+3. Check **Supports Images**
+4. Set **Context Window Size** to `1000000` (1 million tokens)
+5. Click **Save**
 
-## Troubleshooting
+![SCR-20251006-mnhm.png](/docs/images/SCR-20251006-mnhm.png)
 
-### Invalid API Key
-- Ensure you've copied the entire API key
-- Verify the key hasn't expired
-- Check that Gemini API is enabled in your Google Cloud project
-
-### Rate Limiting
-- Gemini has usage quotas
-- Consider upgrading your plan if you hit limits frequently
-
-## Security Note
-
-Your API key is stored locally on your device and is never sent to BrowserOS servers. All API calls are made directly from your browser to Google's servers.
+Done! You're ready to use BrowserOS with Gemini.
