@@ -2,41 +2,28 @@
 title: "LLM Setup Guide"
 description: "Set up AI models to power your BrowserOS experience"
 ---
+To use BrowserOS, you need to configure an LLM provider. You have two options:
 
-# LLM Setup Guide
+1. **Use models locally** - Connect BrowserOS to models running on your machine
+2. **Bring your own API keys** - Use cloud providers like ChatGPT, Gemini, or Claude
 
-BrowserOS supports both local AI models for complete privacy and cloud-based models for maximum capability. Choose the setup that best fits your needs.
+<Note>
+**Our recommendation:** BrowserOS works best with **Gemini 2.5 Flash**. We highly recommend getting an API key from Google AI Studio for Gemini 2.5 Flash. **Google AI Studio gives free access to Gemini 2.5 Flash models for up to 20 requests per minute** - perfect for getting started without any costs.
+</Note>
 
-## Choose Your AI Setup
+## Why bring your own API keys or use local models?
 
-<CardGroup cols={2}>
-  <Card
-    title="Local LLMs"
-    icon="server"
-    href="/local-LLMs/ollama"
-  >
-    Run AI models locally for complete privacy. Your data never leaves your machine.
-  </Card>
-  <Card
-    title="Bring Your Own Keys"
-    icon="key"
-    href="/bring-your-own-keys/gemini"
-  >
-    Connect to cloud AI providers using your own API keys for powerful capabilities.
-  </Card>
-</CardGroup>
+<AccordionGroup>
+  <Accordion title="🔒 Privacy - You control your data">
+    Your API keys are stored locally and encrypted. Requests go directly from your browser to the provider - BrowserOS servers never see your data or keys. With local models, your data never even leaves your machine.
+  </Accordion>
+  
+  <Accordion title="⚡ Rate limits - Avoid usage restrictions">
+    BrowserOS has heavy rate limits on the default shared models. For the smoothest experience without interruptions, bring your own API keys or run models locally. Use BrowserOS as much as you want without hitting limits.
+  </Accordion>
+</AccordionGroup>
 
-## Why Configure AI?
-
-BrowserOS is an AI-powered browser that turns your words into actions. With AI configured, you can:
-
-- **Build agents with natural language** - Automate any task from scraping websites to filling out forms just by describing what you want
-- **Use AI in split-view** - Open ChatGPT, Gemini, Claude or Grok in a side panel while browsing
-- **Install MCP servers** - Connect to Gmail, Calendar, Docs, Sheets, Notion and more
-- **Search by meaning** - Find bookmarks and history semantically, not just by keywords
-- **Automate work tasks** - Let AI handle repetitive tasks while you focus on what matters
-
-## Local AI Models
+## Option #1: Using local AI LLM models
 
 Running models locally gives you complete control and privacy. Your data stays on your machine, and there are no usage costs or API limits.
 
@@ -66,35 +53,29 @@ Running models locally gives you complete control and privacy. Your data stays o
   </Card>
 </CardGroup>
 
-### Benefits of Local Models
-
-- ✅ **Complete privacy** - Your data never leaves your device
-- ✅ **No API costs** - Run unlimited queries for free
-- ✅ **No rate limits** - Process as much as your hardware allows
-- ✅ **Offline capable** - Works without internet connection
-- ✅ **Company-safe** - Perfect for sensitive business data
-
 ### Recommended Models
 
-For best results with local models, we recommend:
-- **Llama 3.1** - Great balance of speed and capability
-- **Mistral** - Fast and efficient for most tasks
-- **CodeLlama** - Optimized for coding tasks
-- **Phi-3** - Lightweight but capable
+For best results with local models:
+- **gpt-oss:20B** - Great balance of speed and capability
+- **qwen3:8B** or **qwen3:14B** - Fast and good for chat-mode, but struggles with agentic tasks
 
-## Cloud AI Providers
+<Warning>
+Many models like Deepseek-R1 via Ollama don't support tool calls and you'll get `400` errors when trying to use them with BrowserOS. Stick with the recommended models above for the best experience.
+</Warning>
 
-Connect to powerful cloud models using your own API keys. Get access to the latest models with maximum capability.
+## Option #2: Bring your own keys to ChatGPT, Gemini, Claude or other models with openrouter!
+
+Connect to powerful cloud models using your own API keys. BrowserOS works very well with Gemini 2.5 Flash - use it for the highest performance, fastest speed, and most stable experience.
 
 ### Available Cloud Providers
 
 <CardGroup cols={3}>
   <Card
-    title="Gemini"
+    title="Gemini (Recommended)"
     icon="gem"
     href="/bring-your-own-keys/gemini"
   >
-    Google's multimodal AI with vision capabilities and large context windows
+    Google's multimodal AI with vision capabilities. Works best with BrowserOS.
   </Card>
   <Card
     title="Claude"
@@ -112,56 +93,6 @@ Connect to powerful cloud models using your own API keys. Get access to the late
   </Card>
 </CardGroup>
 
-### Benefits of Cloud Models
-
-- ⚡ **Latest models** - Access to GPT-4, Claude 3, Gemini Pro
-- 📝 **Larger context** - Handle documents up to 200K tokens
-- 👁️ **Vision capabilities** - Analyze images and screenshots
-- 🔧 **No setup required** - Just add your API key and go
-- 🚀 **Maximum performance** - Leverage powerful cloud infrastructure
-
-### Security & Privacy
-
-When using cloud providers:
-- API keys are stored locally and encrypted
-- Requests go directly from your browser to the provider
-- BrowserOS servers never see your data or keys
-- You control what data gets sent to cloud models
-
-## Quick Setup Guide
-
-### For Local Models (Recommended for Privacy)
-
-1. **Install Ollama** (easiest option)
-   ```bash
-   # macOS/Linux
-   curl -fsSL https://ollama.com/install.sh | sh
-
-   # Windows - Download from ollama.com
-   ```
-
-2. **Download a model**
-   ```bash
-   ollama pull llama3.1
-   ```
-
-3. **Configure in BrowserOS**
-   - Open BrowserOS settings
-   - Navigate to AI Configuration
-   - Select "Ollama" and it will auto-detect
-
-### For Cloud Models
-
-1. **Get an API key**
-   - [OpenAI](https://platform.openai.com/api-keys)
-   - [Anthropic Claude](https://console.anthropic.com/)
-   - [Google Gemini](https://makersuite.google.com/app/apikey)
-
-2. **Add to BrowserOS**
-   - Open BrowserOS settings
-   - Navigate to AI Configuration
-   - Select your provider and enter the key
-
 ## Switching Between Models
 
 You can configure multiple AI providers and switch between them:
@@ -169,31 +100,9 @@ You can configure multiple AI providers and switch between them:
 - Switch to cloud models for complex tasks
 - Set different models for different features
 
-## Need Help?
-
-<CardGroup cols={2}>
-  <Card
-    title="Join our Discord"
-    icon="discord"
-    href="https://discord.gg/YKwjt5vuKr"
-  >
-    Get help from the community and team
-  </Card>
-  <Card
-    title="Documentation"
-    icon="book"
-    href="/index"
-  >
-    Browse our complete documentation
-  </Card>
-</CardGroup>
-
 ## Next Steps
 
-Once you've configured AI, explore what BrowserOS can do:
-- Create your first automation agent
-- Try the split-view AI assistant
-- Install MCP servers for your tools
-- Set up the AI highlighter
-
-Ready to get started? Choose your preferred setup above and follow the guide!
+Once you've configured your LLM provider, explore what BrowserOS can do:
+- Use **Chat Mode** for simple Q&A.
+- Use **Agent Mode** for open-ended agentic tasks—tell the agent what to do and watch it execute step by step.
+- Use **Teach Mode** to create repeatable workflows—show the BrowserOS agent your workflow once, and it will learn and repeat it reliably.
