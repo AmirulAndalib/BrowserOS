@@ -16,7 +16,8 @@
           {
             "group": "Getting Started",
             "pages": [
-              "index"
+              "index",
+              "onboarding"
             ]
           },
           {
@@ -25,21 +26,22 @@
             "pages": [
               "llm-setup-guide",
               {
+                "group": "BYOK LLM",
+                "expanded": true,
+                "pages": [
+                  "bring-your-own-keys/gemini",
+                  "bring-your-own-keys/claude",
+                  "bring-your-own-keys/openai",
+                  "bring-your-own-keys/openrouter"
+                ]
+              },
+              {
                 "group": "Local LLMs",
                 "expanded": true,
                 "pages": [
                   "local-LLMs/ollama",
                   "local-LLMs/lm-studio",
                   "local-LLMs/gpt-oss"
-                ]
-              },
-              {
-                "group": "Bring your own Keys",
-                "expanded": true,
-                "pages": [
-                  "bring-your-own-keys/gemini",
-                  "bring-your-own-keys/claude",
-                  "bring-your-own-keys/openai"
                 ]
               }
             ]
