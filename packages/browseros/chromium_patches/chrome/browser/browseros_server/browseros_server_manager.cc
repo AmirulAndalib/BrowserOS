@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/browseros_server/browseros_server_manager.cc b/chrome/browser/browseros_server/browseros_server_manager.cc
 new file mode 100644
-index 0000000000000..3ca08aa70dcae
+index 0000000000000..e01ae8f9405e8
 --- /dev/null
 +++ b/chrome/browser/browseros_server/browseros_server_manager.cc
-@@ -0,0 +1,567 @@
+@@ -0,0 +1,577 @@
 +// Copyright 2024 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -531,6 +531,16 @@ index 0000000000000..3ca08aa70dcae
 +}
 +
 +base::FilePath BrowserOSServerManager::GetBrowserOSServerExecutablePath() const {
++  // Check for command-line override first
++  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
++  if (command_line->HasSwitch("browseros-server-binary")) {
++    base::FilePath custom_path =
++        command_line->GetSwitchValuePath("browseros-server-binary");
++    LOG(INFO) << "browseros: Using custom server binary from command line: "
++              << custom_path;
++    return custom_path;
++  }
++
 +  base::FilePath exe_dir;
 +
 +#if BUILDFLAG(IS_MAC)
