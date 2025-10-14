@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/browseros_server/browseros_server_manager.h b/chrome/browser/browseros_server/browseros_server_manager.h
 new file mode 100644
-index 0000000000000..2cc60a13b1fe9
+index 0000000000000..0139ab57d606e
 --- /dev/null
 +++ b/chrome/browser/browseros_server/browseros_server_manager.h
-@@ -0,0 +1,107 @@
+@@ -0,0 +1,111 @@
 +// Copyright 2024 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -62,6 +62,9 @@ index 0000000000000..2cc60a13b1fe9
 +  // Gets the MCP port (auto-discovered, stable across restarts)
 +  int GetMCPPort() const { return mcp_port_; }
 +
++  // Gets the Agent port (auto-discovered, stable across restarts)
++  int GetAgentPort() const { return agent_port_; }
++
 +  // Returns whether MCP server is enabled
 +  bool IsMCPEnabled() const { return mcp_enabled_; }
 +
@@ -93,8 +96,9 @@ index 0000000000000..2cc60a13b1fe9
 +  bool IsPortAvailable(int port);
 +
 +  base::Process process_;
-+  int cdp_port_ = 9223;  // CDP port (default: 9223, auto-discovered)
-+  int mcp_port_ = 9224;  // MCP port (default: 9224, auto-discovered)
++  int cdp_port_ = 0;  // CDP port (auto-discovered)
++  int mcp_port_ = 0;  // MCP port (auto-discovered)
++  int agent_port_ = 0;  // Agent port (auto-discovered)
 +  bool mcp_enabled_ = true;  // Whether MCP server is enabled
 +  bool is_running_ = false;
 +

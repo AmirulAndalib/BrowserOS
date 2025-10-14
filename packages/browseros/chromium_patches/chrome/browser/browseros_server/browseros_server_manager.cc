@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/browseros_server/browseros_server_manager.cc b/chrome/browser/browseros_server/browseros_server_manager.cc
 new file mode 100644
-index 0000000000000..e01ae8f9405e8
+index 0000000000000..0cff38b2b618d
 --- /dev/null
 +++ b/chrome/browser/browseros_server/browseros_server_manager.cc
-@@ -0,0 +1,577 @@
+@@ -0,0 +1,635 @@
 +// Copyright 2024 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -32,6 +32,7 @@ index 0000000000000..e01ae8f9405e8
 +#include "content/public/browser/devtools_socket_factory.h"
 +#include "content/public/browser/storage_partition.h"
 +#include "net/base/net_errors.h"
++#include "net/base/port_util.h"
 +#include "net/log/net_log_source.h"
 +#include "net/socket/tcp_server_socket.h"
 +#include "net/traffic_annotation/network_traffic_annotation.h"
@@ -50,6 +51,7 @@ index 0000000000000..e01ae8f9405e8
 +    const base::FilePath& exe_path,
 +    uint16_t cdp_port,
 +    uint16_t mcp_port,
++    uint16_t agent_port,
 +    bool mcp_enabled) {
 +  // Check if executable exists (blocking I/O)
 +  if (!base::PathExists(exe_path)) {
@@ -62,6 +64,7 @@ index 0000000000000..e01ae8f9405e8
 +  base::CommandLine cmd(exe_path);
 +  cmd.AppendSwitchASCII("cdp-port", base::NumberToString(cdp_port));
 +  cmd.AppendSwitchASCII("http-mcp-port", base::NumberToString(mcp_port));
++  cmd.AppendSwitchASCII("agent-port", base::NumberToString(agent_port));
 +
 +  // Add --disable-mcp-server flag when MCP is disabled
 +  if (!mcp_enabled) {
@@ -181,18 +184,24 @@ index 0000000000000..e01ae8f9405e8
 +  if (!prefs) {
 +    LOG(ERROR) << "browseros: Failed to get local state prefs";
 +    // Find available ports from standard defaults
-+    cdp_port_ = FindAvailablePort(9222);
-+    mcp_port_ = FindAvailablePort(9223);
++    cdp_port_ = FindAvailablePort(browseros_server::kDefaultCDPPort);
++    mcp_port_ = FindAvailablePort(browseros_server::kDefaultMCPPort);
++    agent_port_ = FindAvailablePort(browseros_server::kDefaultAgentPort);
 +  } else {
 +    // Read CDP port from prefs and find available port
 +    int saved_cdp_port = prefs->GetInteger(browseros_server::kCDPServerPort);
-+    int cdp_starting_port = (saved_cdp_port > 0) ? saved_cdp_port : 9222;
++    int cdp_starting_port = (saved_cdp_port > 0) ? saved_cdp_port : browseros_server::kDefaultCDPPort;
 +    cdp_port_ = FindAvailablePort(cdp_starting_port);
 +
 +    // Read MCP settings
 +    int saved_mcp_port = prefs->GetInteger(browseros_server::kMCPServerPort);
-+    int mcp_starting_port = (saved_mcp_port > 0) ? saved_mcp_port : 9223;
++    int mcp_starting_port = (saved_mcp_port > 0) ? saved_mcp_port : browseros_server::kDefaultMCPPort;
 +    mcp_port_ = FindAvailablePort(mcp_starting_port);
++
++    // Read Agent port from prefs and find available port
++    int saved_agent_port = prefs->GetInteger(browseros_server::kAgentServerPort);
++    int agent_starting_port = (saved_agent_port > 0) ? saved_agent_port : browseros_server::kDefaultAgentPort;
++    agent_port_ = FindAvailablePort(agent_starting_port);
 +
 +    mcp_enabled_ = prefs->GetBoolean(browseros_server::kMCPServerEnabled);
 +
@@ -213,7 +222,16 @@ index 0000000000000..e01ae8f9405e8
 +    std::string port_str =
 +        command_line->GetSwitchValueASCII("browseros-mcp-port");
 +    int port = 0;
-+    if (base::StringToInt(port_str, &port) && port > 0 && port <= 65535) {
++    if (base::StringToInt(port_str, &port) && net::IsPortValid(port) && port > 0) {
++      // Warn about problematic ports but respect explicit user intent
++      if (net::IsWellKnownPort(port)) {
++        LOG(WARNING) << "browseros: MCP port " << port
++                     << " is well-known (0-1023) and may require elevated privileges";
++      }
++      if (!net::IsPortAllowedForScheme(port, "http")) {
++        LOG(WARNING) << "browseros: MCP port " << port
++                     << " is restricted by Chromium (may interfere with system services)";
++      }
 +      LOG(INFO) << "browseros: MCP port overridden via command line: " << port;
 +      mcp_port_ = port;
 +      // Implicitly enable MCP when port is specified
@@ -221,6 +239,29 @@ index 0000000000000..e01ae8f9405e8
 +      LOG(INFO) << "browseros: MCP server implicitly enabled via command line";
 +    } else {
 +      LOG(WARNING) << "browseros: Invalid MCP port specified on command line: "
++                   << port_str << " (must be 1-65535)";
++    }
++  }
++
++  // Check for command-line Agent port override
++  if (command_line->HasSwitch("browseros-agent-port")) {
++    std::string port_str =
++        command_line->GetSwitchValueASCII("browseros-agent-port");
++    int port = 0;
++    if (base::StringToInt(port_str, &port) && net::IsPortValid(port) && port > 0) {
++      // Warn about problematic ports but respect explicit user intent
++      if (net::IsWellKnownPort(port)) {
++        LOG(WARNING) << "browseros: Agent port " << port
++                     << " is well-known (0-1023) and may require elevated privileges";
++      }
++      if (!net::IsPortAllowedForScheme(port, "http")) {
++        LOG(WARNING) << "browseros: Agent port " << port
++                     << " is restricted by Chromium (may interfere with system services)";
++      }
++      LOG(INFO) << "browseros: Agent port overridden via command line: " << port;
++      agent_port_ = port;
++    } else {
++      LOG(WARNING) << "browseros: Invalid Agent port specified on command line: "
 +                   << port_str << " (must be 1-65535)";
 +    }
 +  }
@@ -256,13 +297,14 @@ index 0000000000000..e01ae8f9405e8
 +  // Capture values to pass to background thread
 +  uint16_t cdp_port = cdp_port_;
 +  uint16_t mcp_port = mcp_port_;
++  uint16_t agent_port = agent_port_;
 +  bool mcp_enabled = mcp_enabled_;
 +
 +  // Post blocking work to background thread, get result back on UI thread
 +  base::ThreadPool::PostTaskAndReplyWithResult(
 +      FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_BLOCKING},
 +      base::BindOnce(&LaunchProcessOnBackgroundThread, exe_path, cdp_port,
-+                     mcp_port, mcp_enabled),
++                     mcp_port, agent_port, mcp_enabled),
 +      base::BindOnce(&BrowserOSServerManager::OnProcessLaunched,
 +                     weak_factory_.GetWeakPtr()));
 +}
@@ -280,12 +322,14 @@ index 0000000000000..e01ae8f9405e8
 +  LOG(INFO) << "browseros: BrowserOS server started";
 +  LOG(INFO) << "browseros: CDP port: " << cdp_port_;
 +  LOG(INFO) << "browseros: MCP port: " << mcp_port_;
++  LOG(INFO) << "browseros: Agent port: " << agent_port_;
 +
 +  // Save prefs to Local State now that we know the server launched
 +  PrefService* prefs = g_browser_process->local_state();
 +  if (prefs) {
 +    prefs->SetInteger(browseros_server::kCDPServerPort, cdp_port_);
 +    prefs->SetInteger(browseros_server::kMCPServerPort, mcp_port_);
++    prefs->SetInteger(browseros_server::kAgentServerPort, agent_port_);
 +    prefs->SetBoolean(browseros_server::kMCPServerEnabled, mcp_enabled_);
 +    LOG(INFO) << "browseros: Saved prefs to Local State";
 +  }
@@ -507,6 +551,21 @@ index 0000000000000..e01ae8f9405e8
 +}
 +
 +bool BrowserOSServerManager::IsPortAvailable(int port) {
++  // Check port is in valid range
++  if (!net::IsPortValid(port) || port == 0) {
++    return false;
++  }
++
++  // Avoid well-known ports (0-1023, require elevated privileges)
++  if (net::IsWellKnownPort(port)) {
++    return false;
++  }
++
++  // Avoid restricted ports (could interfere with system services)
++  if (!net::IsPortAllowedForScheme(port, "http")) {
++    return false;
++  }
++
 +  // Try to bind to both IPv4 and IPv6 localhost
 +  // If EITHER is in use, the port is NOT available
 +  std::unique_ptr<net::TCPServerSocket> socket(
@@ -526,7 +585,6 @@ index 0000000000000..e01ae8f9405e8
 +    return false;  // IPv6 port is in use
 +  }
 +
-+  // Both IPv4 and IPv6 are free
 +  return true;
 +}
 +
