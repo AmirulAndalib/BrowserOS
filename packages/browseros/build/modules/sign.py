@@ -187,6 +187,13 @@ def find_components_to_sign(
         if nested_app not in components["helpers"]:
             components["apps"].append(nested_app)
 
+    # Find BrowserOS Server binaries
+    browseros_server_dir = join_paths(app_path, "Contents", "Resources", "BrowserOSServer")
+    if browseros_server_dir.exists():
+        for item in browseros_server_dir.rglob("*"):
+            if item.is_file() and not item.suffix and os.access(item, os.X_OK):
+                components["executables"].append(item)
+
     return components
 
 
@@ -206,6 +213,7 @@ def get_identifier_for_component(
         "chrome_crashpad_handler": f"{base_identifier}.crashpad_handler",
         "app_mode_loader": f"{base_identifier}.app_mode_loader",
         "web_app_shortcut_copier": f"{base_identifier}.web_app_shortcut_copier",
+        "browseros_server": f"{base_identifier}.browseros_server",
     }
 
     # Check for special cases
