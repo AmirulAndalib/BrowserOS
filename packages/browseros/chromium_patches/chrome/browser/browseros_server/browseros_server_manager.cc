@@ -1,6 +1,6 @@
 diff --git a/chrome/browser/browseros_server/browseros_server_manager.cc b/chrome/browser/browseros_server/browseros_server_manager.cc
 new file mode 100644
-index 0000000000000..0cff38b2b618d
+index 0000000000000..ed87ade44aa93
 --- /dev/null
 +++ b/chrome/browser/browseros_server/browseros_server_manager.cc
 @@ -0,0 +1,635 @@
@@ -629,12 +629,12 @@ index 0000000000000..0cff38b2b618d
 +
 +  // Navigate to BrowserOSServer/default/ subdirectory
 +  // This structure allows future updates to install to versioned directories
-+  base::FilePath browseros_exe = exe_dir.Append("BrowserOSServer")
-+                                  .Append("default")
-+                                  .Append("browseros_server");
++  base::FilePath browseros_exe = exe_dir.Append(FILE_PATH_LITERAL("BrowserOSServer"))
++                                  .Append(FILE_PATH_LITERAL("default"))
++                                  .Append(FILE_PATH_LITERAL("browseros_server"));
 +
 +#if BUILDFLAG(IS_WIN)
-+  browseros_exe = browseros_exe.AddExtension(".exe");
++  browseros_exe = browseros_exe.AddExtension(FILE_PATH_LITERAL(".exe"));
 +#endif
 +
 +  return browseros_exe;
