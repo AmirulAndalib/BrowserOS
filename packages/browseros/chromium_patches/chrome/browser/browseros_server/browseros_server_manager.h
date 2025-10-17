@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/browseros_server/browseros_server_manager.h b/chrome/browser/browseros_server/browseros_server_manager.h
 new file mode 100644
-index 0000000000000..0139ab57d606e
+index 0000000000000..edddc9a8a428c
 --- /dev/null
 +++ b/chrome/browser/browseros_server/browseros_server_manager.h
-@@ -0,0 +1,111 @@
+@@ -0,0 +1,125 @@
 +// Copyright 2024 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -65,6 +65,9 @@ index 0000000000000..0139ab57d606e
 +  // Gets the Agent port (auto-discovered, stable across restarts)
 +  int GetAgentPort() const { return agent_port_; }
 +
++  // Gets the Extension port (auto-discovered, stable across restarts)
++  int GetExtensionPort() const { return extension_port_; }
++
 +  // Returns whether MCP server is enabled
 +  bool IsMCPEnabled() const { return mcp_enabled_; }
 +
@@ -89,6 +92,15 @@ index 0000000000000..0139ab57d606e
 +      std::unique_ptr<network::SimpleURLLoader> url_loader,
 +      scoped_refptr<net::HttpResponseHeaders> headers);
 +  void OnMCPEnabledChanged();
++  void SendMCPControlRequest(bool enabled);
++  void OnMCPControlRequestComplete(
++      bool requested_state,
++      std::unique_ptr<network::SimpleURLLoader> url_loader,
++      scoped_refptr<net::HttpResponseHeaders> headers);
++  void SendInitRequest();
++  void OnInitRequestComplete(
++      std::unique_ptr<network::SimpleURLLoader> url_loader,
++      scoped_refptr<net::HttpResponseHeaders> headers);
 +  void CheckProcessStatus();
 +
 +  base::FilePath GetBrowserOSServerExecutablePath() const;
@@ -99,8 +111,10 @@ index 0000000000000..0139ab57d606e
 +  int cdp_port_ = 0;  // CDP port (auto-discovered)
 +  int mcp_port_ = 0;  // MCP port (auto-discovered)
 +  int agent_port_ = 0;  // Agent port (auto-discovered)
++  int extension_port_ = 0;  // Extension port (auto-discovered)
 +  bool mcp_enabled_ = true;  // Whether MCP server is enabled
 +  bool is_running_ = false;
++  bool init_request_sent_ = false;  // Whether /init request has been sent
 +
 +  // Timer for health checks
 +  base::RepeatingTimer health_check_timer_;
