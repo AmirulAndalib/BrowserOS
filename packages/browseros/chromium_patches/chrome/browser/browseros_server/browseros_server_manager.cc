@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/browseros_server/browseros_server_manager.cc b/chrome/browser/browseros_server/browseros_server_manager.cc
 new file mode 100644
-index 0000000000000..99d73baf734c4
+index 0000000000000..e6bd851f42bfa
 --- /dev/null
 +++ b/chrome/browser/browseros_server/browseros_server_manager.cc
-@@ -0,0 +1,860 @@
+@@ -0,0 +1,863 @@
 +// Copyright 2024 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -838,11 +838,14 @@ index 0000000000000..99d73baf734c4
 +  exe_dir = exe_dir.DirName().Append("Resources");
 +
 +#elif BUILDFLAG(IS_WIN)
-+  // On Windows, binary is in the same directory as chrome.exe
++  // On Windows, installer places BrowserOS Server under the versioned directory
 +  if (!base::PathService::Get(base::DIR_EXE, &exe_dir)) {
 +    LOG(ERROR) << "browseros: Failed to get executable directory";
 +    return base::FilePath();
 +  }
++  // Append version directory (chrome.release places BrowserOSServer under versioned dir)
++  // chrome/installer/mini_installer/chrome.release
++  exe_dir = exe_dir.AppendASCII(version_info::GetVersionNumber());
 +
 +#elif BUILDFLAG(IS_LINUX)
 +  // On Linux, binary is in the same directory as chrome
