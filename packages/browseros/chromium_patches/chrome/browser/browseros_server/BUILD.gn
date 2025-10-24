@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/browseros_server/BUILD.gn b/chrome/browser/browseros_server/BUILD.gn
 new file mode 100644
-index 0000000000000..7165c4459db08
+index 0000000000000..ae59297ed238d
 --- /dev/null
 +++ b/chrome/browser/browseros_server/BUILD.gn
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,107 @@
 +# Copyright 2024 The Chromium Authors
 +# Use of this source code is governed by a BSD-style license that can be
 +# found in the LICENSE file.
@@ -52,6 +52,19 @@ index 0000000000000..7165c4459db08
 +  _browseros_output_name += ".exe"
 +}
 +
++# CLI binary
++_browseros_cli_binary_name = "browseros-cli-${_browseros_os}-${target_cpu}"
++if (is_win) {
++  _browseros_cli_binary_name += ".exe"
++}
++
++_browseros_cli_source_binary = "binaries/${_browseros_cli_binary_name}"
++
++_browseros_cli_output_name = "browseros_cli"
++if (is_win) {
++  _browseros_cli_output_name += ".exe"
++}
++
 +if (is_mac) {
 +  import("//build/config/apple/symbols.gni")
 +  import("//build/config/mac/mac_sdk.gni")
@@ -70,11 +83,31 @@ index 0000000000000..7165c4459db08
 +  }
 +}
 +
++# CLI binary packaging
++if (is_mac) {
++  bundle_data("browseros_cli_bundle_data") {
++    sources = [ _browseros_cli_source_binary ]
++    outputs =
++        [ "{{bundle_resources_dir}}/BrowserOSServer/default/${_browseros_cli_output_name}" ]
++  }
++} else {
++  copy("browseros_cli_binary") {
++    sources = [ _browseros_cli_source_binary ]
++    outputs = [ "$root_out_dir/BrowserOSServer/default/${_browseros_cli_output_name}" ]
++  }
++}
++
 +# Group for all BrowserOS server resources
 +group("browseros_server_resources") {
 +  if (is_mac) {
-+    deps = [ ":browseros_server_bundle_data" ]
++    deps = [
++      ":browseros_server_bundle_data",
++      ":browseros_cli_bundle_data",
++    ]
 +  } else {
-+    deps = [ ":browseros_server_binary" ]
++    deps = [
++      ":browseros_server_binary",
++      ":browseros_cli_binary",
++    ]
 +  }
 +}
