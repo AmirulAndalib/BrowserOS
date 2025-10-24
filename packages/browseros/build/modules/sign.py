@@ -214,6 +214,7 @@ def get_identifier_for_component(
         "app_mode_loader": f"{base_identifier}.app_mode_loader",
         "web_app_shortcut_copier": f"{base_identifier}.web_app_shortcut_copier",
         "browseros_server": f"{base_identifier}.browseros_server",
+        "browseros_cli": f"{base_identifier}.browseros_cli",
     }
 
     # Check for special cases
