@@ -102,3 +102,8 @@ copy_operations:
     source: "resources/binaries/browseros_server/*"
     destination: "chrome/browser/browseros_server/binaries/"
     type: "files"
+
+  - name: "BrowserOS CLI Binaries"
+    source: "resources/binaries/browseros_cli/*"
+    destination: "chrome/browser/browseros_server/binaries/"
+    type: "files"

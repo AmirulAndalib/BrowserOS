@@ -1,2 +1,5 @@
 # BrowserOS Server Binaries - Track with Git LFS
 resources/binaries/browseros_server/* filter=lfs diff=lfs merge=lfs -text
+
+# BrowserOS CLI Binaries - Track with Git LFS
+resources/binaries/browseros_cli/* filter=lfs diff=lfs merge=lfs -text
