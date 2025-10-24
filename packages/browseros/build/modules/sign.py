@@ -613,6 +613,25 @@ def notarize_app(
 
     log_success("Notarization ticket stapled successfully")
 
+    # Remove quarantine from browseros binaries to prevent Gatekeeper blocking extracted .node files
+    # pkg extracts native modules at runtime - they inherit quarantine from parent
+    # Removing quarantine here preserves notarization while allowing runtime extraction
+    log_info("🔓 Removing quarantine from browseros binaries...")
+    browseros_binaries = [
+        join_paths(app_path, "Contents", "Resources", "BrowserOSServer", "default", "browseros_server"),
+        join_paths(app_path, "Contents", "Resources", "BrowserOSServer", "default", "browseros_cli"),
+    ]
+    for binary_path in browseros_binaries:
+        if binary_path.exists():
+            try:
+                run_command(["xattr", "-d", "com.apple.quarantine", str(binary_path)], check=False)
+                log_success(f"Quarantine removed from {binary_path.name}")
+            except Exception as e:
+                log_warning(f"Could not remove quarantine from {binary_path.name}: {e}")
+                # Not fatal - continue
+        else:
+            log_warning(f"{binary_path.name} not found at {binary_path}")
+
     # Clean up
     notarize_zip.unlink()
 
