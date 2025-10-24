@@ -358,6 +358,13 @@ def sign_all_components(
                     if ent_path.exists():
                         entitlements = ent_path
                         break
+            elif "browseros_cli" in str(exe).lower():
+                entitlements_name = "browseros-cli-entitlements.plist"
+                for ent_dir in entitlements_dirs:
+                    ent_path = join_paths(ent_dir, entitlements_name)
+                    if ent_path.exists():
+                        entitlements = ent_path
+                        break
 
             if not sign_component(exe, certificate_name, identifier, options, entitlements):
                 return False

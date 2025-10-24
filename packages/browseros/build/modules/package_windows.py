@@ -181,11 +181,12 @@ def sign_binaries(ctx: BuildContext, certificate_name: Optional[str] = None) -> 
     # Get paths to sign
     build_output_dir = join_paths(ctx.chromium_src, ctx.out_dir)
 
-    # STEP 1: Sign chrome.exe and browseros_server.exe BEFORE building mini_installer
+    # STEP 1: Sign chrome.exe, browseros_server.exe, and browseros_cli.exe BEFORE building mini_installer
     log_info("\nStep 1/3: Signing executables before packaging...")
     binaries_to_sign_first = [
         build_output_dir / "chrome.exe",
         build_output_dir / "BrowserOSServer" / "default" / "browseros_server.exe",
+        build_output_dir / "BrowserOSServer" / "default" / "browseros_cli.exe",
     ]
 
     # Check which binaries exist
