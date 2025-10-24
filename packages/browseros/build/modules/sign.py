@@ -262,8 +262,8 @@ def get_signing_options(component_path: Path) -> str:
     ):
         return "restrict,kill,runtime"
 
-    # For browseros_server - needs JIT, minimal restrictions
-    if "browseros_server" in str(component_path).lower():
+    # For browseros_server and browseros_cli - both need JIT, minimal restrictions
+    if "browseros_server" in str(component_path).lower() or "browseros_cli" in str(component_path).lower():
         return "runtime"
 
     # For dylibs - library flag ONLY for dynamic libraries
