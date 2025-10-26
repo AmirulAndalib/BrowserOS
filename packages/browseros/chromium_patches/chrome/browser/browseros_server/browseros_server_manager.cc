@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/browseros_server/browseros_server_manager.cc b/chrome/browser/browseros_server/browseros_server_manager.cc
 new file mode 100644
-index 0000000000000..494ad4fb4e0a0
+index 0000000000000..ec1f0037999cd
 --- /dev/null
 +++ b/chrome/browser/browseros_server/browseros_server_manager.cc
-@@ -0,0 +1,865 @@
+@@ -0,0 +1,864 @@
 +// Copyright 2024 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -170,13 +170,94 @@ index 0000000000000..494ad4fb4e0a0
 +  Shutdown();
 +}
 +
++void BrowserOSServerManager::InitializePortsAndPrefs() {
++  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
++  PrefService* prefs = g_browser_process->local_state();
++
++  if (!prefs) {
++    cdp_port_ = browseros_server::kDefaultCDPPort;
++    mcp_port_ = browseros_server::kDefaultMCPPort;
++    agent_port_ = browseros_server::kDefaultAgentPort;
++    extension_port_ = browseros_server::kDefaultExtensionPort;
++    mcp_enabled_ = true;
++  } else {
++    cdp_port_ = prefs->GetInteger(browseros_server::kCDPServerPort);
++    if (cdp_port_ <= 0) {
++      cdp_port_ = browseros_server::kDefaultCDPPort;
++    }
++
++    mcp_port_ = prefs->GetInteger(browseros_server::kMCPServerPort);
++    if (mcp_port_ <= 0) {
++      mcp_port_ = browseros_server::kDefaultMCPPort;
++    }
++
++    agent_port_ = prefs->GetInteger(browseros_server::kAgentServerPort);
++    if (agent_port_ <= 0) {
++      agent_port_ = browseros_server::kDefaultAgentPort;
++    }
++
++    extension_port_ = prefs->GetInteger(browseros_server::kExtensionServerPort);
++    if (extension_port_ <= 0) {
++      extension_port_ = browseros_server::kDefaultExtensionPort;
++    }
++
++    mcp_enabled_ = prefs->GetBoolean(browseros_server::kMCPServerEnabled);
++
++    if (!pref_change_registrar_) {
++      pref_change_registrar_ = std::make_unique<PrefChangeRegistrar>();
++      pref_change_registrar_->Init(prefs);
++      pref_change_registrar_->Add(
++          browseros_server::kMCPServerEnabled,
++          base::BindRepeating(&BrowserOSServerManager::OnMCPEnabledChanged,
++                              base::Unretained(this)));
++    }
++  }
++
++  int mcp_override = GetPortOverrideFromCommandLine(
++      command_line, "browseros-mcp-port", "MCP port");
++  if (mcp_override > 0) {
++    mcp_port_ = mcp_override;
++    mcp_enabled_ = true;
++  }
++
++  int cdp_override = GetPortOverrideFromCommandLine(
++      command_line, "browseros-cdp-port", "CDP port");
++  if (cdp_override > 0) {
++    cdp_port_ = cdp_override;
++  }
++
++  int agent_override = GetPortOverrideFromCommandLine(
++      command_line, "browseros-agent-port", "Agent port");
++  if (agent_override > 0) {
++    agent_port_ = agent_override;
++  }
++
++  int extension_override = GetPortOverrideFromCommandLine(
++      command_line, "browseros-extension-port", "Extension port");
++  if (extension_override > 0) {
++    extension_port_ = extension_override;
++  }
++
++  if (prefs) {
++    prefs->SetInteger(browseros_server::kCDPServerPort, cdp_port_);
++    prefs->SetInteger(browseros_server::kMCPServerPort, mcp_port_);
++    prefs->SetInteger(browseros_server::kAgentServerPort, agent_port_);
++    prefs->SetInteger(browseros_server::kExtensionServerPort, extension_port_);
++    prefs->SetBoolean(browseros_server::kMCPServerEnabled, mcp_enabled_);
++    LOG(INFO) << "browseros: Ports initialized and saved to prefs - CDP: "
++              << cdp_port_ << ", MCP: " << mcp_port_ << ", Agent: "
++              << agent_port_ << ", Extension: " << extension_port_;
++  }
++}
++
 +void BrowserOSServerManager::Start() {
 +  if (is_running_) {
 +    LOG(INFO) << "browseros: BrowserOS server already running";
 +    return;
 +  }
 +
-+  // Check if server is disabled via command line
++  InitializePortsAndPrefs();
++
 +  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
 +  if (command_line->HasSwitch("disable-browseros-server")) {
 +    LOG(INFO) << "browseros: BrowserOS server disabled via command line";
@@ -185,13 +266,9 @@ index 0000000000000..494ad4fb4e0a0
 +
 +  LOG(INFO) << "browseros: Starting BrowserOS server";
 +
-+  // Step 1: Start CDP server
 +  StartCDPServer();
-+
-+  // Step 2: Launch BrowserOS process
 +  LaunchBrowserOSProcess();
 +
-+  // Step 3: Start health checking every 60 seconds
 +  health_check_timer_.Start(FROM_HERE, base::Seconds(60), this,
 +                            &BrowserOSServerManager::CheckServerHealth);
 +}
@@ -218,83 +295,17 @@ index 0000000000000..494ad4fb4e0a0
 +}
 +
 +void BrowserOSServerManager::StartCDPServer() {
-+  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
-+
-+  PrefService* prefs = g_browser_process->local_state();
-+  if (!prefs) {
-+    LOG(ERROR) << "browseros: Failed to get local state prefs";
-+    // Find available ports from standard defaults
-+    cdp_port_ = FindAvailablePort(browseros_server::kDefaultCDPPort);
-+    mcp_port_ = FindAvailablePort(browseros_server::kDefaultMCPPort);
-+    agent_port_ = FindAvailablePort(browseros_server::kDefaultAgentPort);
-+    extension_port_ = FindAvailablePort(browseros_server::kDefaultExtensionPort);
-+  } else {
-+    // Read CDP port from prefs and find available port
-+    int saved_cdp_port = prefs->GetInteger(browseros_server::kCDPServerPort);
-+    int cdp_starting_port = (saved_cdp_port > 0) ? saved_cdp_port : browseros_server::kDefaultCDPPort;
-+    cdp_port_ = FindAvailablePort(cdp_starting_port);
-+
-+    // Read MCP settings
-+    int saved_mcp_port = prefs->GetInteger(browseros_server::kMCPServerPort);
-+    int mcp_starting_port = (saved_mcp_port > 0) ? saved_mcp_port : browseros_server::kDefaultMCPPort;
-+    mcp_port_ = FindAvailablePort(mcp_starting_port);
-+
-+    // Read Agent port from prefs and find available port
-+    int saved_agent_port = prefs->GetInteger(browseros_server::kAgentServerPort);
-+    int agent_starting_port = (saved_agent_port > 0) ? saved_agent_port : browseros_server::kDefaultAgentPort;
-+    agent_port_ = FindAvailablePort(agent_starting_port);
-+
-+    // Read Extension port from prefs and find available port
-+    int saved_extension_port = prefs->GetInteger(browseros_server::kExtensionServerPort);
-+    int extension_starting_port = (saved_extension_port > 0) ? saved_extension_port : browseros_server::kDefaultExtensionPort;
-+    extension_port_ = FindAvailablePort(extension_starting_port);
-+
-+    mcp_enabled_ = prefs->GetBoolean(browseros_server::kMCPServerEnabled);
-+
-+    // Set up preference change observer for MCP enabled flag
-+    if (!pref_change_registrar_) {
-+      pref_change_registrar_ = std::make_unique<PrefChangeRegistrar>();
-+      pref_change_registrar_->Init(prefs);
-+      pref_change_registrar_->Add(
-+          browseros_server::kMCPServerEnabled,
-+          base::BindRepeating(&BrowserOSServerManager::OnMCPEnabledChanged,
-+                              base::Unretained(this)));
-+    }
-+  }
-+
-+  LOG(INFO) << "browseros: Ports allocated - CDP: " << cdp_port_
-+            << ", MCP: " << mcp_port_ << ", Agent: " << agent_port_
-+            << ", Extension: " << extension_port_;
-+
-+  // Check for command-line port overrides
-+  int mcp_override = GetPortOverrideFromCommandLine(
-+      command_line, "browseros-mcp-port", "MCP port");
-+  if (mcp_override > 0) {
-+    mcp_port_ = mcp_override;
-+    // Implicitly enable MCP when port is specified
-+    mcp_enabled_ = true;
-+    LOG(INFO) << "browseros: MCP server implicitly enabled via command line";
-+  }
-+
-+  int agent_override = GetPortOverrideFromCommandLine(
-+      command_line, "browseros-agent-port", "Agent port");
-+  if (agent_override > 0) {
-+    agent_port_ = agent_override;
-+  }
-+
-+  int extension_override = GetPortOverrideFromCommandLine(
-+      command_line, "browseros-extension-port", "Extension port");
-+  if (extension_override > 0) {
-+    extension_port_ = extension_override;
-+  }
++  cdp_port_ = FindAvailablePort(cdp_port_);
++  mcp_port_ = FindAvailablePort(mcp_port_);
++  agent_port_ = FindAvailablePort(agent_port_);
++  extension_port_ = FindAvailablePort(extension_port_);
 +
 +  LOG(INFO) << "browseros: Starting CDP server on port " << cdp_port_;
 +
-+  // Start Chromium's built-in DevTools remote debugging server
 +  content::DevToolsAgentHost::StartRemoteDebuggingServer(
 +      std::make_unique<CDPServerSocketFactory>(cdp_port_),
-+      base::FilePath(),  // No output dir needed
-+      base::FilePath()); // No debug frontend dir
++      base::FilePath(),
++      base::FilePath());
 +
 +  LOG(INFO) << "browseros: CDP WebSocket server started at ws://127.0.0.1:"
 +            << cdp_port_;
@@ -347,18 +358,6 @@ index 0000000000000..494ad4fb4e0a0
 +  LOG(INFO) << "browseros: Agent port: " << agent_port_;
 +  LOG(INFO) << "browseros: Extension port: " << extension_port_;
 +
-+  // Save prefs to Local State now that we know the server launched
-+  PrefService* prefs = g_browser_process->local_state();
-+  if (prefs) {
-+    prefs->SetInteger(browseros_server::kCDPServerPort, cdp_port_);
-+    prefs->SetInteger(browseros_server::kMCPServerPort, mcp_port_);
-+    prefs->SetInteger(browseros_server::kAgentServerPort, agent_port_);
-+    prefs->SetInteger(browseros_server::kExtensionServerPort, extension_port_);
-+    prefs->SetBoolean(browseros_server::kMCPServerEnabled, mcp_enabled_);
-+    LOG(INFO) << "browseros: Saved prefs to Local State";
-+  }
-+
-+  // Start monitoring the process
 +  process_check_timer_.Start(FROM_HERE, base::Seconds(5), this,
 +                             &BrowserOSServerManager::CheckProcessStatus);
 +

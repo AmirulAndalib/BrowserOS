@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/browseros_server/browseros_server_manager.h b/chrome/browser/browseros_server/browseros_server_manager.h
 new file mode 100644
-index 0000000000000..edddc9a8a428c
+index 0000000000000..7824804ba35f0
 --- /dev/null
 +++ b/chrome/browser/browseros_server/browseros_server_manager.h
-@@ -0,0 +1,125 @@
+@@ -0,0 +1,126 @@
 +// Copyright 2024 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -80,6 +80,7 @@ index 0000000000000..edddc9a8a428c
 +  BrowserOSServerManager();
 +  ~BrowserOSServerManager();
 +
++  void InitializePortsAndPrefs();
 +  void StartCDPServer();
 +  void StopCDPServer();
 +  void LaunchBrowserOSProcess();
