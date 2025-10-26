@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/browseros_server/browseros_server_manager.cc b/chrome/browser/browseros_server/browseros_server_manager.cc
 new file mode 100644
-index 0000000000000..e6bd851f42bfa
+index 0000000000000..494ad4fb4e0a0
 --- /dev/null
 +++ b/chrome/browser/browseros_server/browseros_server_manager.cc
-@@ -0,0 +1,863 @@
+@@ -0,0 +1,865 @@
 +// Copyright 2024 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -855,10 +855,12 @@ index 0000000000000..e6bd851f42bfa
 +  }
 +#endif
 +
-+  // Navigate to BrowserOSServer/default/ subdirectory
++  // Navigate to BrowserOSServer/default/resources/bin/ subdirectory
 +  // This structure allows future updates to install to versioned directories
 +  base::FilePath browseros_exe = exe_dir.Append(FILE_PATH_LITERAL("BrowserOSServer"))
 +                                  .Append(FILE_PATH_LITERAL("default"))
++                                  .Append(FILE_PATH_LITERAL("resources"))
++                                  .Append(FILE_PATH_LITERAL("bin"))
 +                                  .Append(FILE_PATH_LITERAL("browseros_server"));
 +
 +#if BUILDFLAG(IS_WIN)
