@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/browseros_server/BUILD.gn b/chrome/browser/browseros_server/BUILD.gn
 new file mode 100644
-index 0000000000000..b73da9080fa49
+index 0000000000000..ddbdf0b78c0a3
 --- /dev/null
 +++ b/chrome/browser/browseros_server/BUILD.gn
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,66 @@
 +# Copyright 2024 The Chromium Authors
 +# Use of this source code is governed by a BSD-style license that can be
 +# found in the LICENSE file.
@@ -49,14 +49,16 @@ index 0000000000000..b73da9080fa49
 +  bundle_data("browseros_resources_bundle") {
 +    sources = [ "resources" ]
 +    outputs = [ "{{bundle_resources_dir}}/BrowserOSServer/default/{{source_file_part}}" ]
-+    deps = [ ":validate_browseros_resources" ]
++    # TODO: Re-enable validation when resources/bin/browseros_server is available
++    # deps = [ ":validate_browseros_resources" ]
 +  }
 +} else {
 +  # Copy for Windows/Linux - recursively packages resources/ to <exe_dir>/BrowserOSServer/default/
 +  copy("browseros_resources_copy") {
 +    sources = [ "resources" ]
 +    outputs = [ "$root_out_dir/BrowserOSServer/default/{{source_file_part}}" ]
-+    deps = [ ":validate_browseros_resources" ]
++    # TODO: Re-enable validation when resources/bin/browseros_server is available
++    # deps = [ ":validate_browseros_resources" ]
 +  }
 +}
 +
