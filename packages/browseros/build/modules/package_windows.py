@@ -31,7 +31,7 @@ BROWSEROS_SERVER_BINARIES: List[str] = [
 
 def get_browseros_server_binary_paths(build_output_dir: Path) -> List[Path]:
     """Return absolute paths to BrowserOS Server binaries for signing."""
-    server_dir = build_output_dir / "BrowserOSServer" / "default"
+    server_dir = build_output_dir / "BrowserOSServer" / "default" / "resources" / "bin"
     return [server_dir / binary for binary in BROWSEROS_SERVER_BINARIES]
 
 
