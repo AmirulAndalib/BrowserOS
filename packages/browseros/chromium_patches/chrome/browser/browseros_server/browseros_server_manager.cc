@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/browseros_server/browseros_server_manager.cc b/chrome/browser/browseros_server/browseros_server_manager.cc
 new file mode 100644
-index 0000000000000..ec1f0037999cd
+index 0000000000000..e5ebe48cf4432
 --- /dev/null
 +++ b/chrome/browser/browseros_server/browseros_server_manager.cc
-@@ -0,0 +1,864 @@
+@@ -0,0 +1,899 @@
 +// Copyright 2024 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -93,6 +93,7 @@ index 0000000000000..ec1f0037999cd
 +// This function performs blocking I/O operations (PathExists, LaunchProcess).
 +base::Process LaunchProcessOnBackgroundThread(
 +    const base::FilePath& exe_path,
++    const base::FilePath& resources_dir,
 +    uint16_t cdp_port,
 +    uint16_t mcp_port,
 +    uint16_t agent_port,
@@ -110,6 +111,7 @@ index 0000000000000..ec1f0037999cd
 +  cmd.AppendSwitchASCII("http-mcp-port", base::NumberToString(mcp_port));
 +  cmd.AppendSwitchASCII("agent-port", base::NumberToString(agent_port));
 +  cmd.AppendSwitchASCII("extension-port", base::NumberToString(extension_port));
++  cmd.AppendSwitchPath("resources-dir", resources_dir);
 +
 +  // Set up launch options
 +  base::LaunchOptions options;
@@ -324,8 +326,27 @@ index 0000000000000..ec1f0037999cd
 +}
 +
 +void BrowserOSServerManager::LaunchBrowserOSProcess() {
-+  // Get executable path on UI thread (PathService::Get is thread-safe)
++  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
 +  base::FilePath exe_path = GetBrowserOSServerExecutablePath();
++  base::FilePath resources_dir;
++
++  // Determine resources directory:
++  // 1. Explicit override takes precedence
++  // 2. If binary is overridden but not resources, derive from binary location
++  // 3. Otherwise use default location
++  if (command_line->HasSwitch("browseros-server-resources-dir")) {
++    resources_dir = GetBrowserOSServerResourcesPath();
++  } else if (command_line->HasSwitch("browseros-server-binary")) {
++    // Custom binary: assume resources are two levels up from binary
++    // .../resources/bin/browseros_server -> .../resources/
++    resources_dir = exe_path.DirName().DirName();
++    LOG(INFO) << "browseros: Deriving resources from custom binary location";
++  } else {
++    resources_dir = GetBrowserOSServerResourcesPath();
++  }
++
++  LOG(INFO) << "browseros: Launching server - binary: " << exe_path;
++  LOG(INFO) << "browseros: Launching server - resources: " << resources_dir;
 +
 +  // Capture values to pass to background thread
 +  uint16_t cdp_port = cdp_port_;
@@ -336,8 +357,8 @@ index 0000000000000..ec1f0037999cd
 +  // Post blocking work to background thread, get result back on UI thread
 +  base::ThreadPool::PostTaskAndReplyWithResult(
 +      FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_BLOCKING},
-+      base::BindOnce(&LaunchProcessOnBackgroundThread, exe_path, cdp_port,
-+                     mcp_port, agent_port, extension_port),
++      base::BindOnce(&LaunchProcessOnBackgroundThread, exe_path, resources_dir,
++                     cdp_port, mcp_port, agent_port, extension_port),
 +      base::BindOnce(&BrowserOSServerManager::OnProcessLaunched,
 +                     weak_factory_.GetWeakPtr()));
 +}
@@ -812,13 +833,13 @@ index 0000000000000..ec1f0037999cd
 +  return true;
 +}
 +
-+base::FilePath BrowserOSServerManager::GetBrowserOSServerExecutablePath() const {
++base::FilePath BrowserOSServerManager::GetBrowserOSServerResourcesPath() const {
 +  // Check for command-line override first
 +  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
-+  if (command_line->HasSwitch("browseros-server-binary")) {
++  if (command_line->HasSwitch("browseros-server-resources-dir")) {
 +    base::FilePath custom_path =
-+        command_line->GetSwitchValuePath("browseros-server-binary");
-+    LOG(INFO) << "browseros: Using custom server binary from command line: "
++        command_line->GetSwitchValuePath("browseros-server-resources-dir");
++    LOG(INFO) << "browseros: Using custom resources dir from command line: "
 +              << custom_path;
 +    return custom_path;
 +  }
@@ -843,7 +864,6 @@ index 0000000000000..ec1f0037999cd
 +    return base::FilePath();
 +  }
 +  // Append version directory (chrome.release places BrowserOSServer under versioned dir)
-+  // chrome/installer/mini_installer/chrome.release
 +  exe_dir = exe_dir.AppendASCII(version_info::GetVersionNumber());
 +
 +#elif BUILDFLAG(IS_LINUX)
@@ -854,13 +874,28 @@ index 0000000000000..ec1f0037999cd
 +  }
 +#endif
 +
-+  // Navigate to BrowserOSServer/default/resources/bin/ subdirectory
-+  // This structure allows future updates to install to versioned directories
-+  base::FilePath browseros_exe = exe_dir.Append(FILE_PATH_LITERAL("BrowserOSServer"))
-+                                  .Append(FILE_PATH_LITERAL("default"))
-+                                  .Append(FILE_PATH_LITERAL("resources"))
-+                                  .Append(FILE_PATH_LITERAL("bin"))
-+                                  .Append(FILE_PATH_LITERAL("browseros_server"));
++  // Return path to resources directory
++  return exe_dir.Append(FILE_PATH_LITERAL("BrowserOSServer"))
++      .Append(FILE_PATH_LITERAL("default"))
++      .Append(FILE_PATH_LITERAL("resources"));
++}
++
++base::FilePath BrowserOSServerManager::GetBrowserOSServerExecutablePath() const {
++  // Check for direct binary path override first
++  base::CommandLine* command_line = base::CommandLine::ForCurrentProcess();
++  if (command_line->HasSwitch("browseros-server-binary")) {
++    base::FilePath custom_path =
++        command_line->GetSwitchValuePath("browseros-server-binary");
++    LOG(INFO) << "browseros: Using custom server binary from command line: "
++              << custom_path;
++    return custom_path;
++  }
++
++  // Derive executable path from resources directory
++  base::FilePath browseros_exe =
++      GetBrowserOSServerResourcesPath()
++          .Append(FILE_PATH_LITERAL("bin"))
++          .Append(FILE_PATH_LITERAL("browseros_server"));
 +
 +#if BUILDFLAG(IS_WIN)
 +  browseros_exe = browseros_exe.AddExtension(FILE_PATH_LITERAL(".exe"));

@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/browseros_server/browseros_server_manager.h b/chrome/browser/browseros_server/browseros_server_manager.h
 new file mode 100644
-index 0000000000000..7824804ba35f0
+index 0000000000000..9eec2132cf8dc
 --- /dev/null
 +++ b/chrome/browser/browseros_server/browseros_server_manager.h
-@@ -0,0 +1,126 @@
+@@ -0,0 +1,127 @@
 +// Copyright 2024 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -104,6 +104,7 @@ index 0000000000000..7824804ba35f0
 +      scoped_refptr<net::HttpResponseHeaders> headers);
 +  void CheckProcessStatus();
 +
++  base::FilePath GetBrowserOSServerResourcesPath() const;
 +  base::FilePath GetBrowserOSServerExecutablePath() const;
 +  int FindAvailablePort(int starting_port);
 +  bool IsPortAvailable(int port);
