@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/browseros_server/browseros_server_manager.cc b/chrome/browser/browseros_server/browseros_server_manager.cc
 new file mode 100644
-index 0000000000000..e83706bb0d2b9
+index 0000000000000..f422c4adfbc84
 --- /dev/null
 +++ b/chrome/browser/browseros_server/browseros_server_manager.cc
-@@ -0,0 +1,982 @@
+@@ -0,0 +1,980 @@
 +// Copyright 2024 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -465,26 +465,24 @@ index 0000000000000..e83706bb0d2b9
 +    return;
 +  }
 +
-+  LOG(INFO) << "browseros: Terminating BrowserOS server process";
++  LOG(INFO) << "browseros: Terminating BrowserOS server process (PID: "
++            << process_.Pid() << ")";
 +
 +  // Reset init flag so it gets sent again after restart
 +  init_request_sent_ = false;
 +
-+  // Try graceful shutdown first
-+  process_.Terminate(0, false);
++  // Terminate and wait for process to exit (blocks until dead)
++  // - Windows: TerminateProcess() (immediate kill) + WaitForSingleObject()
++  // - POSIX: SIGTERM → wait 60s → SIGKILL if needed
++  // Need to allow blocking since Terminate(wait=true) waits for process exit
++  base::ScopedAllowBlocking allow_blocking;
 +
-+  // Give it some time to shut down, then force kill if still running
-+  base::ThreadPool::PostDelayedTask(
-+      FROM_HERE, {base::MayBlock()},
-+      base::BindOnce(
-+          [](base::Process process) {
-+            if (process.IsValid()) {
-+              // Force kill if still running
-+              process.Terminate(0, false);
-+            }
-+          },
-+          process_.Duplicate()),
-+      base::Seconds(2));
++  bool terminated = process_.Terminate(0, true);
++  if (terminated) {
++    LOG(INFO) << "browseros: BrowserOS server process terminated successfully";
++  } else {
++    LOG(ERROR) << "browseros: Failed to terminate BrowserOS server process";
++  }
 +
 +  is_running_ = false;
 +}
