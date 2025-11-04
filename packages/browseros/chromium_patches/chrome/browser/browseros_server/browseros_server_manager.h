@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/browseros_server/browseros_server_manager.h b/chrome/browser/browseros_server/browseros_server_manager.h
 new file mode 100644
-index 0000000000000..550e06e5d1293
+index 0000000000000..24d15ed993576
 --- /dev/null
 +++ b/chrome/browser/browseros_server/browseros_server_manager.h
-@@ -0,0 +1,128 @@
+@@ -0,0 +1,136 @@
 +// Copyright 2024 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -13,6 +13,7 @@ index 0000000000000..550e06e5d1293
 +
 +#include <memory>
 +
++#include "base/files/file.h"
 +#include "base/files/file_path.h"
 +#include "base/memory/ref_counted.h"
 +#include "base/memory/weak_ptr.h"
@@ -29,6 +30,8 @@ index 0000000000000..550e06e5d1293
 +namespace network {
 +class SimpleURLLoader;
 +}
++
++namespace browseros {
 +
 +// BrowserOS: Manages the lifecycle of the BrowserOS server process (singleton)
 +// This manager:
@@ -80,7 +83,9 @@ index 0000000000000..550e06e5d1293
 +  BrowserOSServerManager();
 +  ~BrowserOSServerManager();
 +
++  bool AcquireLock();
 +  void InitializePortsAndPrefs();
++  void SavePortsToPrefs();
 +  void StartCDPServer();
 +  void StopCDPServer();
 +  void LaunchBrowserOSProcess();
@@ -110,6 +115,7 @@ index 0000000000000..550e06e5d1293
 +  int FindAvailablePort(int starting_port);
 +  bool IsPortAvailable(int port);
 +
++  base::File lock_file_;  // System-wide lock to ensure single instance
 +  base::Process process_;
 +  int cdp_port_ = 0;  // CDP port (auto-discovered)
 +  int mcp_port_ = 0;  // MCP port (auto-discovered)
@@ -130,5 +136,7 @@ index 0000000000000..550e06e5d1293
 +
 +  base::WeakPtrFactory<BrowserOSServerManager> weak_factory_{this};
 +};
++
++}  // namespace browseros
 +
 +#endif  // CHROME_BROWSER_BROWSEROS_SERVER_BROWSEROS_SERVER_MANAGER_H_
