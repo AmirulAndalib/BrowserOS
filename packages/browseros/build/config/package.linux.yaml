@@ -1,7 +1,7 @@
 # BrowserOS Linux Release Build Configuration
 build:
   type: release
-  architecture: x64  # Linux x64 only
+  architecture: x64 # Linux x64 only
   # architectures: [x64] # Single architecture for Linux
   universal: false # Linux doesn't support universal binaries
 
@@ -9,11 +9,11 @@ gn_flags:
   file: build/config/gn/flags.linux.release.gn
 
 steps:
-  clean: true
-  git_setup: true
-  apply_patches: true
-  build: true
-  sign: false  # Linux doesn't require code signing
+  clean: false
+  git_setup: false
+  apply_patches: false
+  build: false
+  sign: false # Linux doesn't require code signing
   package: true
 
 paths:
@@ -27,8 +27,8 @@ env:
 # Linux-specific settings
 linux:
   appimage:
-    compression: gzip  # Compression type for AppImage
-    architecture: x86_64  # AppImage architecture designation
+    compression: gzip # Compression type for AppImage
+    architecture: x86_64 # AppImage architecture designation
 
 # Notification settings
 notifications:
