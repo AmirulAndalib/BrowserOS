@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/browseros_server/browseros_server_manager.cc b/chrome/browser/browseros_server/browseros_server_manager.cc
 new file mode 100644
-index 0000000000000..e5ebe48cf4432
+index 0000000000000..b9e7be6a68785
 --- /dev/null
 +++ b/chrome/browser/browseros_server/browseros_server_manager.cc
-@@ -0,0 +1,899 @@
+@@ -0,0 +1,932 @@
 +// Copyright 2024 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -94,6 +94,7 @@ index 0000000000000..e5ebe48cf4432
 +base::Process LaunchProcessOnBackgroundThread(
 +    const base::FilePath& exe_path,
 +    const base::FilePath& resources_dir,
++    const base::FilePath& execution_dir,
 +    uint16_t cdp_port,
 +    uint16_t mcp_port,
 +    uint16_t agent_port,
@@ -105,6 +106,18 @@ index 0000000000000..e5ebe48cf4432
 +    return base::Process();
 +  }
 +
++  if (execution_dir.empty()) {
++    LOG(ERROR) << "browseros: Execution directory path is empty";
++    return base::Process();
++  }
++
++  // Ensure execution directory exists (blocking I/O)
++  if (!base::CreateDirectory(execution_dir)) {
++    LOG(ERROR) << "browseros: Failed to create execution directory at: "
++               << execution_dir;
++    return base::Process();
++  }
++
 +  // Build command line
 +  base::CommandLine cmd(exe_path);
 +  cmd.AppendSwitchASCII("cdp-port", base::NumberToString(cdp_port));
@@ -112,6 +125,7 @@ index 0000000000000..e5ebe48cf4432
 +  cmd.AppendSwitchASCII("agent-port", base::NumberToString(agent_port));
 +  cmd.AppendSwitchASCII("extension-port", base::NumberToString(extension_port));
 +  cmd.AppendSwitchPath("resources-dir", resources_dir);
++  cmd.AppendSwitchPath("execution-dir", execution_dir);
 +
 +  // Set up launch options
 +  base::LaunchOptions options;
@@ -345,8 +359,16 @@ index 0000000000000..e5ebe48cf4432
 +    resources_dir = GetBrowserOSServerResourcesPath();
 +  }
 +
++  base::FilePath execution_dir = GetBrowserOSExecutionDir();
++  if (execution_dir.empty()) {
++    LOG(ERROR) << "browseros: Failed to resolve execution directory";
++    StopCDPServer();
++    return;
++  }
++
 +  LOG(INFO) << "browseros: Launching server - binary: " << exe_path;
 +  LOG(INFO) << "browseros: Launching server - resources: " << resources_dir;
++  LOG(INFO) << "browseros: Launching server - execution dir: " << execution_dir;
 +
 +  // Capture values to pass to background thread
 +  uint16_t cdp_port = cdp_port_;
@@ -358,7 +380,8 @@ index 0000000000000..e5ebe48cf4432
 +  base::ThreadPool::PostTaskAndReplyWithResult(
 +      FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_BLOCKING},
 +      base::BindOnce(&LaunchProcessOnBackgroundThread, exe_path, resources_dir,
-+                     cdp_port, mcp_port, agent_port, extension_port),
++                     execution_dir, cdp_port, mcp_port, agent_port,
++                     extension_port),
 +      base::BindOnce(&BrowserOSServerManager::OnProcessLaunched,
 +                     weak_factory_.GetWeakPtr()));
 +}
@@ -878,6 +901,16 @@ index 0000000000000..e5ebe48cf4432
 +  return exe_dir.Append(FILE_PATH_LITERAL("BrowserOSServer"))
 +      .Append(FILE_PATH_LITERAL("default"))
 +      .Append(FILE_PATH_LITERAL("resources"));
++}
++
++base::FilePath BrowserOSServerManager::GetBrowserOSExecutionDir() const {
++  base::FilePath user_data_dir;
++  if (!base::PathService::Get(chrome::DIR_USER_DATA, &user_data_dir)) {
++    LOG(ERROR) << "browseros: Failed to resolve DIR_USER_DATA path";
++    return base::FilePath();
++  }
++
++  return user_data_dir.Append(FILE_PATH_LITERAL("browseros_sidecar"));
 +}
 +
 +base::FilePath BrowserOSServerManager::GetBrowserOSServerExecutablePath() const {
