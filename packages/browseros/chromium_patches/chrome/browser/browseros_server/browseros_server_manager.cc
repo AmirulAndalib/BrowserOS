@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/browseros_server/browseros_server_manager.cc b/chrome/browser/browseros_server/browseros_server_manager.cc
 new file mode 100644
-index 0000000000000..f422c4adfbc84
+index 0000000000000..aeb6c9c1d44d3
 --- /dev/null
 +++ b/chrome/browser/browseros_server/browseros_server_manager.cc
-@@ -0,0 +1,980 @@
+@@ -0,0 +1,999 @@
 +// Copyright 2024 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -25,6 +25,11 @@ index 0000000000000..f422c4adfbc84
 +#include "base/threading/thread_restrictions.h"
 +#include "build/build_config.h"
 +#include "chrome/browser/browser_process.h"
++
++#if BUILDFLAG(IS_POSIX)
++#include <signal.h>
++#endif
++
 +#include "chrome/browser/browseros_server/browseros_server_prefs.h"
 +#include "chrome/browser/net/system_network_context_manager.h"
 +#include "chrome/browser/profiles/profile.h"
@@ -465,24 +470,38 @@ index 0000000000000..f422c4adfbc84
 +    return;
 +  }
 +
-+  LOG(INFO) << "browseros: Terminating BrowserOS server process (PID: "
++  LOG(INFO) << "browseros: Force killing BrowserOS server process (PID: "
 +            << process_.Pid() << ")";
 +
 +  // Reset init flag so it gets sent again after restart
 +  init_request_sent_ = false;
 +
-+  // Terminate and wait for process to exit (blocks until dead)
-+  // - Windows: TerminateProcess() (immediate kill) + WaitForSingleObject()
-+  // - POSIX: SIGTERM → wait 60s → SIGKILL if needed
-+  // Need to allow blocking since Terminate(wait=true) waits for process exit
++  // Allow blocking since we wait for process exit
 +  base::ScopedAllowBlocking allow_blocking;
 +
++#if BUILDFLAG(IS_POSIX)
++  // POSIX: Send SIGKILL for immediate termination (no graceful shutdown)
++  // This matches Windows TerminateProcess behavior
++  base::ProcessId pid = process_.Pid();
++  if (kill(pid, SIGKILL) == 0) {
++    int exit_code = 0;
++    if (process_.WaitForExit(&exit_code)) {
++      LOG(INFO) << "browseros: Process killed successfully with SIGKILL";
++    } else {
++      LOG(WARNING) << "browseros: SIGKILL sent but WaitForExit failed";
++    }
++  } else {
++    PLOG(ERROR) << "browseros: Failed to send SIGKILL to PID " << pid;
++  }
++#else
++  // Windows: TerminateProcess is already immediate force kill
 +  bool terminated = process_.Terminate(0, true);
 +  if (terminated) {
-+    LOG(INFO) << "browseros: BrowserOS server process terminated successfully";
++    LOG(INFO) << "browseros: Process terminated successfully";
 +  } else {
-+    LOG(ERROR) << "browseros: Failed to terminate BrowserOS server process";
++    LOG(ERROR) << "browseros: Failed to terminate process";
 +  }
++#endif
 +
 +  is_running_ = false;
 +}
