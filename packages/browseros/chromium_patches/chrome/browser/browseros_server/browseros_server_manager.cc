@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/browseros_server/browseros_server_manager.cc b/chrome/browser/browseros_server/browseros_server_manager.cc
 new file mode 100644
-index 0000000000000..aeb6c9c1d44d3
+index 0000000000000..1e5340aa3dddd
 --- /dev/null
 +++ b/chrome/browser/browseros_server/browseros_server_manager.cc
-@@ -0,0 +1,999 @@
+@@ -0,0 +1,1046 @@
 +// Copyright 2024 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -262,13 +262,17 @@ index 0000000000000..aeb6c9c1d44d3
 +
 +    mcp_enabled_ = prefs->GetBoolean(browseros_server::kMCPServerEnabled);
 +
-+    // Set up MCP enabled change observer
++    // Set up pref change observers
 +    if (!pref_change_registrar_) {
 +      pref_change_registrar_ = std::make_unique<PrefChangeRegistrar>();
 +      pref_change_registrar_->Init(prefs);
 +      pref_change_registrar_->Add(
 +          browseros_server::kMCPServerEnabled,
 +          base::BindRepeating(&BrowserOSServerManager::OnMCPEnabledChanged,
++                              base::Unretained(this)));
++      pref_change_registrar_->Add(
++          browseros_server::kRestartServerRequested,
++          base::BindRepeating(&BrowserOSServerManager::OnRestartServerRequestedChanged,
 +                              base::Unretained(this)));
 +    }
 +  }
@@ -442,6 +446,7 @@ index 0000000000000..aeb6c9c1d44d3
 +  if (!process.IsValid()) {
 +    LOG(ERROR) << "browseros: Failed to launch BrowserOS server";
 +    StopCDPServer();
++    is_restarting_ = false;
 +    return;
 +  }
 +
@@ -456,6 +461,16 @@ index 0000000000000..aeb6c9c1d44d3
 +
 +  process_check_timer_.Start(FROM_HERE, base::Seconds(5), this,
 +                             &BrowserOSServerManager::CheckProcessStatus);
++
++  // Reset restart flag and pref after successful launch
++  if (is_restarting_) {
++    is_restarting_ = false;
++    PrefService* prefs = g_browser_process->local_state();
++    if (prefs && prefs->GetBoolean(browseros_server::kRestartServerRequested)) {
++      prefs->SetBoolean(browseros_server::kRestartServerRequested, false);
++      LOG(INFO) << "browseros: Restart completed, reset restart_requested pref";
++    }
++  }
 +
 +  // /init will be sent after first successful periodic health check
 +
@@ -658,6 +673,38 @@ index 0000000000000..aeb6c9c1d44d3
 +    mcp_enabled_ = new_value;
 +    SendMCPControlRequest(new_value);
 +  }
++}
++
++void BrowserOSServerManager::OnRestartServerRequestedChanged() {
++  PrefService* prefs = g_browser_process->local_state();
++  if (!prefs) {
++    return;
++  }
++
++  bool restart_requested = prefs->GetBoolean(browseros_server::kRestartServerRequested);
++
++  // Only process if pref is set to true
++  if (!restart_requested) {
++    return;
++  }
++
++  // Ignore if already restarting (prevents thrashing from UI spam)
++  if (is_restarting_) {
++    LOG(INFO) << "browseros: Restart already in progress, ignoring duplicate request";
++    return;
++  }
++
++  // Ignore if not running
++  if (!is_running_) {
++    LOG(WARNING) << "browseros: Cannot restart - server is not running";
++    // Reset pref anyway
++    prefs->SetBoolean(browseros_server::kRestartServerRequested, false);
++    return;
++  }
++
++  LOG(INFO) << "browseros: Server restart requested via preference";
++  is_restarting_ = true;
++  RestartBrowserOSProcess();
 +}
 +
 +void BrowserOSServerManager::SendMCPControlRequest(bool enabled) {

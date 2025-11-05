@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/browseros_server/browseros_server_manager.h b/chrome/browser/browseros_server/browseros_server_manager.h
 new file mode 100644
-index 0000000000000..24d15ed993576
+index 0000000000000..d991d965c4913
 --- /dev/null
 +++ b/chrome/browser/browseros_server/browseros_server_manager.h
-@@ -0,0 +1,136 @@
+@@ -0,0 +1,138 @@
 +// Copyright 2024 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -98,6 +98,7 @@ index 0000000000000..24d15ed993576
 +      std::unique_ptr<network::SimpleURLLoader> url_loader,
 +      scoped_refptr<net::HttpResponseHeaders> headers);
 +  void OnMCPEnabledChanged();
++  void OnRestartServerRequestedChanged();
 +  void SendMCPControlRequest(bool enabled);
 +  void OnMCPControlRequestComplete(
 +      bool requested_state,
@@ -123,6 +124,7 @@ index 0000000000000..24d15ed993576
 +  int extension_port_ = 0;  // Extension port (auto-discovered)
 +  bool mcp_enabled_ = true;  // Whether MCP server is enabled
 +  bool is_running_ = false;
++  bool is_restarting_ = false;  // Whether server is currently restarting
 +  bool init_request_sent_ = false;  // Whether /init request has been sent
 +
 +  // Timer for health checks
