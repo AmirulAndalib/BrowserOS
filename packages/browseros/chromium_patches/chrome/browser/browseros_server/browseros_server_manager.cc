@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/browseros_server/browseros_server_manager.cc b/chrome/browser/browseros_server/browseros_server_manager.cc
 new file mode 100644
-index 0000000000000..1e5340aa3dddd
+index 0000000000000..4d34f3efb2645
 --- /dev/null
 +++ b/chrome/browser/browseros_server/browseros_server_manager.cc
-@@ -0,0 +1,1046 @@
+@@ -0,0 +1,1070 @@
 +// Copyright 2024 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -491,7 +491,9 @@ index 0000000000000..1e5340aa3dddd
 +  // Reset init flag so it gets sent again after restart
 +  init_request_sent_ = false;
 +
-+  // Allow blocking since we wait for process exit
++  // sync primitives is needed for process termination. 
++  // NOTE: only run on background threads
++  base::ScopedAllowBaseSyncPrimitives allow_sync;
 +  base::ScopedAllowBlocking allow_blocking;
 +
 +#if BUILDFLAG(IS_POSIX)
@@ -704,7 +706,29 @@ index 0000000000000..1e5340aa3dddd
 +
 +  LOG(INFO) << "browseros: Server restart requested via preference";
 +  is_restarting_ = true;
-+  RestartBrowserOSProcess();
++
++  // Stop timer now (must be on UI thread)
++  process_check_timer_.Stop();
++
++  // Capture UI task runner to post back after background work
++  auto ui_task_runner = base::SequencedTaskRunner::GetCurrentDefault();
++
++  // Kill process on background thread, then relaunch on UI thread
++  base::ThreadPool::PostTask(
++      FROM_HERE, {base::MayBlock(), base::TaskPriority::USER_BLOCKING},
++      base::BindOnce(
++          [](BrowserOSServerManager* manager,
++             scoped_refptr<base::SequencedTaskRunner> ui_runner) {
++            // Kill old process and wait for exit (blocking, safe on background)
++            manager->TerminateBrowserOSProcess();
++
++            // Post back to UI thread to launch new process
++            ui_runner->PostTask(
++                FROM_HERE,
++                base::BindOnce(&BrowserOSServerManager::LaunchBrowserOSProcess,
++                               base::Unretained(manager)));
++          },
++          base::Unretained(this), ui_task_runner));
 +}
 +
 +void BrowserOSServerManager::SendMCPControlRequest(bool enabled) {
