@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/ui/views/side_panel/third_party_llm/third_party_llm_panel_coordinator.cc b/chrome/browser/ui/views/side_panel/third_party_llm/third_party_llm_panel_coordinator.cc
 new file mode 100644
-index 0000000000000..e417ab706cd5c
+index 0000000000000..f688820f42d13
 --- /dev/null
 +++ b/chrome/browser/ui/views/side_panel/third_party_llm/third_party_llm_panel_coordinator.cc
-@@ -0,0 +1,1165 @@
+@@ -0,0 +1,1170 @@
 +// Copyright 2024 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -13,6 +13,7 @@ index 0000000000000..e417ab706cd5c
 +#include <memory>
 +#include <vector>
 +
++#include "base/check.h"
 +#include "base/functional/callback.h"
 +#include "ui/views/controls/menu/menu_runner.h"
 +#include "ui/base/mojom/menu_source_type.mojom.h"
@@ -106,11 +107,11 @@ index 0000000000000..e417ab706cd5c
 +}  // namespace
 +
 +ThirdPartyLlmPanelCoordinator::ThirdPartyLlmPanelCoordinator(Browser* browser)
-+    : BrowserUserData<ThirdPartyLlmPanelCoordinator>(*browser),
-+      feedback_timer_(std::make_unique<base::OneShotTimer>()) {
++    : browser_(browser), feedback_timer_(std::make_unique<base::OneShotTimer>()) {
++  CHECK(browser_);
 +  // Register for early cleanup notifications
 +  browser_list_observation_.Observe(BrowserList::GetInstance());
-+  profile_observation_.Observe(browser->profile());
++  profile_observation_.Observe(browser_->profile());
 +
 +  // Load providers from preferences
 +  LoadProvidersFromPrefs();
@@ -124,10 +125,11 @@ index 0000000000000..e417ab706cd5c
 +void ThirdPartyLlmPanelCoordinator::CreateAndRegisterEntry(
 +    SidePanelRegistry* global_registry) {
 +  auto entry = std::make_unique<SidePanelEntry>(
-+      SidePanelEntry::Id::kThirdPartyLlm,
++      SidePanelEntry::Key(SidePanelEntry::Id::kThirdPartyLlm),
 +      base::BindRepeating(
 +          &ThirdPartyLlmPanelCoordinator::CreateThirdPartyLlmWebView,
-+          base::Unretained(this)));
++          base::Unretained(this)),
++      base::RepeatingCallback<int()>());
 +  
 +  global_registry->Register(std::move(entry));
 +}
@@ -1065,17 +1067,22 @@ index 0000000000000..e417ab706cd5c
 +}
 +
 +void ThirdPartyLlmPanelCoordinator::OnBrowserRemoved(Browser* browser) {
-+  if (browser == &GetBrowser()) {
++  if (browser == browser_) {
 +    // Browser is being removed - clean up WebContents early
 +    CleanupWebContents();
 +  }
 +}
 +
 +void ThirdPartyLlmPanelCoordinator::OnProfileWillBeDestroyed(Profile* profile) {
-+  if (profile == GetBrowser().profile()) {
++  if (profile == browser_->profile()) {
 +    // Profile is being destroyed - clean up WebContents if not already done
 +    CleanupWebContents();
 +  }
++}
++
++Browser& ThirdPartyLlmPanelCoordinator::GetBrowser() const {
++  CHECK(browser_);
++  return *browser_;
 +}
 +
 +void ThirdPartyLlmPanelCoordinator::ShowOptionsMenu() {
@@ -1167,5 +1174,3 @@ index 0000000000000..e417ab706cd5c
 +  registry->RegisterListPref(kThirdPartyLlmProvidersPref);
 +  registry->RegisterIntegerPref(kThirdPartyLlmSelectedProviderPref, 0);
 +}
-+
-+BROWSER_USER_DATA_KEY_IMPL(ThirdPartyLlmPanelCoordinator);

@@ -1,8 +1,8 @@
 diff --git a/chrome/browser/ui/views/side_panel/BUILD.gn b/chrome/browser/ui/views/side_panel/BUILD.gn
-index 2af616e71a52a..56021613259dc 100644
+index 55cfc94371d78..754fda27e0015 100644
 --- a/chrome/browser/ui/views/side_panel/BUILD.gn
 +++ b/chrome/browser/ui/views/side_panel/BUILD.gn
-@@ -88,6 +88,16 @@ source_set("side_panel") {
+@@ -89,6 +89,16 @@ source_set("side_panel") {
      "side_panel_util.h",
      "side_panel_web_ui_view.cc",
      "side_panel_web_ui_view.h",
@@ -17,9 +17,9 @@ index 2af616e71a52a..56021613259dc 100644
 +    "clash_of_gpts/clash_of_gpts_window.cc",
 +    "clash_of_gpts/clash_of_gpts_window.h",
    ]
-   public_deps = [
-     "//base",
-@@ -162,6 +172,7 @@ source_set("side_panel") {
+   if (enable_glic) {
+     sources += [
+@@ -177,6 +187,7 @@ source_set("side_panel") {
      "//components/keyed_service/core",
      "//components/language/core/browser",
      "//components/language/core/common",

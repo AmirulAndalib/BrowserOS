@@ -1,5 +1,5 @@
 diff --git a/chrome/browser/extensions/extension_context_menu_model.cc b/chrome/browser/extensions/extension_context_menu_model.cc
-index d5e3f14b43b44..1a3f546260abb 100644
+index 39b916751757d..1a13771d771b8 100644
 --- a/chrome/browser/extensions/extension_context_menu_model.cc
 +++ b/chrome/browser/extensions/extension_context_menu_model.cc
 @@ -7,6 +7,7 @@
@@ -10,7 +10,7 @@ index d5e3f14b43b44..1a3f546260abb 100644
  #include "base/feature_list.h"
  #include "base/functional/bind.h"
  #include "base/metrics/histogram_macros.h"
-@@ -693,7 +694,8 @@ void ExtensionContextMenuModel::InitMenuWithFeature(
+@@ -800,7 +801,8 @@ void ExtensionContextMenuModel::InitMenuWithFeature(
  
    // Controls section.
    bool has_options_page = OptionsPageInfo::HasOptionsPage(extension);

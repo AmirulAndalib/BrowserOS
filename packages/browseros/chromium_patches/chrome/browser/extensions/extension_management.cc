@@ -1,8 +1,8 @@
 diff --git a/chrome/browser/extensions/extension_management.cc b/chrome/browser/extensions/extension_management.cc
-index ae782891ad341..fa1a80d0265b1 100644
+index fd38c92b7493b..c0782570a81b7 100644
 --- a/chrome/browser/extensions/extension_management.cc
 +++ b/chrome/browser/extensions/extension_management.cc
-@@ -14,6 +14,7 @@
+@@ -9,6 +9,7 @@
  #include <utility>
  
  #include "base/command_line.h"
@@ -10,7 +10,7 @@ index ae782891ad341..fa1a80d0265b1 100644
  #include "base/containers/contains.h"
  #include "base/feature_list.h"
  #include "base/functional/bind.h"
-@@ -244,7 +245,22 @@ GURL ExtensionManagement::GetEffectiveUpdateURL(const Extension& extension) {
+@@ -282,7 +283,22 @@ GURL ExtensionManagement::GetEffectiveUpdateURL(const Extension& extension) {
          << "Update URL cannot be overridden to be the webstore URL!";
      return update_url;
    }
@@ -34,7 +34,7 @@ index ae782891ad341..fa1a80d0265b1 100644
  }
  
  bool ExtensionManagement::UpdatesFromWebstore(const Extension& extension) {
-@@ -593,6 +609,12 @@ ExtensionIdSet ExtensionManagement::GetForcePinnedList() const {
+@@ -664,6 +680,12 @@ ExtensionIdSet ExtensionManagement::GetForcePinnedList() const {
        force_pinned_list.insert(entry.first);
      }
    }

@@ -1,8 +1,8 @@
 diff --git a/chrome/browser/extensions/api/settings_private/prefs_util.cc b/chrome/browser/extensions/api/settings_private/prefs_util.cc
-index 97bb4be60af93..1bff654e3ac42 100644
+index 79c4eb8fc905c..af55f9af24648 100644
 --- a/chrome/browser/extensions/api/settings_private/prefs_util.cc
 +++ b/chrome/browser/extensions/api/settings_private/prefs_util.cc
-@@ -580,6 +580,37 @@ const PrefsUtil::TypedPrefMap& PrefsUtil::GetAllowlistedKeys() {
+@@ -592,6 +592,37 @@ const PrefsUtil::TypedPrefMap& PrefsUtil::GetAllowlistedKeys() {
    (*s_allowlist)[::prefs::kCaretBrowsingEnabled] =
        settings_api::PrefType::kBoolean;
  
@@ -40,7 +40,7 @@ index 97bb4be60af93..1bff654e3ac42 100644
  #if BUILDFLAG(IS_CHROMEOS)
    // Accounts / Users / People.
    (*s_allowlist)[ash::kAccountsPrefAllowGuest] =
-@@ -1164,6 +1195,8 @@ const PrefsUtil::TypedPrefMap& PrefsUtil::GetAllowlistedKeys() {
+@@ -1180,6 +1211,8 @@ const PrefsUtil::TypedPrefMap& PrefsUtil::GetAllowlistedKeys() {
        settings_api::PrefType::kBoolean;
    (*s_allowlist)[::prefs::kImportDialogSearchEngine] =
        settings_api::PrefType::kBoolean;

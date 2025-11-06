@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/extensions/browseros_external_loader.cc b/chrome/browser/extensions/browseros_external_loader.cc
 new file mode 100644
-index 0000000000000..53eeebf1be954
+index 0000000000000..70842c316df3c
 --- /dev/null
 +++ b/chrome/browser/extensions/browseros_external_loader.cc
-@@ -0,0 +1,661 @@
+@@ -0,0 +1,669 @@
 +// Copyright 2024 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -33,6 +33,7 @@ index 0000000000000..53eeebf1be954
 +#include "content/public/browser/storage_partition.h"
 +#include "extensions/browser/disable_reason.h"
 +#include "extensions/browser/extension_prefs.h"
++#include "extensions/browser/extension_registrar.h"
 +#include "extensions/browser/extension_registry.h"
 +#include "extensions/browser/extension_system.h"
 +#include "extensions/browser/pending_extension_manager.h"
@@ -383,8 +384,15 @@ index 0000000000000..53eeebf1be954
 +    }
 +
 +    // Re-enable BrowserOS extensions regardless of disable reason
++    auto* registrar = extensions::ExtensionRegistrar::Get(profile_);
++    if (!registrar) {
++      LOG(WARNING) << "browseros: Cannot re-enable " << extension_id
++                   << " because ExtensionRegistrar is unavailable";
++      continue;
++    }
++
 +    LOG(INFO) << "browseros: Re-enabling extension " << extension_id;
-+    service->EnableExtension(extension_id);
++    registrar->EnableExtension(extension_id);
 +  }
 +}
 +
