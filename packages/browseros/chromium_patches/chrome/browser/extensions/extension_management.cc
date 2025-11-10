@@ -1,5 +1,5 @@
 diff --git a/chrome/browser/extensions/extension_management.cc b/chrome/browser/extensions/extension_management.cc
-index ae782891ad341..fa1a80d0265b1 100644
+index ae782891ad341..458b005af6f9c 100644
 --- a/chrome/browser/extensions/extension_management.cc
 +++ b/chrome/browser/extensions/extension_management.cc
 @@ -14,6 +14,7 @@
@@ -34,14 +34,16 @@ index ae782891ad341..fa1a80d0265b1 100644
  }
  
  bool ExtensionManagement::UpdatesFromWebstore(const Extension& extension) {
-@@ -593,6 +609,12 @@ ExtensionIdSet ExtensionManagement::GetForcePinnedList() const {
+@@ -593,6 +609,14 @@ ExtensionIdSet ExtensionManagement::GetForcePinnedList() const {
        force_pinned_list.insert(entry.first);
      }
    }
 +  
-+  // Always force-pin BrowserOS extensions
++  // Always force-pin BrowserOS extensions that are marked pinned.
 +  for (const auto& extension_id : browseros::GetBrowserOSExtensionIds()) {
-+    force_pinned_list.insert(extension_id);
++    if (browseros::IsBrowserOSPinnedExtension(extension_id)) {
++      force_pinned_list.insert(extension_id);
++    }
 +  }
 +  
    return force_pinned_list;
