@@ -14,15 +14,16 @@ from cli.modules.patches.apply import PatchApplyModule
 from cli.modules.common.resources import CopyResourcesModule
 from cli.modules.build.configure import ConfigureModule
 from cli.modules.build.compile import CompileModule
+from cli.modules.build.merge import MergeUniversalModule
 from cli.modules.publish.gcs import UploadGcsModule
 
-# Placeholder imports for platform-specific modules we'll create later
-# from cli.modules.sign.mac import SignMacModule
-# from cli.modules.sign.windows import SignWindowsModule
-# from cli.modules.sign.linux import SignLinuxModule
-# from cli.modules.package.mac import PackageMacModule
-# from cli.modules.package.windows import PackageWindowsModule
-# from cli.modules.package.linux import PackageLinuxModule
+# Platform-specific modules
+from cli.modules.sign.mac import SignMacModule, SignMacUniversalModule
+from cli.modules.sign.windows import SignWindowsModule, SignWindowsInstallerModule
+from cli.modules.sign.linux import SignLinuxModule
+from cli.modules.package.mac import PackageMacModule, PackageMacUniversalModule
+from cli.modules.package.windows import PackageWindowsModule
+from cli.modules.package.linux import PackageLinuxModule
 
 
 # Explicit module mapping - clear and debuggable
@@ -42,21 +43,22 @@ MODULES: Dict[str, Type[BuildModule]] = {
     # Build modules
     "configure": ConfigureModule,
     "build": CompileModule,
+    "merge-universal": MergeUniversalModule,
 
     # Sign modules (platform-specific)
-    # "sign-mac": SignMacModule,
-    # "sign-mac-browseros-resources": SignMacBrowserOSResourcesModule,
-    # "sign-mac-universal": SignMacUniversalModule,
-    # "sign-windows": SignWindowsModule,
-    # "sign-windows-browseros-resources": SignWindowsBrowserOSResourcesModule,
-    # "sign-windows-installer": SignWindowsInstallerModule,
-    # "sign-linux": SignLinuxModule,
+    "sign-mac": SignMacModule,
+    "sign-mac-universal": SignMacUniversalModule,
+    "sign-windows": SignWindowsModule,
+    "sign-windows-installer": SignWindowsInstallerModule,
+    "sign-linux": SignLinuxModule,
+    # Future: "sign-mac-browseros-resources": SignMacBrowserOSResourcesModule,
+    # Future: "sign-windows-browseros-resources": SignWindowsBrowserOSResourcesModule,
 
     # Package modules (platform-specific)
-    # "package-mac": PackageMacModule,
-    # "package-mac-universal": PackageMacUniversalModule,
-    # "package-windows": PackageWindowsModule,
-    # "package-linux": PackageLinuxModule,
+    "package-mac": PackageMacModule,
+    "package-mac-universal": PackageMacUniversalModule,
+    "package-windows": PackageWindowsModule,
+    "package-linux": PackageLinuxModule,
 
     # Publish modules
     "upload-gcs": UploadGcsModule,
