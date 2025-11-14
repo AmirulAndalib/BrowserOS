@@ -82,7 +82,7 @@ def apply_patches(
 
     # Get list of patches
     root_patches_dir = ctx.get_patches_dir()
-    nxtscape_patches_dir = ctx.get_nxtscape_patches_dir()
+    nxtscape_patches_dir = ctx.get_browseros_patches_dir()
 
     if not nxtscape_patches_dir.exists():
         log_error(f"Patches directory not found: {nxtscape_patches_dir}")

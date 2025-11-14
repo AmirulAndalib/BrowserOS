@@ -76,7 +76,7 @@ def upload_to_gcs(
     platform_dir = _get_platform_dir(platform_override)
 
     # Build GCS path: gs://nxtscape/resources/<version>/<platform>/
-    gcs_prefix = f"resources/{ctx.nxtscape_version}/{platform_dir}"
+    gcs_prefix = f"resources/{ctx.browseros_version}/{platform_dir}"
 
     log_info(f"\n☁️  Uploading artifacts to gs://{GCS_BUCKET_NAME}/{gcs_prefix}/")
 
@@ -338,7 +338,7 @@ def handle_upload_dist(
             build_type="release",  # Not needed for upload
         )
         # Override the version with what we detected
-        ctx.nxtscape_version = version
+        ctx.browseros_version = version
     except Exception as e:
         # If BuildContext fails, we can still upload with minimal info
         log_warning(f"Could not create full BuildContext: {e}")

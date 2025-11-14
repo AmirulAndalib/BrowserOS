@@ -273,7 +273,7 @@ def package_universal(contexts: List[BuildContext]) -> bool:
 
     # Use the universal app path
     universal_dir = contexts[0].chromium_src / "out/Default_universal"
-    universal_app_path = universal_dir / contexts[0].NXTSCAPE_APP_NAME
+    universal_app_path = universal_dir / contexts[0].BROWSEROS_APP_NAME
 
     if not universal_app_path.exists():
         log_error(f"Universal app not found: {universal_app_path}")

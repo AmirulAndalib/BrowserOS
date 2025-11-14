@@ -285,7 +285,7 @@ def handle_merge_command(
         build_type="release",
     )
     output_path = (
-        chromium_src / "out" / "Default_universal" / temp_ctx.NXTSCAPE_APP_NAME
+        chromium_src / "out" / "Default_universal" / temp_ctx.BROWSEROS_APP_NAME
     )
     log_info(f"  Output: {output_path} (auto-generated)")
 

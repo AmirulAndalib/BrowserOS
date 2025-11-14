@@ -267,7 +267,7 @@ def build_main(
             )
 
             log_info(f"📍 Chromium: {ctx.chromium_version}")
-            log_info(f"📍 Nxtscape: {ctx.nxtscape_version}")
+            log_info(f"📍 Nxtscape: {ctx.browseros_version}")
             log_info(f"📍 Output directory: {ctx.out_dir}")
 
             # Clean (only for first architecture to avoid conflicts)

@@ -43,7 +43,7 @@ def copy_browser_files(
     out_dir = join_paths(ctx.chromium_src, ctx.out_dir)
 
     files_to_copy = [
-        ctx.NXTSCAPE_APP_NAME,
+        ctx.BROWSEROS_APP_NAME,
         "chrome_crashpad_handler",
         "chrome_sandbox",
         "chromedriver",
@@ -75,7 +75,7 @@ def copy_browser_files(
             shutil.copytree(src, join_paths(target_dir, dir_name), dirs_exist_ok=True)
             log_info(f"  ✓ Copied {dir_name}/")
 
-    browseros_path = Path(join_paths(target_dir, ctx.NXTSCAPE_APP_NAME))
+    browseros_path = Path(join_paths(target_dir, ctx.BROWSEROS_APP_NAME))
     if browseros_path.exists():
         browseros_path.chmod(0o755)
 
@@ -166,7 +166,7 @@ def prepare_appdir(ctx: BuildContext, appdir: Path) -> bool:
 
     # Create desktop file
     desktop_file = create_desktop_file(
-        apps_dir, f"/opt/browseros/{ctx.NXTSCAPE_APP_NAME}"
+        apps_dir, f"/opt/browseros/{ctx.BROWSEROS_APP_NAME}"
     )
 
     # Copy icon
@@ -178,7 +178,7 @@ def prepare_appdir(ctx: BuildContext, appdir: Path) -> bool:
     shutil.copy2(desktop_file, appdir_desktop)
     desktop_content = appdir_desktop.read_text()
     desktop_content = desktop_content.replace(
-        f"Exec=/opt/browseros/{ctx.NXTSCAPE_APP_NAME} %U", "Exec=AppRun %U"
+        f"Exec=/opt/browseros/{ctx.BROWSEROS_APP_NAME} %U", "Exec=AppRun %U"
     )
     appdir_desktop.write_text(desktop_content)
 
@@ -193,7 +193,7 @@ THIS="$(readlink -f "${{0}}")"
 HERE="$(dirname "${{THIS}}")"
 export LD_LIBRARY_PATH="${{HERE}}"/opt/browseros:$LD_LIBRARY_PATH
 export CHROME_WRAPPER="${{THIS}}"
-"${{HERE}}"/opt/browseros/{ctx.NXTSCAPE_APP_NAME} "$@"
+"${{HERE}}"/opt/browseros/{ctx.BROWSEROS_APP_NAME} "$@"
 """
 
     apprun_file = Path(join_paths(appdir, "AppRun"))
@@ -276,7 +276,7 @@ def create_launcher_script(ctx: BuildContext, bin_dir: Path) -> None:
     launcher_content = f"""#!/bin/sh
 # BrowserOS launcher script
 export LD_LIBRARY_PATH=/usr/lib/browseros:$LD_LIBRARY_PATH
-exec /usr/lib/browseros/{ctx.NXTSCAPE_APP_NAME} "$@"
+exec /usr/lib/browseros/{ctx.BROWSEROS_APP_NAME} "$@"
 """
 
     launcher_path = Path(join_paths(bin_dir, "browseros"))
@@ -290,7 +290,7 @@ def create_control_file(ctx: BuildContext, debian_dir: Path) -> None:
     debian_dir.mkdir(parents=True, exist_ok=True)
 
     # Version formatting: strip 'v' prefix and spaces, ensure numeric
-    version = ctx.get_nxtscape_chromium_version()
+    version = ctx.get_browseros_chromium_version()
     version = version.lstrip("v").replace(" ", "").replace("_", ".")
 
     # Architecture mapping
@@ -426,7 +426,7 @@ def package_appimage(ctx: BuildContext, package_dir: Path) -> Optional[Path]:
     """
     log_info("🖼️  Building AppImage...")
 
-    appdir = Path(join_paths(package_dir, f"{ctx.NXTSCAPE_APP_BASE_NAME}.AppDir"))
+    appdir = Path(join_paths(package_dir, f"{ctx.BROWSEROS_APP_BASE_NAME}.AppDir"))
     if appdir.exists():
         safe_rmtree(appdir)
 
@@ -434,9 +434,9 @@ def package_appimage(ctx: BuildContext, package_dir: Path) -> Optional[Path]:
         safe_rmtree(appdir)
         return None
 
-    version = ctx.get_nxtscape_chromium_version().replace(" ", "_")
+    version = ctx.get_browseros_chromium_version().replace(" ", "_")
     arch_suffix = "x86_64" if ctx.architecture == "x64" else "arm64"
-    filename = f"{ctx.NXTSCAPE_APP_BASE_NAME}-{version}-{arch_suffix}.AppImage"
+    filename = f"{ctx.BROWSEROS_APP_BASE_NAME}-{version}-{arch_suffix}.AppImage"
     output_path = Path(join_paths(package_dir, filename))
 
     success = create_appimage(ctx, appdir, output_path)
@@ -458,7 +458,7 @@ def package_deb(ctx: BuildContext, package_dir: Path) -> Optional[Path]:
     """
     log_info("📦 Building .deb package...")
 
-    debdir = Path(join_paths(package_dir, f"{ctx.NXTSCAPE_APP_BASE_NAME}_deb"))
+    debdir = Path(join_paths(package_dir, f"{ctx.BROWSEROS_APP_BASE_NAME}_deb"))
     if debdir.exists():
         safe_rmtree(debdir)
 
@@ -467,7 +467,7 @@ def package_deb(ctx: BuildContext, package_dir: Path) -> Optional[Path]:
         return None
 
     version = (
-        ctx.get_nxtscape_chromium_version()
+        ctx.get_browseros_chromium_version()
         .lstrip("v")
         .replace(" ", "")
         .replace("_", ".")
@@ -490,7 +490,7 @@ def package_deb(ctx: BuildContext, package_dir: Path) -> Optional[Path]:
 def package(ctx: BuildContext) -> bool:
     """Package BrowserOS for Linux as both AppImage and .deb"""
     log_info(
-        f"📦 Packaging {ctx.NXTSCAPE_APP_BASE_NAME} {ctx.get_nxtscape_chromium_version()} for Linux ({ctx.architecture})"
+        f"📦 Packaging {ctx.BROWSEROS_APP_BASE_NAME} {ctx.get_browseros_chromium_version()} for Linux ({ctx.architecture})"
     )
 
     # Create packaging directory
