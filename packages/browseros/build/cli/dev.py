@@ -6,12 +6,10 @@ A git-like patch management system for maintaining patches against Chromium.
 Enables extracting, applying, and managing patches across Chromium upgrades.
 """
 
-import os
 import sys
 import yaml
 from pathlib import Path
 from typing import Optional
-from dataclasses import dataclass
 
 import typer
 from typer import Typer, Option, Argument
@@ -21,81 +19,24 @@ from ..common.context import BuildContext
 from ..common.utils import log_info, log_error, log_success, log_warning, join_paths
 
 
-@dataclass
-class DevCliConfig:
-    """Configuration for Dev CLI from various sources"""
-
-    chromium_src: Optional[Path] = None
-    auto_commit: bool = False
-    interactive: bool = True
-
-    @classmethod
-    def load(cls, cli_chromium_src: Optional[Path] = None) -> "DevCliConfig":
-        """Load configuration from various sources with precedence:
-        1. CLI arguments (highest priority)
-        2. Environment variables
-        3. Config file
-        4. Defaults (lowest priority)
-        """
-        config = cls()
-
-        # Load from config file if exists
-        config_file = Path.cwd() / ".dev-cli.yaml"
-        if config_file.exists():
-            try:
-                with open(config_file, "r") as f:
-                    file_config = yaml.safe_load(f)
-                    if file_config and "defaults" in file_config:
-                        defaults = file_config["defaults"]
-                        if "chromium_src" in defaults:
-                            config.chromium_src = Path(defaults["chromium_src"])
-                        config.auto_commit = defaults.get("auto_commit", False)
-                        config.interactive = defaults.get("interactive", True)
-            except Exception as e:
-                log_warning(f"Failed to load config file: {e}")
-
-        # Override with environment variables
-        env_chromium_src = os.environ.get("CHROMIUM_SRC")
-        if env_chromium_src:
-            config.chromium_src = Path(env_chromium_src)
-
-        # Override with CLI arguments (highest priority)
-        if cli_chromium_src:
-            config.chromium_src = cli_chromium_src
-
-        # Set default if still not set
-        if not config.chromium_src:
-            # Try to detect from current directory structure
-            possible_src = Path.cwd() / "chromium_src"
-            if possible_src.exists() and (possible_src / "chrome").exists():
-                config.chromium_src = possible_src
-
-        return config
-
-
 def create_build_context(chromium_src: Optional[Path] = None) -> Optional[BuildContext]:
     """Create BuildContext for dev CLI operations"""
     try:
-        config = DevCliConfig.load(chromium_src)
-
-        if not config.chromium_src:
+        if not chromium_src:
             log_error("Chromium source directory not specified")
-            log_info("Use --chromium-src option or set CHROMIUM_SRC environment variable")
+            log_info("Use --chromium-src option to specify the Chromium source directory")
             return None
 
-        if not config.chromium_src.exists():
-            log_error(f"Chromium source directory does not exist: {config.chromium_src}")
+        if not chromium_src.exists():
+            log_error(f"Chromium source directory does not exist: {chromium_src}")
             return None
 
         ctx = BuildContext(
             root_dir=Path.cwd(),
-            chromium_src=config.chromium_src,
+            chromium_src=chromium_src,
             architecture="",  # Not needed for patch operations
             build_type="debug",  # Not needed for patch operations
         )
-
-        # Store config in context for access by commands
-        ctx.dev_config = config
 
         return ctx
     except Exception as e:
