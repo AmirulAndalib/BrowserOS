@@ -12,7 +12,7 @@ from typing import Dict
 
 def load_config(config_path: Path) -> Dict:
     """Load YAML config with environment variable expansion"""
-    from ..utils import log_warning
+    from .utils import log_warning
 
     if not config_path.exists():
         raise FileNotFoundError(f"Config file not found: {config_path}")

@@ -10,7 +10,7 @@ import yaml
 import subprocess
 from pathlib import Path
 from ..common.context import BuildContext
-from ..utils import log_info, log_success, log_error, log_warning, get_platform
+from ..common.utils import log_info, log_success, log_error, log_warning, get_platform
 
 
 def copy_resources(ctx: BuildContext, commit_each: bool = False) -> bool:

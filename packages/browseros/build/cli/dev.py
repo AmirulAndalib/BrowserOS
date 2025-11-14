@@ -18,7 +18,7 @@ from typer import Typer, Option, Argument
 
 # Import from common and utils
 from ..common.context import BuildContext
-from ..utils import log_info, log_error, log_success, log_warning, join_paths
+from ..common.utils import log_info, log_error, log_success, log_warning, join_paths
 
 
 @dataclass

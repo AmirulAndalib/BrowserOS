@@ -23,7 +23,7 @@ def run(
         True if all steps succeeded, False otherwise
     """
     # Import here to avoid circular dependencies
-    from ..utils import log_info, log_error
+    from .utils import log_info, log_error
     from .notify import NullNotifier
 
     notifier = notifier or NullNotifier()

@@ -7,7 +7,7 @@ import os
 import shutil
 from pathlib import Path
 from ..common.context import BuildContext
-from ..utils import run_command, log_info, log_success, safe_rmtree
+from ..common.utils import run_command, log_info, log_success, safe_rmtree
 
 
 def clean(ctx: BuildContext) -> bool:

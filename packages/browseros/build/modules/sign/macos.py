@@ -720,7 +720,7 @@ def sign_app(ctx: BuildContext, create_dmg: bool = True) -> bool:
             log_info("📦 Creating and notarizing DMG package")
             log_info("=" * 70)
 
-            from modules.package import create_signed_notarized_dmg
+            from ..package.macos import create_signed_notarized_dmg
 
             # Find pkg-dmg tool
             pkg_dmg_path = ctx.get_pkg_dmg_path()
@@ -795,7 +795,7 @@ def sign_universal(contexts: List[BuildContext]) -> bool:
 
     # Use universalizer script to merge architectures
     universalizer_script = join_paths(
-        contexts[0].root_dir, "build", "universalizer_patched.py"
+        contexts[0].root_dir, "build", "modules", "package", "universalizer_patched.py"
     )
 
     if not universalizer_script.exists():
