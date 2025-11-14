@@ -1,5 +1,7 @@
-# Requirements for Nxtscape Build System
-click>=8.0.0 
+# Requirements for BrowserOS Build System
+click>=8.0.0
+typer>=0.20.0
 PyYAML>=5.4.1
 requests>=2.25.1
 google-cloud-storage>=2.10.0
+rich>=10.11.0

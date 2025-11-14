@@ -1,0 +1,16 @@
+# Example pipeline configuration
+pipelines:
+  macos-debug:
+    matrix:
+      architectures: [x64]
+    env:
+      GN_FLAGS: build/config/gn/flags.macos.debug.gn
+    steps:
+      - clean
+      - setup-env
+      # - git-sync  # Not implemented yet
+      # - patch-chromium
+      # - patch-strings
+      # - configure
+      # - build
+      # - package-mac
