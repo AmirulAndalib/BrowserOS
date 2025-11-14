@@ -5,7 +5,7 @@ String replacement module for BrowserOS build system
 
 import re
 from pathlib import Path
-from ..context import BuildContext
+from ..common.context import BuildContext
 from ..utils import log_info, log_success, log_error, log_warning
 
 

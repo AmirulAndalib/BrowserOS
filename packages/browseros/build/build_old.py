@@ -29,7 +29,7 @@ def load_env_file():
 load_env_file()
 
 # Import shared components (relative imports for package mode)
-from .context import BuildContext
+from .common.context import BuildContext
 from .utils import (
     load_config,
     log_info,

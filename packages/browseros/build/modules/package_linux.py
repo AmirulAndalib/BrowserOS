@@ -9,7 +9,7 @@ import subprocess
 from pathlib import Path
 from typing import List, Tuple, Optional
 
-from ..context import BuildContext
+from ..common.context import BuildContext
 from ..utils import (
     log_info,
     log_error,

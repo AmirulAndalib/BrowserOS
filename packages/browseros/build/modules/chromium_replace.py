@@ -6,7 +6,7 @@ Chromium file replacement module for Nxtscape build system
 import sys
 import shutil
 from pathlib import Path
-from ..context import BuildContext
+from ..common.context import BuildContext
 from ..utils import log_info, log_success, log_error, log_warning
 
 

@@ -7,7 +7,7 @@ import os
 import sys
 from pathlib import Path
 from typing import Optional
-from ..context import BuildContext
+from ..common.context import BuildContext
 from ..utils import run_command, log_info, log_error, log_success, join_paths, IS_WINDOWS
 
 

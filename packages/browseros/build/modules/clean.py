@@ -6,7 +6,7 @@ Clean module for Nxtscape build system
 import os
 import shutil
 from pathlib import Path
-from ..context import BuildContext
+from ..common.context import BuildContext
 from ..utils import run_command, log_info, log_success, safe_rmtree
 
 
