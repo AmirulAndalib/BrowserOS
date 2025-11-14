@@ -53,34 +53,17 @@ from .modules.configure import configure
 from .modules.compile import build
 from .modules.gcs import upload_package_artifacts, upload_signed_artifacts, handle_upload_dist
 
-# Platform-specific imports
+# Platform-specific imports - Now using new modular structure
+from .modules.sign import sign, sign_universal, check_signing_environment
+from .modules.package import package, package_universal
+
+# Platform-specific post-build
 if IS_MACOS:
-    from .modules.sign import sign, sign_universal, check_signing_environment
-    from .modules.package import package, package_universal
     from .modules.postbuild import run_postbuild
 elif IS_WINDOWS:
-    from .modules.package_windows import (
-        package,
-        package_universal,
-        sign_binaries as sign,
-    )
-
-    # Windows doesn't have universal signing
-    def sign_universal(contexts: list[BuildContext]) -> bool:
-        log_warning("Universal signing is not supported on Windows")
-        return True
-
     def run_postbuild(ctx: BuildContext) -> None:
         log_warning("Post-build tasks are not implemented for Windows yet")
-
 elif IS_LINUX:
-    from .modules.package_linux import package, package_universal, sign_binaries as sign
-
-    # Linux doesn't have universal signing
-    def sign_universal(contexts: list[BuildContext]) -> bool:
-        log_warning("Universal signing is not supported on Linux")
-        return True
-
     def run_postbuild(ctx: BuildContext) -> None:
         log_warning("Post-build tasks are not implemented for Linux yet")
 
