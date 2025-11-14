@@ -13,7 +13,17 @@ from typing import Optional, Tuple
 import typer
 
 from ..build_old import build_main
-from ..utils import log_error
+from ..utils import log_error, log_info
+
+# Import common modules for future use (keeping build_main for now)
+from ..common import (
+    BuildContext,
+    run,
+    load_config_or_defaults,
+    merge_config,
+    NullNotifier,
+    SlackNotifier
+)
 
 
 def main(

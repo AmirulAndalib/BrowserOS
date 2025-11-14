@@ -8,7 +8,7 @@ import tempfile
 import shutil
 import multiprocessing
 from pathlib import Path
-from ..context import BuildContext
+from ..common.context import BuildContext
 from ..utils import (
     run_command,
     log_info,

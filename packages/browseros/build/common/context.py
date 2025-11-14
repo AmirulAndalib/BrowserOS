@@ -8,7 +8,7 @@ from enum import Enum
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Dict, List
-from .utils import (
+from ..utils import (
     log_error,
     log_warning,
     get_platform,
