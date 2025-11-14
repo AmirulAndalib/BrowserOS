@@ -10,6 +10,7 @@ dependencies = [
   "requests>=2.25.1",
   "google-cloud-storage>=2.10.0",
   "rich>=10.11.0",
+  "python-dotenv>=1.0.0",
 ]
 
 [project.scripts]
@@ -50,4 +51,3 @@ extend-exclude = '''
 profile = "black"
 line_length = 88
 skip_glob = ["env/*", "chromium_src/*", "chromium_src_bak/*", "third_party/*"]
-

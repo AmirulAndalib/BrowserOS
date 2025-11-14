@@ -2,29 +2,29 @@
 
 import os
 import re
-import yaml
 from pathlib import Path
 from typing import Dict, Any, List, Optional
+
+import yaml
+from dotenv import dotenv_values, find_dotenv
 
 
 class ConfigLoader:
     """Load and parse pipeline configuration files."""
 
-    def __init__(self):
+    def __init__(self, env_file: Optional[Path] = None):
         self.env_vars = os.environ.copy()
-        self._load_env_file()
+        self._load_env_file(env_file)
 
-    def _load_env_file(self):
-        """Load .env file if it exists."""
-        env_file = Path.cwd() / ".env"
-        if env_file.exists():
-            with open(env_file) as f:
-                for line in f:
-                    line = line.strip()
-                    if line and not line.startswith("#"):
-                        key, _, value = line.partition("=")
-                        if key and value:
-                            self.env_vars[key.strip()] = value.strip()
+    def _load_env_file(self, env_file: Optional[Path]):
+        """Load environment variables from a .env file using python-dotenv."""
+        env_path = env_file or find_dotenv(usecwd=True)
+        if not env_path:
+            return
+
+        for key, value in dotenv_values(env_path).items():
+            if value is not None:
+                self.env_vars[key] = value
 
     def load_config(self, config_path: Path) -> Dict[str, Any]:
         """Load pipeline configuration from YAML file."""
