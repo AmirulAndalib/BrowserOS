@@ -22,6 +22,7 @@ from .utils import (
 
 class ArtifactType(str, Enum):
     """Well-known artifact types produced during build"""
+
     # Signing outputs
     SIGNED_APP = "sign:app"
     SIGNED_DMG = "sign:dmg"
@@ -54,14 +55,14 @@ class BuildContext:
     package: bool = False
     build: bool = False
     chromium_version: str = ""
-    nxtscape_version: str = ""
-    nxtscape_chromium_version: str = ""
+    browseros_version: str = ""
+    browseros_chromium_version: str = ""
     start_time: float = 0.0
 
     # App names - will be set based on platform
     CHROMIUM_APP_NAME: str = ""
-    NXTSCAPE_APP_NAME: str = ""
-    NXTSCAPE_APP_BASE_NAME: str = "BrowserOS"  # Base name without extension
+    BROWSEROS_APP_NAME: str = ""
+    BROWSEROS_APP_BASE_NAME: str = "BrowserOS"  # Base name without extension
 
     # Third party
     SPARKLE_VERSION: str = "2.7.0"
@@ -78,15 +79,15 @@ class BuildContext:
         # Set platform-specific app names
         if IS_WINDOWS:
             self.CHROMIUM_APP_NAME = f"chrome{get_executable_extension()}"
-            self.NXTSCAPE_APP_NAME = (
-                f"{self.NXTSCAPE_APP_BASE_NAME}{get_executable_extension()}"
+            self.BROWSEROS_APP_NAME = (
+                f"{self.BROWSEROS_APP_BASE_NAME}{get_executable_extension()}"
             )
         elif IS_MACOS:
             self.CHROMIUM_APP_NAME = "Chromium.app"
-            self.NXTSCAPE_APP_NAME = f"{self.NXTSCAPE_APP_BASE_NAME}.app"
+            self.BROWSEROS_APP_NAME = f"{self.BROWSEROS_APP_BASE_NAME}.app"
         else:
             self.CHROMIUM_APP_NAME = "chrome"
-            self.NXTSCAPE_APP_NAME = self.NXTSCAPE_APP_BASE_NAME.lower()
+            self.BROWSEROS_APP_NAME = self.BROWSEROS_APP_BASE_NAME.lower()
 
         # Set architecture-specific output directory with platform separator
         if IS_WINDOWS:
@@ -96,19 +97,21 @@ class BuildContext:
 
         # Load version information using static methods
         if not self.chromium_version:
-            self.chromium_version, version_dict = self._load_chromium_version(self.root_dir)
+            self.chromium_version, version_dict = self._load_chromium_version(
+                self.root_dir
+            )
         else:
             # If chromium_version was provided, we still need to parse it for version_dict
             version_dict = {}
 
-        if not self.nxtscape_version:
-            self.nxtscape_version = self._load_nxtscape_version(self.root_dir)
+        if not self.browseros_version:
+            self.browseros_version = self._load_browseros_version(self.root_dir)
 
         # Set nxtscape_chromium_version as chromium version with BUILD + nxtscape_version
-        if self.chromium_version and self.nxtscape_version and version_dict:
+        if self.chromium_version and self.browseros_version and version_dict:
             # Calculate new BUILD number by adding nxtscape_version to original BUILD
-            new_build = int(version_dict["BUILD"]) + int(self.nxtscape_version)
-            self.nxtscape_chromium_version = f"{version_dict['MAJOR']}.{version_dict['MINOR']}.{new_build}.{version_dict['PATCH']}"
+            new_build = int(version_dict["BUILD"]) + int(self.browseros_version)
+            self.browseros_chromium_version = f"{version_dict['MAJOR']}.{version_dict['MINOR']}.{new_build}.{version_dict['PATCH']}"
 
         # Determine chromium source directory
         if self.chromium_src and self.chromium_src.exists():
@@ -153,22 +156,26 @@ class BuildContext:
         """
         from typing import Any
 
-        root_dir = Path(config.get('root_dir', Path.cwd()))
-        chromium_src = Path(config.get('chromium_src', '')) if config.get('chromium_src') else Path()
+        root_dir = Path(config.get("root_dir", Path.cwd()))
+        chromium_src = (
+            Path(config.get("chromium_src", ""))
+            if config.get("chromium_src")
+            else Path()
+        )
 
         # Get architecture or use platform default
-        arch = config.get('architecture') or get_platform_arch()
+        arch = config.get("architecture") or get_platform_arch()
 
         # Create instance
         ctx = cls(
             root_dir=root_dir,
             chromium_src=chromium_src,
             architecture=arch,
-            build_type=config.get('build_type', 'debug'),
-            apply_patches=config.get('apply_patches', False),
-            sign_package=config.get('sign_package', False),
-            package=config.get('package', False),
-            build=config.get('build', False),
+            build_type=config.get("build_type", "debug"),
+            apply_patches=config.get("apply_patches", False),
+            sign_package=config.get("sign_package", False),
+            package=config.get("package", False),
+            build=config.get("build", False),
         )
 
         return ctx
@@ -195,9 +202,9 @@ class BuildContext:
         return "", version_dict
 
     @staticmethod
-    def _load_nxtscape_version(root_dir: Path) -> str:
-        """Load nxtscape version from config/NXTSCAPE_VERSION"""
-        version_file = join_paths(root_dir, "build", "config", "NXTSCAPE_VERSION")
+    def _load_browseros_version(root_dir: Path) -> str:
+        """Load browseros version from config/BROWSEROS_VERSION"""
+        version_file = join_paths(root_dir, "build", "config", "BROWSEROS_VERSION")
         if version_file.exists():
             return version_file.read_text().strip()
         return ""
@@ -226,8 +233,8 @@ class BuildContext:
         """Get patches directory"""
         return join_paths(self.root_dir, "patches")
 
-    def get_nxtscape_patches_dir(self) -> Path:
-        """Get Nxtscape specific patches directory"""
+    def get_browseros_patches_dir(self) -> Path:
+        """Get browseros specific patches directory"""
         return join_paths(self.get_patches_dir(), "browseros")
 
     def get_sparkle_dir(self) -> Path:
@@ -238,37 +245,9 @@ class BuildContext:
         """Get Sparkle download URL"""
         return f"https://github.com/sparkle-project/Sparkle/releases/download/{self.SPARKLE_VERSION}/Sparkle-{self.SPARKLE_VERSION}.tar.xz"
 
-    def get_resources_dir(self) -> Path:
-        """Get resources directory"""
-        return join_paths(self.root_dir, "resources")
-
-    def get_resources_files_dir(self) -> Path:
-        """Get resources files directory"""
-        return join_paths(self.get_resources_dir(), "files")
-
-    def get_resources_gen_dir(self) -> Path:
-        """Get generated resources directory"""
-        return join_paths(self.get_resources_dir(), "gen")
-
-    def get_chrome_resources_dir(self) -> Path:
-        """Get Chrome browser resources directory"""
-        return join_paths(self.chromium_src, "chrome", "browser", "resources")
-
-    def get_chrome_theme_dir(self) -> Path:
-        """Get Chrome theme directory"""
-        return join_paths(self.chromium_src, "chrome", "app", "theme", "chromium")
-
-    def get_chrome_app_dir(self) -> Path:
-        """Get Chrome app directory"""
-        return join_paths(self.chromium_src, "chrome", "app")
-
     def get_entitlements_dir(self) -> Path:
         """Get entitlements directory"""
         return join_paths(self.root_dir, "resources", "entitlements")
-
-    def get_dmg_dir(self) -> Path:
-        """Get DMG output directory (macOS only)"""
-        return join_paths(self.chromium_src, self.out_dir, "dmg")
 
     def get_pkg_dmg_path(self) -> Path:
         """Get pkg-dmg tool path (macOS only)"""
@@ -279,11 +258,11 @@ class BuildContext:
         # For debug builds, check if the app has a different name
         if self.build_type == "debug" and IS_MACOS:
             # Check for debug-branded app name
-            debug_app_name = f"{self.NXTSCAPE_APP_BASE_NAME} Dev.app"
+            debug_app_name = f"{self.BROWSEROS_APP_BASE_NAME} Dev.app"
             debug_app_path = join_paths(self.chromium_src, self.out_dir, debug_app_name)
             if debug_app_path.exists():
                 return debug_app_path
-        return join_paths(self.chromium_src, self.out_dir, self.NXTSCAPE_APP_NAME)
+        return join_paths(self.chromium_src, self.out_dir, self.BROWSEROS_APP_NAME)
 
     def get_chromium_app_path(self) -> Path:
         """Get original Chromium app path"""
@@ -301,28 +280,28 @@ class BuildContext:
         """Get DMG filename with architecture suffix"""
         if self.architecture == "universal":
             if signed:
-                return f"{self.NXTSCAPE_APP_BASE_NAME}_{self.nxtscape_chromium_version}_universal_signed.dmg"
-            return f"{self.NXTSCAPE_APP_BASE_NAME}_{self.nxtscape_chromium_version}_universal.dmg"
+                return f"{self.BROWSEROS_APP_BASE_NAME}_{self.browseros_chromium_version}_universal_signed.dmg"
+            return f"{self.BROWSEROS_APP_BASE_NAME}_{self.browseros_chromium_version}_universal.dmg"
         else:
             if signed:
-                return f"{self.NXTSCAPE_APP_BASE_NAME}_{self.nxtscape_chromium_version}_{self.architecture}_signed.dmg"
-            return f"{self.NXTSCAPE_APP_BASE_NAME}_{self.nxtscape_chromium_version}_{self.architecture}.dmg"
+                return f"{self.BROWSEROS_APP_BASE_NAME}_{self.browseros_chromium_version}_{self.architecture}_signed.dmg"
+            return f"{self.BROWSEROS_APP_BASE_NAME}_{self.browseros_chromium_version}_{self.architecture}.dmg"
 
-    def get_nxtscape_chromium_version(self) -> str:
-        """Get Nxtscape version string"""
-        return self.nxtscape_chromium_version
+    def get_browseros_chromium_version(self) -> str:
+        """Get browseros chromium version string"""
+        return self.browseros_chromium_version
 
-    def get_nxtscape_version(self) -> str:
-        """Get Nxtscape version string"""
-        return self.nxtscape_version
+    def get_browseros_version(self) -> str:
+        """Get browseros version string"""
+        return self.browseros_version
 
     def get_app_base_name(self) -> str:
         """Get app base name without extension"""
-        return self.NXTSCAPE_APP_BASE_NAME
+        return self.BROWSEROS_APP_BASE_NAME
 
     def get_dist_dir(self) -> Path:
         """Get distribution output directory with version"""
-        return join_paths(self.root_dir, "dist", self.nxtscape_version)
+        return join_paths(self.root_dir, "dist", self.browseros_version)
 
     # Dev CLI specific methods
     def get_dev_patches_dir(self) -> Path:

@@ -25,9 +25,9 @@ def build(ctx: BuildContext) -> bool:
     log_info("\n🔨 Building Nxtscape (this will take a while)...")
 
     # Create VERSION file with nxtscape_chromium_version
-    if ctx.nxtscape_chromium_version:
+    if ctx.browseros_chromium_version:
         # Parse the nxtscape_chromium_version back into components
-        parts = ctx.nxtscape_chromium_version.split(".")
+        parts = ctx.browseros_chromium_version.split(".")
         if len(parts) == 4:
             version_content = f"MAJOR={parts[0]}\nMINOR={parts[1]}\nBUILD={parts[2]}\nPATCH={parts[3]}"
 
@@ -44,7 +44,7 @@ def build(ctx: BuildContext) -> bool:
             os.unlink(temp_path)
 
             log_info(
-                f"Created VERSION file with nxtscape_chromium_version: {ctx.nxtscape_chromium_version}"
+                f"Created VERSION file with nxtscape_chromium_version: {ctx.browseros_chromium_version}"
             )
     else:
         log_warning("No nxtscape_chromium_version set. Not building")

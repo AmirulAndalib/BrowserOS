@@ -154,9 +154,9 @@ def find_components_to_sign(
             nxtscape_framework_paths.append(fw_path)
 
             # Add versioned path if context is available
-            if ctx and ctx.nxtscape_chromium_version:
+            if ctx and ctx.browseros_chromium_version:
                 versioned_path = join_paths(
-                    fw_path, "Versions", ctx.nxtscape_chromium_version
+                    fw_path, "Versions", ctx.browseros_chromium_version
                 )
                 if versioned_path.exists():
                     nxtscape_framework_paths.insert(
@@ -785,7 +785,7 @@ def sign_universal(contexts: List[BuildContext]) -> bool:
 
     # Create universal output directory
     universal_dir = join_paths(contexts[0].chromium_src, "out", "Default_universal")
-    universal_app_path = join_paths(universal_dir, contexts[0].NXTSCAPE_APP_NAME)
+    universal_app_path = join_paths(universal_dir, contexts[0].BROWSEROS_APP_NAME)
 
     if universal_dir.exists():
         log_info("Removing existing universal directory...")
