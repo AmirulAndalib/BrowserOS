@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 from typing import Optional, List, Dict
 from ...common.context import BuildContext
-from ..dev_cli.utils import (
+from .utils import (
     FilePatch,
     FileOperation,
     GitError,

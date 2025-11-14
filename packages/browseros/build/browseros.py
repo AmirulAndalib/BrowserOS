@@ -25,9 +25,13 @@ build_app.callback(invoke_without_command=True)(build.main)
 # Add build as a subcommand
 app.add_typer(build_app, name="build", help="Build BrowserOS browser")
 
-# TODO: Add dev and release commands in future phases
-# app.add_typer(dev_app, name="dev", help="Dev patch management")
-# app.add_typer(release_app, name="release", help="Release automation")
+# Add dev command
+from .cli import dev
+app.add_typer(dev.app, name="dev", help="Dev patch management")
+
+# TODO: Add release command in future
+# from .cli import release
+# app.add_typer(release.app, name="release", help="Release automation")
 
 
 if __name__ == "__main__":
