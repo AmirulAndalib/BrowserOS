@@ -56,7 +56,7 @@ class SlackNotifier(Notifier):
 
     def _get_os_info(self) -> tuple[str, str]:
         """Get OS emoji and name for Slack notifications"""
-        from ..utils import get_platform
+        from .utils import get_platform
         platform = get_platform()
         if platform == "macos":
             return "🍎", "macOS"
@@ -75,7 +75,7 @@ class SlackNotifier(Notifier):
         try:
             import requests
         except ImportError:
-            from ..utils import log_warning
+            from .utils import log_warning
             log_warning("requests module not available for Slack notifications")
             return False
 
@@ -113,16 +113,16 @@ class SlackNotifier(Notifier):
             )
 
             if response.status_code == 200:
-                from ..utils import log_info
+                from .utils import log_info
                 log_info(f"📲 Slack notification sent")
                 return True
             else:
-                from ..utils import log_warning
+                from .utils import log_warning
                 log_warning(f"Slack notification failed with status {response.status_code}")
                 return False
 
         except requests.RequestException as e:
-            from ..utils import log_warning
+            from .utils import log_warning
             log_warning(f"Failed to send Slack notification: {e}")
             return False
 
@@ -155,7 +155,7 @@ class ConsoleNotifier(Notifier):
     """Console output notifier for debugging"""
 
     def __init__(self):
-        from ..utils import log_info
+        from .utils import log_info
         self.log_info = log_info
 
     def step_started(self, step_name: str, message: str = None):

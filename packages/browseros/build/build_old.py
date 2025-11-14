@@ -30,7 +30,7 @@ load_env_file()
 
 # Import shared components (relative imports for package mode)
 from .common.context import BuildContext
-from .utils import (
+from .common.utils import (
     load_config,
     log_info,
     log_warning,
@@ -89,14 +89,25 @@ else:
         log_warning("Post-build tasks are not implemented for this platform")
 
 
-from .modules.slack import (
-    notify_build_started,
-    notify_build_step,
-    notify_build_success,
-    notify_build_failure,
-    notify_build_interrupted,
-    notify_gcs_upload,
-)
+# Slack notifications moved to common.notify - using direct functions for now
+# TODO: Refactor to use new notifier classes
+def notify_build_started(build_type, architectures):
+    pass  # Placeholder - use SlackNotifier from common.notify
+
+def notify_build_step(message):
+    pass  # Placeholder - use SlackNotifier from common.notify
+
+def notify_build_success(mins, secs, gcs_uris=None):
+    pass  # Placeholder - use SlackNotifier from common.notify
+
+def notify_build_failure(error):
+    pass  # Placeholder - use SlackNotifier from common.notify
+
+def notify_build_interrupted():
+    pass  # Placeholder - use SlackNotifier from common.notify
+
+def notify_gcs_upload(architecture, gcs_uris):
+    pass  # Placeholder - use SlackNotifier from common.notify
 
 
 def build_main(
@@ -385,7 +396,7 @@ def build_main(
             universal_app_path = universal_dir / built_contexts[0].NXTSCAPE_APP_NAME
 
             # Find universalizer script
-            universalizer_script = root_dir / "build" / "universalizer_patched.py"
+            universalizer_script = root_dir / "build" / "modules" / "package" / "universalizer_patched.py"
 
             # Merge the architectures
             if not merge_architectures(

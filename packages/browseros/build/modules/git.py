@@ -11,7 +11,7 @@ import tarfile
 import urllib.request
 from pathlib import Path
 from ..common.context import BuildContext
-from ..utils import run_command, log_info, log_error, log_success, IS_WINDOWS, safe_rmtree
+from ..common.utils import run_command, log_info, log_error, log_success, IS_WINDOWS, safe_rmtree
 
 
 def setup_git(ctx: BuildContext) -> bool:
