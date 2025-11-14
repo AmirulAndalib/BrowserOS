@@ -4,8 +4,10 @@ Build context dataclass to hold all build state
 """
 
 import time
+from enum import Enum
 from pathlib import Path
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Dict, List
 from .utils import (
     log_error,
     log_warning,
@@ -18,9 +20,29 @@ from .utils import (
 )
 
 
+class ArtifactType(str, Enum):
+    """Well-known artifact types produced during build"""
+    # Signing outputs
+    SIGNED_APP = "sign:app"
+    SIGNED_DMG = "sign:dmg"
+    SIGNED_INSTALLER = "sign:installer"
+    SIGNED_APPIMAGE = "sign:appimage"
+    NOTARIZATION_ZIP = "sign:notarization_zip"
+
+    # Packaging outputs
+    PACKAGE_DMG = "package:dmg"
+    PACKAGE_INSTALLER = "package:installer"
+    PACKAGE_APPIMAGE = "package:appimage"
+    PACKAGE_UNIVERSAL = "package:universal"
+
+    # Build outputs
+    BUILD_APP = "build:app"
+    BUILD_BINARY = "build:binary"
+
+
 @dataclass
 class BuildContext:
-    """Simple dataclass to hold all build state"""
+    """Context Object pattern - ONE place for all build state"""
 
     root_dir: Path
     chromium_src: Path = Path()
@@ -43,6 +65,9 @@ class BuildContext:
 
     # Third party
     SPARKLE_VERSION: str = "2.7.0"
+
+    # Build artifacts (steps populate this)
+    artifacts: Dict[str, List[Path]] = field(default_factory=dict)
 
     def __post_init__(self):
         """Load version files and set platform/architecture-specific configurations"""
@@ -69,27 +94,15 @@ class BuildContext:
         else:
             self.out_dir = f"out/Default_{self.architecture}"
 
-        version_dict = {}
-
+        # Load version information using static methods
         if not self.chromium_version:
-            # Read from VERSION file
-            version_file = join_paths(self.root_dir, "CHROMIUM_VERSION")
-            if version_file.exists():
-                # Parse VERSION file format: MAJOR=137\nMINOR=0\nBUILD=7151\nPATCH=69
-                for line in version_file.read_text().strip().split("\n"):
-                    key, value = line.split("=")
-                    version_dict[key] = value
-
-                # Construct chromium_version as MAJOR.MINOR.BUILD.PATCH
-                self.chromium_version = f"{version_dict['MAJOR']}.{version_dict['MINOR']}.{version_dict['BUILD']}.{version_dict['PATCH']}"
+            self.chromium_version, version_dict = self._load_chromium_version(self.root_dir)
+        else:
+            # If chromium_version was provided, we still need to parse it for version_dict
+            version_dict = {}
 
         if not self.nxtscape_version:
-            # Read from NXTSCAPE_VERSION file
-            version_file = join_paths(
-                self.root_dir, "build", "config", "NXTSCAPE_VERSION"
-            )
-            if version_file.exists():
-                self.nxtscape_version = version_file.read_text().strip()
+            self.nxtscape_version = self._load_nxtscape_version(self.root_dir)
 
         # Set nxtscape_chromium_version as chromium version with BUILD + nxtscape_version
         if self.chromium_version and self.nxtscape_version and version_dict:
@@ -112,6 +125,82 @@ class BuildContext:
                 )
 
         self.start_time = time.time()
+
+    # === Artifact Management ===
+
+    def add_artifact(self, artifact_type: ArtifactType, path: Path):
+        """Add an artifact to tracking"""
+        key = artifact_type.value
+        if key not in self.artifacts:
+            self.artifacts[key] = []
+        self.artifacts[key].append(path)
+
+    def get_artifacts(self, artifact_type: ArtifactType) -> List[Path]:
+        """Get all artifacts of a type"""
+        return self.artifacts.get(artifact_type.value, [])
+
+    def has_artifact(self, artifact_type: ArtifactType) -> bool:
+        """Check if artifact type exists"""
+        return artifact_type.value in self.artifacts
+
+    # === Initialization ===
+
+    @classmethod
+    def init_context(cls, config: Dict) -> "BuildContext":
+        """
+        Initialize context from config
+        Replaces __post_init__ logic for better testability
+        """
+        from typing import Any
+
+        root_dir = Path(config.get('root_dir', Path.cwd()))
+        chromium_src = Path(config.get('chromium_src', '')) if config.get('chromium_src') else Path()
+
+        # Get architecture or use platform default
+        arch = config.get('architecture') or get_platform_arch()
+
+        # Create instance
+        ctx = cls(
+            root_dir=root_dir,
+            chromium_src=chromium_src,
+            architecture=arch,
+            build_type=config.get('build_type', 'debug'),
+            apply_patches=config.get('apply_patches', False),
+            sign_package=config.get('sign_package', False),
+            package=config.get('package', False),
+            build=config.get('build', False),
+        )
+
+        return ctx
+
+    @staticmethod
+    def _load_chromium_version(root_dir: Path):
+        """
+        Load chromium version from CHROMIUM_VERSION file
+        Returns: (version_string, version_dict)
+        """
+        version_dict = {}
+        version_file = join_paths(root_dir, "CHROMIUM_VERSION")
+
+        if version_file.exists():
+            # Parse VERSION file format: MAJOR=137\nMINOR=0\nBUILD=7151\nPATCH=69
+            for line in version_file.read_text().strip().split("\n"):
+                key, value = line.split("=")
+                version_dict[key] = value
+
+            # Construct chromium_version as MAJOR.MINOR.BUILD.PATCH
+            chromium_version = f"{version_dict['MAJOR']}.{version_dict['MINOR']}.{version_dict['BUILD']}.{version_dict['PATCH']}"
+            return chromium_version, version_dict
+
+        return "", version_dict
+
+    @staticmethod
+    def _load_nxtscape_version(root_dir: Path) -> str:
+        """Load nxtscape version from config/NXTSCAPE_VERSION"""
+        version_file = join_paths(root_dir, "build", "config", "NXTSCAPE_VERSION")
+        if version_file.exists():
+            return version_file.read_text().strip()
+        return ""
 
     # Path getter methods
     def get_config_dir(self) -> Path:
