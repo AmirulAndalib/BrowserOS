@@ -32,10 +32,19 @@ class SetupEnvModule(BuildModule):
             env_vars["DEPOT_TOOLS_WIN_TOOLCHAIN"] = "0"
             print("  Set DEPOT_TOOLS_WIN_TOOLCHAIN=0")
 
-        elif ctx.platform == "macos":
-            # Check for signing environment if needed
+            # Check for Windows signing environment if needed
             if self._should_check_signing(ctx, step_cfg):
-                signing_check = self._check_signing_environment()
+                signing_check = self._check_windows_signing_environment()
+                if not signing_check["success"]:
+                    return StepResult(
+                        success=False,
+                        message=signing_check["message"]
+                    )
+
+        elif ctx.platform == "macos":
+            # Check for macOS signing environment if needed
+            if self._should_check_signing(ctx, step_cfg):
+                signing_check = self._check_macos_signing_environment()
                 if not signing_check["success"]:
                     return StepResult(
                         success=False,
@@ -71,13 +80,13 @@ class SetupEnvModule(BuildModule):
         # Check if any signing modules are in the pipeline
         return step_cfg.get("check_signing", False)
 
-    def _check_signing_environment(self) -> Dict[str, Any]:
+    def _check_macos_signing_environment(self) -> Dict[str, Any]:
         """Check if signing environment is properly configured for macOS."""
         required_vars = [
-            "NXTSCAPE_RELEASE_PROVISIONING_PROFILE",
-            "NXTSCAPE_RELEASE_IDENTITY_NAME",
-            "NXTSCAPE_RELEASE_TEAM_ID",
-            "NXTSCAPE_MACOS_KEYCHAIN_PASSWORD"
+            "MACOS_CERTIFICATE_NAME",
+            "PROD_MACOS_NOTARIZATION_APPLE_ID",
+            "PROD_MACOS_NOTARIZATION_TEAM_ID",
+            "PROD_MACOS_NOTARIZATION_PWD"
         ]
 
         missing = []
@@ -88,12 +97,39 @@ class SetupEnvModule(BuildModule):
         if missing:
             return {
                 "success": False,
-                "message": f"Missing signing environment variables: {', '.join(missing)}"
+                "message": f"Missing macOS signing environment variables: {', '.join(missing)}"
             }
 
         return {
             "success": True,
-            "message": "Signing environment configured"
+            "message": "macOS signing environment configured"
+        }
+
+    def _check_windows_signing_environment(self) -> Dict[str, Any]:
+        """Check if signing environment is properly configured for Windows."""
+        # Windows signing uses SSL.com eSigner
+        required_vars = [
+            "CODE_SIGN_TOOL_PATH",
+            "ESIGNER_USERNAME",
+            "ESIGNER_PASSWORD",
+            "ESIGNER_TOTP_SECRET",
+            "ESIGNER_CREDENTIAL_ID"
+        ]
+
+        missing = []
+        for var in required_vars:
+            if not os.environ.get(var):
+                missing.append(var)
+
+        if missing:
+            return {
+                "success": False,
+                "message": f"Missing Windows signing environment variables: {', '.join(missing)}"
+            }
+
+        return {
+            "success": True,
+            "message": "Windows signing environment configured"
         }
 
     def _find_depot_tools(self, ctx: BuildContext) -> Path:

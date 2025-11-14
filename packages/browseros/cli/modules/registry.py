@@ -3,26 +3,26 @@
 from typing import Dict, Type, Optional
 from cli.orchestrator.module import BuildModule
 
-# Import all modules (will be populated as we create them)
+# Import all modules
 from cli.modules.common.clean import CleanModule
 from cli.modules.setup.env import SetupEnvModule
+from cli.modules.common.git import GitSyncModule
+from cli.modules.patches.chromium import PatchChromiumModule
+from cli.modules.patches.strings import PatchStringsModule
+from cli.modules.patches.sparkle import PatchSparkleModule
+from cli.modules.patches.apply import PatchApplyModule
+from cli.modules.common.resources import CopyResourcesModule
+from cli.modules.build.configure import ConfigureModule
+from cli.modules.build.compile import CompileModule
+from cli.modules.publish.gcs import UploadGcsModule
 
-# Placeholder imports for modules we'll create later
-# from cli.modules.common.git import GitSyncModule
-# from cli.modules.patches.chromium import PatchChromiumModule
-# from cli.modules.patches.strings import PatchStringsModule
-# from cli.modules.patches.sparkle import PatchSparkleModule
-# from cli.modules.patches.apply import PatchApplyModule
-# from cli.modules.common.resources import CopyResourcesModule
-# from cli.modules.build.configure import ConfigureModule
-# from cli.modules.build.compile import BuildModule as CompileModule
+# Placeholder imports for platform-specific modules we'll create later
 # from cli.modules.sign.mac import SignMacModule
 # from cli.modules.sign.windows import SignWindowsModule
 # from cli.modules.sign.linux import SignLinuxModule
 # from cli.modules.package.mac import PackageMacModule
 # from cli.modules.package.windows import PackageWindowsModule
 # from cli.modules.package.linux import PackageLinuxModule
-# from cli.modules.publish.gcs import UploadGcsModule
 
 
 # Explicit module mapping - clear and debuggable
@@ -30,18 +30,18 @@ MODULES: Dict[str, Type[BuildModule]] = {
     # Common modules
     "clean": CleanModule,
     "setup-env": SetupEnvModule,
-    # "git-sync": GitSyncModule,
-    # "copy-resources": CopyResourcesModule,
+    "git-sync": GitSyncModule,
+    "copy-resources": CopyResourcesModule,
 
     # Patch modules
-    # "patch-chromium": PatchChromiumModule,
-    # "patch-strings": PatchStringsModule,
-    # "patch-sparkle": PatchSparkleModule,
-    # "patch-apply": PatchApplyModule,
+    "patch-chromium": PatchChromiumModule,
+    "patch-strings": PatchStringsModule,
+    "patch-sparkle": PatchSparkleModule,
+    "patch-apply": PatchApplyModule,
 
     # Build modules
-    # "configure": ConfigureModule,
-    # "build": CompileModule,
+    "configure": ConfigureModule,
+    "build": CompileModule,
 
     # Sign modules (platform-specific)
     # "sign-mac": SignMacModule,
@@ -59,7 +59,7 @@ MODULES: Dict[str, Type[BuildModule]] = {
     # "package-linux": PackageLinuxModule,
 
     # Publish modules
-    # "upload-gcs": UploadGcsModule,
+    "upload-gcs": UploadGcsModule,
     # Future: "upload-aws": UploadAwsModule,
     # Future: "upload-ssh": UploadSshModule,
 }

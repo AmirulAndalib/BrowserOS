@@ -101,7 +101,7 @@ class CleanModule(BuildModule):
         if not ctx.chromium_path:
             return
 
-        sparkle_dir = ctx.chromium_path.parent.parent / "Sparkle"
+        sparkle_dir = ctx.chromium_path / "third_party" / "sparkle"
         if sparkle_dir.exists():
             print(f"  Cleaning Sparkle: {sparkle_dir}")
             shutil.rmtree(sparkle_dir, ignore_errors=True)
