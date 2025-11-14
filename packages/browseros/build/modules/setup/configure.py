@@ -38,7 +38,7 @@ def configure(ctx: BuildContext, gn_flags_file: Optional[Path] = None) -> bool:
 
     # Run gn gen
     os.chdir(ctx.chromium_src)
-    gn_cmd = "gn.bat" if IS_WINDOWS else "gn"
+    gn_cmd = "gn.bat" if IS_WINDOWS() else "gn"
     run_command([gn_cmd, "gen", ctx.out_dir, "--fail-on-unused-args"])
 
     log_success("Build configured")

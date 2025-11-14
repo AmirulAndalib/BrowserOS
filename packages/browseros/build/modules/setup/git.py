@@ -51,7 +51,7 @@ def setup_git(ctx: BuildContext) -> bool:
     # Sync dependencies
     log_info("📥 Syncing dependencies (this may take a while)...")
     # Windows gclient doesn't support --shallow flag
-    if IS_WINDOWS:
+    if IS_WINDOWS():
         run_command(["gclient.bat", "sync", "-D", "--no-history", "--shallow"])
     else:
         run_command(["gclient", "sync", "-D", "--no-history", "--shallow"])

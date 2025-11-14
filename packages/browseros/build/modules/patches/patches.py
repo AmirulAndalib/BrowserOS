@@ -165,11 +165,11 @@ def apply_patches(
 
 def get_current_platform() -> str:
     """Get the current platform name for skip checking"""
-    if IS_WINDOWS:
+    if IS_WINDOWS():
         return "windows"
-    elif IS_LINUX:
+    elif IS_LINUX():
         return "linux"
-    elif IS_MACOS:
+    elif IS_MACOS():
         return "darwin"
     else:
         return "unknown"

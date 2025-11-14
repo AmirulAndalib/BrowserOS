@@ -40,9 +40,9 @@ def _get_platform_dir(platform_override: Optional[str] = None) -> str:
     if platform_override:
         return platform_override
 
-    if IS_WINDOWS:
+    if IS_WINDOWS():
         return "win"
-    elif IS_MACOS:
+    elif IS_MACOS():
         return "macos"
     else:
         return "linux"
@@ -152,10 +152,10 @@ def upload_package_artifacts(ctx: BuildContext) -> tuple[bool, List[str]]:
     # Look for files in the dist/<version> directory
     dist_dir = ctx.get_dist_dir()
     if dist_dir.exists():
-        if IS_MACOS:
+        if IS_MACOS():
             # Look for DMG files
             artifacts.extend(dist_dir.glob("*.dmg"))
-        elif IS_WINDOWS:
+        elif IS_WINDOWS():
             # Look for installer and ZIP files
             artifacts.extend(dist_dir.glob("*.exe"))
             artifacts.extend(dist_dir.glob("*.zip"))
@@ -246,9 +246,9 @@ def _detect_artifacts(dist_path: Path, platform_override: Optional[str] = None) 
             return []
     else:
         # Auto-detect based on current platform
-        if IS_MACOS:
+        if IS_MACOS():
             patterns = ["*.dmg"]
-        elif IS_WINDOWS:
+        elif IS_WINDOWS():
             patterns = ["*.exe", "*.zip"]
         else:  # Linux
             patterns = ["*.AppImage", "*.deb"]
