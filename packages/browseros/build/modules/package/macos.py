@@ -9,7 +9,7 @@ import shutil
 from pathlib import Path
 from typing import Optional, List
 from ...common.context import BuildContext
-from ...utils import run_command, log_info, log_error, log_success
+from ...common.utils import run_command, log_info, log_error, log_success
 
 
 def package(ctx: BuildContext) -> bool:

@@ -6,7 +6,7 @@ Linux doesn't require code signing like macOS/Windows
 
 from typing import List
 from ...common.context import BuildContext
-from ...utils import log_info, log_warning
+from ...common.utils import log_info, log_warning
 
 
 def sign(ctx: BuildContext) -> bool:

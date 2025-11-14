@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 from ...common.context import BuildContext
 from ..extract.utils import get_commit_changed_files, run_git_command
-from ...utils import log_info, log_error, log_success, log_warning
+from ...common.utils import log_info, log_error, log_success, log_warning
 
 
 def add_feature(ctx: BuildContext, feature_name: str, commit: str, description: Optional[str] = None) -> bool:

@@ -9,8 +9,8 @@ import sys
 import shutil
 from pathlib import Path
 from typing import List
-from ..common.context import BuildContext
-from ..common.utils import run_command, log_info, log_error, log_success, log_warning
+from ...common.context import BuildContext
+from ...common.utils import run_command, log_info, log_error, log_success, log_warning
 
 
 def merge_architectures(
@@ -48,9 +48,9 @@ def merge_architectures(
 
     # Find universalizer script
     if universalizer_script is None:
-        # Try to find it in the package module directory
+        # Try to find it in the same package module directory
         current_dir = Path(__file__).parent
-        universalizer_script = current_dir / "package" / "universalizer_patched.py"
+        universalizer_script = current_dir / "universalizer_patched.py"
 
     if not universalizer_script.exists():
         log_error(f"Universalizer script not found: {universalizer_script}")
@@ -172,7 +172,7 @@ def merge_sign_package(
         log_info("=" * 70)
 
         try:
-            from .sign import sign_app
+            from ..sign import sign_app
 
             ctx = create_minimal_context(output_path, chromium_src, root_dir)
             if not sign_app(ctx, create_dmg=False):
@@ -195,7 +195,7 @@ def merge_sign_package(
         log_info("=" * 70)
 
         try:
-            from .package import create_dmg
+            from . import create_dmg
 
             ctx = create_minimal_context(output_path, chromium_src, root_dir)
 
@@ -271,12 +271,12 @@ def handle_merge_command(
         return False
 
     # Get root_dir from where this module is located
-    root_dir = Path(__file__).parent.parent.parent
+    root_dir = Path(__file__).parent.parent.parent.parent
     log_info(f"📂 Using root directory: {root_dir}")
 
     # Auto-generate output path in chromium source
     # Get the app name from BuildContext
-    from context import BuildContext
+    from ...common.context import BuildContext
 
     temp_ctx = BuildContext(
         root_dir=root_dir,

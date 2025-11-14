@@ -3,7 +3,7 @@ Platform-specific signing module for BrowserOS
 Automatically imports the correct signing functions based on the platform
 """
 
-from ...utils import IS_MACOS, IS_WINDOWS, IS_LINUX
+from ...common.utils import IS_MACOS, IS_WINDOWS, IS_LINUX
 
 # Import platform-specific functions
 if IS_MACOS:
@@ -32,12 +32,12 @@ elif IS_LINUX:
 else:
     # Fallback for unknown platforms
     def sign(ctx):
-        from ...utils import log_warning
+        from ...common.utils import log_warning
         log_warning(f"Signing not implemented for this platform")
         return True
 
     def sign_universal(contexts):
-        from ...utils import log_warning
+        from ...common.utils import log_warning
         log_warning(f"Universal signing not implemented for this platform")
         return True
 

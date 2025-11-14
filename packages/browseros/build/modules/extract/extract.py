@@ -25,7 +25,7 @@ from .utils import (
     get_commit_info,
     get_commit_changed_files,
 )
-from ...utils import log_info, log_error, log_success, log_warning
+from ...common.utils import log_info, log_error, log_success, log_warning
 
 
 @click.group(name="extract")

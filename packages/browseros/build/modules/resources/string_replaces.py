@@ -5,8 +5,8 @@ String replacement module for BrowserOS build system
 
 import re
 from pathlib import Path
-from ..common.context import BuildContext
-from ..common.utils import log_info, log_success, log_error, log_warning
+from ...common.context import BuildContext
+from ...common.utils import log_info, log_success, log_error, log_warning
 
 
 # Strings we want to replace but that we also replace automatically

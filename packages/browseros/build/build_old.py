@@ -42,16 +42,15 @@ from .common.utils import (
 )
 
 # Import modules
-from .modules.clean import clean
-from .modules.git import setup_git, setup_sparkle
-from .modules.patches import apply_patches
-from .modules.resources import copy_resources
-from .modules.chromium_replace import replace_chromium_files, add_file_to_replacements
-from .modules.string_replaces import apply_string_replacements
-from .modules.inject import inject_version
-from .modules.configure import configure
+from .modules.setup.clean import clean
+from .modules.setup.git import setup_git, setup_sparkle
+from .modules.patches.patches import apply_patches
+from .modules.resources.resources import copy_resources
+from .modules.resources.chromium_replace import replace_chromium_files, add_file_to_replacements
+from .modules.resources.string_replaces import apply_string_replacements
+from .modules.setup.configure import configure
 from .modules.compile import build
-from .modules.gcs import upload_package_artifacts, upload_signed_artifacts, handle_upload_dist
+from .modules.upload import upload_package_artifacts, upload_signed_artifacts, handle_upload_dist
 
 # Platform-specific imports - Now using new modular structure
 from .modules.sign import sign, sign_universal, check_signing_environment
@@ -59,7 +58,8 @@ from .modules.package import package, package_universal
 
 # Platform-specific post-build
 if IS_MACOS:
-    from .modules.postbuild import run_postbuild
+    def run_postbuild(ctx: BuildContext) -> None:
+        log_warning("Post-build tasks are not implemented for macOS anymore")
 elif IS_WINDOWS:
     def run_postbuild(ctx: BuildContext) -> None:
         log_warning("Post-build tasks are not implemented for Windows yet")
@@ -377,7 +377,7 @@ def build_main(
             log_info(f"{'='*60}")
 
             # Import merge function
-            from modules.merge import merge_architectures
+            from modules.package.merge import merge_architectures
 
             # Get paths for the built apps
             arch1_app = built_contexts[0].get_app_path()
@@ -664,7 +664,7 @@ def main(
 
     # Handle merge command
     if merge:
-        from modules.merge import handle_merge_command
+        from modules.package.merge import handle_merge_command
 
         arch1_path, arch2_path = merge
 

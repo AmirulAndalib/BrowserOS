@@ -3,7 +3,7 @@ Platform-specific packaging module for BrowserOS
 Automatically imports the correct packaging functions based on the platform
 """
 
-from ...utils import IS_MACOS, IS_WINDOWS, IS_LINUX
+from ...common.utils import IS_MACOS, IS_WINDOWS, IS_LINUX
 
 # Import platform-specific functions
 if IS_MACOS:
@@ -31,12 +31,12 @@ elif IS_LINUX:
 else:
     # Fallback for unknown platforms
     def package(ctx):
-        from ...utils import log_warning
+        from ...common.utils import log_warning
         log_warning(f"Packaging not implemented for this platform")
         return True
 
     def package_universal(contexts):
-        from ...utils import log_warning
+        from ...common.utils import log_warning
         log_warning(f"Universal packaging not implemented for this platform")
         return True
 
