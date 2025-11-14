@@ -1,0 +1,34 @@
+# BrowserOS Quick Build Pipeline
+# Minimal configuration for rapid iteration during development
+
+name: quick-build
+description: "Fast incremental build - no clean, sync, or patches"
+
+# Single architecture for speed
+matrix:
+  architectures: [x64]  # Change via --arch CLI flag
+  universal: false
+
+# Environment variables
+env:
+  GN_FLAGS: build/config/gn/flags.${PLATFORM:-macos}.debug.gn
+  PYTHONPATH: scripts
+
+# Minimal steps - assumes patches already applied
+steps:
+  - setup-env
+
+  # Just configure and build - no patches or clean
+  - configure:
+      gn_flags: "${GN_FLAGS}"
+      is_debug: true
+      use_goma: true  # Use build cache if available
+  - build
+
+# No notifications or uploads
+notifications:
+  slack: false
+
+# Usage:
+# browseros build run --config cli/config/quick-build.yaml --chromium-src /path/to/src
+# Perfect for iterative development when you just changed some code and want to rebuild quickly

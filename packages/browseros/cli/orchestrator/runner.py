@@ -38,6 +38,7 @@ class PipelineRunner:
     def __init__(self, pipeline_ctx: PipelineContext):
         self.pipeline_ctx = pipeline_ctx
         self.event_handlers: Dict[RunnerEvent, list] = {event: [] for event in RunnerEvent}
+        self.metadata: Dict[str, Any] = {}  # Additional metadata for notifications
 
     def add_handler(self, event: RunnerEvent, handler: Callable[[EventData], None]):
         """Register an event handler."""
@@ -45,7 +46,11 @@ class PipelineRunner:
 
     def execute(self, plan: BuildPlan, ctx: BuildContext) -> StepResult:
         """Execute a build plan."""
-        self._emit(RunnerEvent.PIPELINE_START, metadata={"plan": plan.pipeline_name})
+        start_metadata = {
+            "plan": plan.pipeline_name,
+            **self.metadata  # Include runner metadata
+        }
+        self._emit(RunnerEvent.PIPELINE_START, metadata=start_metadata)
 
         overall_success = True
         overall_message = ""

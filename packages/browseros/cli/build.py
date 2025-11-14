@@ -40,14 +40,30 @@ def run(
 ):
     """Run a build pipeline from configuration."""
 
-    # Load configuration first to check for chromium_src
+    # Load configuration
     loader = ConfigLoader()
-    pipeline_config = loader.load_config(config)
+    full_config = loader.load_config(config)
+
+    # Extract pipeline name (default to first pipeline or use --pipeline flag later)
+    pipeline_name = None
+    if "pipelines" in full_config:
+        pipeline_name = list(full_config["pipelines"].keys())[0]
+        pipeline_config = loader.get_pipeline_config(full_config, pipeline_name)
+    else:
+        # Old config format
+        pipeline_config = full_config
 
     # Get chromium_src from config if not provided via CLI
-    if not chromium_src and "paths" in pipeline_config and "chromium_src" in pipeline_config["paths"]:
-        chromium_src = Path(pipeline_config["paths"]["chromium_src"])
-        typer.echo(f"Using chromium_src from config: {chromium_src}")
+    if not chromium_src:
+        # Check new location
+        if "paths" in pipeline_config and "chromium_src" in pipeline_config["paths"]:
+            chromium_src = Path(pipeline_config["paths"]["chromium_src"])
+        # Check old location
+        elif "paths" in full_config and "chromium_src" in full_config["paths"]:
+            chromium_src = Path(full_config["paths"]["chromium_src"])
+
+        if chromium_src:
+            typer.echo(f"Using chromium_src from config: {chromium_src}")
 
     # Enforce chromium_src requirement
     if not chromium_src:
@@ -72,27 +88,35 @@ def run(
 
     # Apply verb flags to determine which modules to run
     selected_modules = []
-    if clean:
-        selected_modules.append("clean")
-    if sync:
-        selected_modules.append("git-sync")
-    if patch:
-        selected_modules.extend(["patch-chromium", "patch-strings", "patch-sparkle", "patch-apply"])
-    if resources:
-        selected_modules.append("copy-resources")
-    if build:
-        selected_modules.extend(["configure", "build"])
-    if sign:
-        # Platform-specific signing will be handled by plan builder
-        selected_modules.append("sign")
-    if package:
-        selected_modules.append("package")
-    if upload:
-        selected_modules.append("upload-gcs")
+
+    # If any verb flags are set, use them
+    if any([clean, sync, patch, resources, build, sign, package, upload]):
+        if clean:
+            selected_modules.append("clean")
+        if sync:
+            selected_modules.extend(["setup-env", "git-sync"])
+        if patch:
+            selected_modules.extend([
+                "patch-chromium", "patch-strings", "patch-sparkle",
+                "patch-apply"
+            ])
+        if resources:
+            selected_modules.append("copy-resources")
+        if build:
+            selected_modules.extend(["configure", "build"])
+        if sign:
+            # Platform-specific signing will be handled by plan builder
+            selected_modules.append("sign")
+        if package:
+            selected_modules.append("package")
+        if upload:
+            selected_modules.append("upload-gcs")
 
     # Override with explicit steps if provided
     if steps:
         selected_modules = steps
+    elif only:
+        selected_modules = only
 
     # Create build context
     build_ctx = BuildContext(
@@ -107,10 +131,22 @@ def run(
 
     # Build execution plan
     plan_builder = PlanBuilder()
-    plan = plan_builder.build_plan(pipeline_config, build_ctx)
+    plan = plan_builder.build_plan(full_config, build_ctx)
 
-    # Execute plan
+    # Execute plan with notifications
     runner = PipelineRunner(pipeline_ctx)
+
+    # Setup Slack notifications if enabled
+    from cli.orchestrator.notifications import setup_slack_notifications
+    slack_enabled = slack or pipeline_config.get("notifications", {}).get("slack", False)
+    setup_slack_notifications(runner, enabled=slack_enabled)
+
+    # Add metadata for notifications
+    runner.metadata = {
+        "build_type": build_type,
+        "architectures": [arch] if arch else pipeline_config.get("matrix", {}).get("architectures", ["unknown"])
+    }
+
     result = runner.execute(plan, build_ctx)
 
     if not result.success:

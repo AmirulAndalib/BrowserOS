@@ -1,0 +1,65 @@
+# BrowserOS Windows Release Pipeline
+# Production configuration for building, signing, and distributing Windows releases
+
+name: windows-release
+description: "Production release build for Windows"
+
+# Build configuration
+matrix:
+  architectures: [x64]
+  universal: false  # Windows doesn't support universal binaries
+
+# Environment variables
+env:
+  GN_FLAGS: build/config/gn/flags.windows.release.gn
+  PYTHONPATH: scripts
+  DEPOT_TOOLS_WIN_TOOLCHAIN: "0"
+
+# Build steps - executed in order
+steps:
+  # Preparation
+  - clean
+  - setup-env:
+      check_signing: true  # Verify SSL.com eSigner environment
+  - git-sync
+
+  # Apply patches and modifications
+  - patch-chromium
+  - patch-strings
+  - patch-apply  # No Sparkle on Windows
+  - copy-resources
+
+  # Build
+  - configure:
+      gn_flags: "${GN_FLAGS}"
+      build_mini_installer: true  # Build installer package
+  - build
+
+  # Sign and package
+  - sign-windows:
+      certificate_name: "${WINDOWS_CERTIFICATE_NAME:-FELAFAX, INC.}"
+  - package-windows:
+      create_installer: true
+      create_portable: true  # Also create portable ZIP
+  - sign-windows-installer  # Sign the installer package
+
+  # Distribution
+  - upload-gcs
+
+# Required environment variables for SSL.com eSigner
+signing:
+  certificate_name: "FELAFAX, INC."
+  require_env_vars:
+    - CODE_SIGN_TOOL_PATH
+    - ESIGNER_USERNAME
+    - ESIGNER_PASSWORD
+    - ESIGNER_TOTP_SECRET
+    - ESIGNER_CREDENTIAL_ID
+
+# Notifications
+notifications:
+  slack: true  # Send build status to Slack
+
+# Paths (can be overridden via CLI)
+paths:
+  # chromium_src: C:/chromium/src  # Set via --chromium-src

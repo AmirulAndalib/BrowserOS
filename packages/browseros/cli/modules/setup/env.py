@@ -77,7 +77,8 @@ class SetupEnvModule(BuildModule):
 
     def _should_check_signing(self, ctx: BuildContext, step_cfg: Dict[str, Any]) -> bool:
         """Determine if signing environment should be checked."""
-        # Check if any signing modules are in the pipeline
+        # Only check if explicitly requested in config
+        # This prevents failing in dry-run or when sign modules aren't included
         return step_cfg.get("check_signing", False)
 
     def _check_macos_signing_environment(self) -> Dict[str, Any]:

@@ -1,0 +1,44 @@
+# BrowserOS Debug Build Pipeline
+# Minimal configuration for development builds (all platforms)
+
+name: debug-build
+description: "Development build for testing"
+
+# Single architecture for faster builds
+matrix:
+  architectures: [x64]  # Change via --arch CLI flag
+  universal: false
+
+# Environment variables
+env:
+  GN_FLAGS: build/config/gn/flags.${PLATFORM:-macos}.debug.gn
+  PYTHONPATH: scripts
+
+# Minimal steps for development
+steps:
+  # Preparation
+  - clean
+  - setup-env  # No signing check for debug builds
+  - git-sync
+
+  # Apply patches
+  - patch-chromium
+  - patch-strings
+  - patch-sparkle:
+      when: "platform == 'macos'"
+  - patch-apply
+  - copy-resources
+
+  # Build only - no packaging or signing
+  - configure:
+      gn_flags: "${GN_FLAGS}"
+      is_debug: true
+  - build
+
+# No notifications for debug builds
+notifications:
+  slack: false
+
+# Paths (can be overridden via CLI)
+paths:
+  # chromium_src: Set via --chromium-src

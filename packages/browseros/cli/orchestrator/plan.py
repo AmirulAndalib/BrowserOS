@@ -46,8 +46,21 @@ class PlanBuilder:
         """Build execution plan from pipeline config and context."""
         from cli.modules.registry import get_module
 
+        # Get the actual pipeline config if it's nested
+        pipeline_config = self._extract_pipeline_config(config, ctx)
+
+        # Apply environment variables to context
+        if "env" in pipeline_config:
+            for key, value in pipeline_config["env"].items():
+                # Expand ${VAR} references
+                if isinstance(value, str) and "${" in value:
+                    import re
+                    pattern = re.compile(r'\$\{(\w+)\}')
+                    value = pattern.sub(lambda m: ctx.env_overrides.get(m.group(1), m.group(0)), value)
+                ctx.env_overrides[key] = value
+
         steps = []
-        step_configs = self._get_steps_from_config(config, ctx)
+        step_configs = self._get_steps_from_config(pipeline_config, ctx)
 
         for idx, step_config in enumerate(step_configs):
             if isinstance(step_config, str):
@@ -61,7 +74,7 @@ class PlanBuilder:
                 else:
                     # Single key dict like {"sign-mac": {...}}
                     module_name = list(step_config.keys())[0]
-                    module_config = step_config[module_name]
+                    module_config = step_config[module_name] if isinstance(step_config[module_name], dict) else {}
             else:
                 continue
 
@@ -97,23 +110,31 @@ class PlanBuilder:
         plan = BuildPlan(
             steps=steps,
             context=ctx,
-            pipeline_name=config.get("name", "unnamed")
+            pipeline_name=pipeline_config.get("description", config.get("name", "unnamed"))
         )
 
         return plan
 
+    def _extract_pipeline_config(self, config: Dict[str, Any], ctx: BuildContext) -> Dict[str, Any]:
+        """Extract the actual pipeline configuration."""
+        # If config has 'pipelines' key, extract the specific pipeline
+        if "pipelines" in config:
+            pipelines = config["pipelines"]
+            # Get the first pipeline if not specified
+            if pipelines:
+                pipeline_name = list(pipelines.keys())[0]
+                return pipelines[pipeline_name]
+
+        # Otherwise return the config as-is
+        return config
+
     def _get_steps_from_config(self, config: Dict[str, Any], ctx: BuildContext) -> List[Any]:
         """Extract steps from configuration."""
-        # Direct steps from config
-        if "steps" in config:
+        # Only support new format: steps must be a list
+        if "steps" in config and isinstance(config["steps"], list):
             return config["steps"]
 
-        # If no explicit steps, check for pipeline name
-        if "pipelines" in config:
-            # This shouldn't happen with proper config loading
-            # but handle it gracefully
-            return []
-
+        # No steps defined
         return []
 
     def _resolve_platform_module(self, module_name: str, platform: str) -> str:

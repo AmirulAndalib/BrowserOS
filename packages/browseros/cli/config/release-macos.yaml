@@ -1,0 +1,62 @@
+# BrowserOS macOS Release Pipeline
+# Production configuration for building, signing, and distributing macOS releases
+
+name: macos-release
+description: "Production release build for macOS"
+
+# Build matrix for universal binary support
+matrix:
+  architectures: [arm64, x64]
+  universal: true
+
+# Environment variables
+env:
+  GN_FLAGS: build/config/gn/flags.macos.release.gn
+  PYTHONPATH: scripts
+
+# Build steps - executed in order
+steps:
+  # Preparation
+  - clean
+  - setup-env:
+      check_signing: true  # Verify signing environment is configured
+  - git-sync
+
+  # Apply patches and modifications
+  - patch-chromium
+  - patch-strings
+  - patch-sparkle  # macOS-specific auto-update framework
+  - patch-apply
+  - copy-resources
+
+  # Build
+  - configure:
+      gn_flags: "${GN_FLAGS}"
+  - build
+
+  # Sign and package
+  - sign-mac  # Sign the app bundle
+  - package-mac  # Create DMG
+
+  # Universal binary (runs only when arch == universal)
+  - sign-mac-universal:
+      when: "arch == 'universal'"
+
+  # Distribution
+  - upload-gcs
+
+# Required environment variables for signing
+signing:
+  require_env_vars:
+    - MACOS_CERTIFICATE_NAME
+    - PROD_MACOS_NOTARIZATION_APPLE_ID
+    - PROD_MACOS_NOTARIZATION_TEAM_ID
+    - PROD_MACOS_NOTARIZATION_PWD
+
+# Notifications
+notifications:
+  slack: true  # Send build status to Slack
+
+# Paths (can be overridden via CLI)
+paths:
+  # chromium_src: /path/to/chromium/src  # Set via --chromium-src

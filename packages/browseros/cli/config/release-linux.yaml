@@ -1,0 +1,52 @@
+# BrowserOS Linux Release Pipeline
+# Production configuration for building and distributing Linux releases
+
+name: linux-release
+description: "Production release build for Linux"
+
+# Build configuration
+matrix:
+  architectures: [x64]
+  universal: false  # Linux doesn't support universal binaries
+
+# Environment variables
+env:
+  GN_FLAGS: build/config/gn/flags.linux.release.gn
+  PYTHONPATH: scripts
+
+# Build steps - executed in order
+steps:
+  # Preparation
+  - clean
+  - setup-env  # No signing check needed for Linux
+  - git-sync
+
+  # Apply patches and modifications
+  - patch-chromium
+  - patch-strings
+  - patch-apply  # No Sparkle on Linux
+  - copy-resources
+
+  # Build
+  - configure:
+      gn_flags: "${GN_FLAGS}"
+  - build
+
+  # Package (no signing required on Linux)
+  - package-linux:
+      appimage:
+        compression: gzip
+        architecture: x86_64
+      create_deb: true  # Create .deb package
+      create_rpm: false  # Optional RPM package
+
+  # Distribution
+  - upload-gcs
+
+# Notifications
+notifications:
+  slack: true  # Send build status to Slack
+
+# Paths (can be overridden via CLI)
+paths:
+  # chromium_src: /home/user/chromium/src  # Set via --chromium-src
