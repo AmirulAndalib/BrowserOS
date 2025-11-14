@@ -7,8 +7,8 @@ Injects nxtscape browser version into extension manifests
 import json
 from pathlib import Path
 from typing import List, Dict, Any
-from context import BuildContext
-from utils import log_info, log_error, log_success, join_paths
+from ..context import BuildContext
+from ..utils import log_info, log_error, log_success, join_paths
 
 
 def inject_version(ctx: BuildContext) -> bool:

@@ -9,8 +9,8 @@ import sys
 import shutil
 from pathlib import Path
 from typing import List
-from context import BuildContext
-from utils import run_command, log_info, log_error, log_success, log_warning
+from ..context import BuildContext
+from ..utils import run_command, log_info, log_error, log_success, log_warning
 
 
 def merge_architectures(

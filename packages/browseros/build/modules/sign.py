@@ -11,8 +11,8 @@ import glob
 import shutil
 from pathlib import Path
 from typing import Optional, List, Dict, Tuple
-from context import BuildContext
-from utils import (
+from ..context import BuildContext
+from ..utils import (
     run_command as utils_run_command,
     log_info,
     log_error,

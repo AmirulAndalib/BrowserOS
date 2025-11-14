@@ -9,8 +9,8 @@ import click
 import sys
 from pathlib import Path
 from typing import Optional, List, Dict
-from context import BuildContext
-from modules.dev_cli.utils import (
+from ...context import BuildContext
+from ..dev_cli.utils import (
     FilePatch,
     FileOperation,
     GitError,
@@ -25,7 +25,7 @@ from modules.dev_cli.utils import (
     get_commit_info,
     get_commit_changed_files,
 )
-from utils import log_info, log_error, log_success, log_warning
+from ...utils import log_info, log_error, log_success, log_warning
 
 
 @click.group(name="extract")

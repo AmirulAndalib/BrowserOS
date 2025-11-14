@@ -6,7 +6,7 @@ Build context dataclass to hold all build state
 import time
 from pathlib import Path
 from dataclasses import dataclass
-from utils import (
+from .utils import (
     log_error,
     log_warning,
     get_platform,

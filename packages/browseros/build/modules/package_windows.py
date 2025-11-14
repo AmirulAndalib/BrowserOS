@@ -10,8 +10,8 @@ import shutil
 import zipfile
 from pathlib import Path
 from typing import Optional, List
-from context import BuildContext
-from utils import (
+from ..context import BuildContext
+from ..utils import (
     run_command,
     log_info,
     log_error,
