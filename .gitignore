@@ -4,7 +4,7 @@
 **/env
 **/logs
 **/old-scripts
-**/__pycache__/**
+**/__pycache__/
 nxtscape-cli-access.json
 gclient.json
 .env
