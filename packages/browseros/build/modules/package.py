@@ -8,8 +8,8 @@ import sys
 import shutil
 from pathlib import Path
 from typing import Optional, List
-from context import BuildContext
-from utils import run_command, log_info, log_error, log_success
+from ..context import BuildContext
+from ..utils import run_command, log_info, log_error, log_success
 
 
 def package(ctx: BuildContext) -> bool:

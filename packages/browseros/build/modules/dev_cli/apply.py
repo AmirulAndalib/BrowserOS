@@ -8,9 +8,9 @@ import click
 import yaml
 from pathlib import Path
 from typing import List, Tuple, Optional
-from context import BuildContext
-from modules.dev_cli.utils import run_git_command, GitError
-from utils import log_info, log_error, log_success, log_warning
+from ...context import BuildContext
+from ..dev_cli.utils import run_git_command, GitError
+from ...utils import log_info, log_error, log_success, log_warning
 
 
 # Core Functions - Can be called programmatically or from CLI

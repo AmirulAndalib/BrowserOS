@@ -11,7 +11,7 @@ import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-from utils import log_info, log_warning, log_error, get_platform
+from ..utils import log_info, log_warning, log_error, get_platform
 
 
 def get_slack_webhook_url() -> Optional[str]:

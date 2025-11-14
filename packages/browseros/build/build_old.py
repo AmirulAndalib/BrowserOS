@@ -28,9 +28,9 @@ def load_env_file():
 # Load .env file on import
 load_env_file()
 
-# Import shared components
-from context import BuildContext
-from utils import (
+# Import shared components (relative imports for package mode)
+from .context import BuildContext
+from .utils import (
     load_config,
     log_info,
     log_warning,
@@ -42,24 +42,24 @@ from utils import (
 )
 
 # Import modules
-from modules.clean import clean
-from modules.git import setup_git, setup_sparkle
-from modules.patches import apply_patches
-from modules.resources import copy_resources
-from modules.chromium_replace import replace_chromium_files, add_file_to_replacements
-from modules.string_replaces import apply_string_replacements
-from modules.inject import inject_version
-from modules.configure import configure
-from modules.compile import build
-from modules.gcs import upload_package_artifacts, upload_signed_artifacts, handle_upload_dist
+from .modules.clean import clean
+from .modules.git import setup_git, setup_sparkle
+from .modules.patches import apply_patches
+from .modules.resources import copy_resources
+from .modules.chromium_replace import replace_chromium_files, add_file_to_replacements
+from .modules.string_replaces import apply_string_replacements
+from .modules.inject import inject_version
+from .modules.configure import configure
+from .modules.compile import build
+from .modules.gcs import upload_package_artifacts, upload_signed_artifacts, handle_upload_dist
 
 # Platform-specific imports
 if IS_MACOS:
-    from modules.sign import sign, sign_universal, check_signing_environment
-    from modules.package import package, package_universal
-    from modules.postbuild import run_postbuild
+    from .modules.sign import sign, sign_universal, check_signing_environment
+    from .modules.package import package, package_universal
+    from .modules.postbuild import run_postbuild
 elif IS_WINDOWS:
-    from modules.package_windows import (
+    from .modules.package_windows import (
         package,
         package_universal,
         sign_binaries as sign,
@@ -74,7 +74,7 @@ elif IS_WINDOWS:
         log_warning("Post-build tasks are not implemented for Windows yet")
 
 elif IS_LINUX:
-    from modules.package_linux import package, package_universal, sign_binaries as sign
+    from .modules.package_linux import package, package_universal, sign_binaries as sign
 
     # Linux doesn't have universal signing
     def sign_universal(contexts: list[BuildContext]) -> bool:
@@ -106,7 +106,7 @@ else:
         log_warning("Post-build tasks are not implemented for this platform")
 
 
-from modules.slack import (
+from .modules.slack import (
     notify_build_started,
     notify_build_step,
     notify_build_success,

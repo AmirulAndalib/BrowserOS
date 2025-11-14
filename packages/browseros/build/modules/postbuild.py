@@ -5,8 +5,8 @@ Post-build module to fix Info.plist and other post-processing tasks
 
 import plistlib
 from pathlib import Path
-from context import BuildContext
-from utils import log_info, log_success, log_error
+from ..context import BuildContext
+from ..utils import log_info, log_success, log_error
 
 
 def add_sparkle_keys_to_info_plist(ctx: BuildContext):

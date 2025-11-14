@@ -8,9 +8,9 @@ import click
 import yaml
 from pathlib import Path
 from typing import Dict, List
-from context import BuildContext
-from modules.dev_cli.utils import get_commit_changed_files, run_git_command
-from utils import log_info, log_error, log_success, log_warning
+from ...context import BuildContext
+from ..dev_cli.utils import get_commit_changed_files, run_git_command
+from ...utils import log_info, log_error, log_success, log_warning
 
 
 @click.group(name="feature")
