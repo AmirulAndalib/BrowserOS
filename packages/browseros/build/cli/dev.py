@@ -49,6 +49,8 @@ app = Typer(
     name="dev",
     help="Chromium patch management tool",
     no_args_is_help=True,
+    pretty_exceptions_enable=False,
+    pretty_exceptions_show_locals=False,
 )
 
 # State class to hold global options
@@ -128,9 +130,24 @@ def status():
 
 
 # Create sub-apps for extract, apply, and feature commands
-extract_app = Typer(name="extract", help="Extract patches from commits")
-apply_app = Typer(name="apply", help="Apply patches to Chromium")
-feature_app = Typer(name="feature", help="Manage features")
+extract_app = Typer(
+    name="extract",
+    help="Extract patches from commits",
+    pretty_exceptions_enable=False,
+    pretty_exceptions_show_locals=False,
+)
+apply_app = Typer(
+    name="apply",
+    help="Apply patches to Chromium",
+    pretty_exceptions_enable=False,
+    pretty_exceptions_show_locals=False,
+)
+feature_app = Typer(
+    name="feature",
+    help="Manage features",
+    pretty_exceptions_enable=False,
+    pretty_exceptions_show_locals=False,
+)
 
 # Add sub-apps to main app
 app.add_typer(extract_app, name="extract")

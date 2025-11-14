@@ -16,10 +16,17 @@ import typer
 from .cli import build
 
 # Create main app
-app = typer.Typer(help="BrowserOS Build System")
+app = typer.Typer(
+    help="BrowserOS Build System",
+    pretty_exceptions_enable=False,
+    pretty_exceptions_show_locals=False
+)
 
 # Create build sub-app and register build.main as its callback
-build_app = typer.Typer()
+build_app = typer.Typer(
+    pretty_exceptions_enable=False,
+    pretty_exceptions_show_locals=False
+)
 build_app.callback(invoke_without_command=True)(build.main)
 
 # Add build as a subcommand
