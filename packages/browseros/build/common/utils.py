@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Optional, List, Dict, Union
 from datetime import datetime
 
-# Import logging functions from logger module
+# Import logging functions from logger module (will use our platform detection)
 from .logger import (
     log_info,
     log_warning,
@@ -21,10 +21,21 @@ from .logger import (
     _log_to_file,  # Internal function for run_command
 )
 
-# Platform detection
-IS_WINDOWS = sys.platform == "win32"
-IS_MACOS = sys.platform == "darwin"
-IS_LINUX = sys.platform.startswith("linux")
+
+# Platform detection functions
+def IS_WINDOWS() -> bool:
+    """Check if running on Windows"""
+    return sys.platform == "win32"
+
+
+def IS_MACOS() -> bool:
+    """Check if running on macOS"""
+    return sys.platform == "darwin"
+
+
+def IS_LINUX() -> bool:
+    """Check if running on Linux"""
+    return sys.platform.startswith("linux")
 
 
 def run_command(
@@ -126,25 +137,25 @@ def load_config(config_path: Path) -> Dict:
 # Platform-specific utilities
 def get_platform() -> str:
     """Get platform name in a consistent format"""
-    if IS_WINDOWS:
+    if IS_WINDOWS():
         return "windows"
-    elif IS_MACOS:
+    elif IS_MACOS():
         return "macos"
-    elif IS_LINUX:
+    elif IS_LINUX():
         return "linux"
     return "unknown"
 
 
 def get_platform_arch() -> str:
     """Get default architecture for current platform"""
-    if IS_WINDOWS:
+    if IS_WINDOWS():
         return "x64"
-    elif IS_MACOS:
+    elif IS_MACOS():
         # macOS can be arm64 or x64
         import platform
 
         return "arm64" if platform.machine() == "arm64" else "x64"
-    elif IS_LINUX:
+    elif IS_LINUX():
         # Linux can be x64 or arm64
         import platform
 
@@ -161,14 +172,14 @@ def get_platform_arch() -> str:
 
 def get_executable_extension() -> str:
     """Get executable file extension for current platform"""
-    return ".exe" if IS_WINDOWS else ""
+    return ".exe" if IS_WINDOWS() else ""
 
 
 def get_app_extension() -> str:
     """Get application bundle extension for current platform"""
-    if IS_MACOS:
+    if IS_MACOS():
         return ".app"
-    elif IS_WINDOWS:
+    elif IS_WINDOWS():
         return ".exe"
     return ""
 
@@ -176,7 +187,7 @@ def get_app_extension() -> str:
 def normalize_path(path: Union[str, Path]) -> Path:
     """Normalize path for current platform"""
     path = Path(path)
-    if IS_WINDOWS:
+    if IS_WINDOWS():
         # Convert forward slashes to backslashes on Windows
         return Path(str(path).replace("/", "\\"))
     return path
@@ -201,7 +212,7 @@ def safe_rmtree(path: Union[str, Path]) -> None:
     if not path.exists():
         return
 
-    if IS_WINDOWS:
+    if IS_WINDOWS():
         # On Windows, use rmdir for junctions and symlinks
         import stat
 

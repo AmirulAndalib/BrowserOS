@@ -77,12 +77,12 @@ class BuildContext:
             self.architecture = get_platform_arch()
 
         # Set platform-specific app names
-        if IS_WINDOWS:
+        if IS_WINDOWS():
             self.CHROMIUM_APP_NAME = f"chrome{get_executable_extension()}"
             self.BROWSEROS_APP_NAME = (
                 f"{self.BROWSEROS_APP_BASE_NAME}{get_executable_extension()}"
             )
-        elif IS_MACOS:
+        elif IS_MACOS():
             self.CHROMIUM_APP_NAME = "Chromium.app"
             self.BROWSEROS_APP_NAME = f"{self.BROWSEROS_APP_BASE_NAME}.app"
         else:
@@ -90,7 +90,7 @@ class BuildContext:
             self.BROWSEROS_APP_NAME = self.BROWSEROS_APP_BASE_NAME.lower()
 
         # Set architecture-specific output directory with platform separator
-        if IS_WINDOWS:
+        if IS_WINDOWS():
             self.out_dir = f"out\\Default_{self.architecture}"
         else:
             self.out_dir = f"out/Default_{self.architecture}"
@@ -256,7 +256,7 @@ class BuildContext:
     def get_app_path(self) -> Path:
         """Get built app path"""
         # For debug builds, check if the app has a different name
-        if self.build_type == "debug" and IS_MACOS:
+        if self.build_type == "debug" and IS_MACOS():
             # Check for debug-branded app name
             debug_app_name = f"{self.BROWSEROS_APP_BASE_NAME} Dev.app"
             debug_app_path = join_paths(self.chromium_src, self.out_dir, debug_app_name)

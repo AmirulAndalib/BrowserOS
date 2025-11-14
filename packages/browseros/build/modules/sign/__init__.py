@@ -6,7 +6,7 @@ Automatically imports the correct signing functions based on the platform
 from ...common.utils import IS_MACOS, IS_WINDOWS, IS_LINUX
 
 # Import platform-specific functions
-if IS_MACOS:
+if IS_MACOS():
     from .macos import (
         sign,
         sign_universal,
@@ -15,14 +15,14 @@ if IS_MACOS:
         notarize_app,
         verify_signature,
     )
-elif IS_WINDOWS:
+elif IS_WINDOWS():
     from .windows import (
         sign,
         sign_binaries,
         sign_universal,
         check_signing_environment,
     )
-elif IS_LINUX:
+elif IS_LINUX():
     from .linux import (
         sign,
         sign_binaries,
@@ -52,7 +52,7 @@ __all__ = [
 ]
 
 # Platform-specific exports
-if IS_MACOS:
+if IS_MACOS():
     __all__.extend(['sign_app', 'notarize_app', 'verify_signature'])
-if IS_WINDOWS:
+if IS_WINDOWS():
     __all__.append('sign_binaries')

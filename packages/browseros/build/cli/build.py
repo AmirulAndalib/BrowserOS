@@ -179,12 +179,12 @@ def main(
     log_info("=" * 50)
 
     # Check signing environment (macOS)
-    if sign_flag and IS_MACOS:
+    if sign_flag and IS_MACOS():
         if not check_signing_environment():
             raise typer.Exit(1)
 
     # Set Windows-specific environment variables
-    if IS_WINDOWS:
+    if IS_WINDOWS():
         os.environ["DEPOT_TOOLS_WIN_TOOLCHAIN"] = "0"
         log_info("🔧 Set DEPOT_TOOLS_WIN_TOOLCHAIN=0 for Windows build")
 
@@ -233,7 +233,7 @@ def main(
             log_info(f"📁 Using Chromium source from config: {chromium_src_path}")
 
         # Get Windows signing certificate name from config
-        if IS_WINDOWS and "signing" in config_data and "certificate_name" in config_data["signing"]:
+        if IS_WINDOWS() and "signing" in config_data and "certificate_name" in config_data["signing"]:
             certificate_name = config_data["signing"]["certificate_name"]
             log_info(f"🔏 Using certificate for signing: {certificate_name}")
 
@@ -309,7 +309,7 @@ def main(
                 apply_string_replacements(ctx)
 
                 # Setup sparkle (macOS only)
-                if IS_MACOS:
+                if IS_MACOS():
                     setup_sparkle(ctx)
                 else:
                     log_info("Skipping Sparkle setup (macOS only)")
@@ -330,7 +330,7 @@ def main(
             if sign_flag:
                 log_info(f"\n🔏 Signing {ctx.architecture} build...")
                 # Pass certificate_name for Windows signing
-                if IS_WINDOWS:
+                if IS_WINDOWS():
                     sign(ctx, certificate_name)
                 else:
                     sign(ctx)

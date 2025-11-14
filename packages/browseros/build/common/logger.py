@@ -43,7 +43,9 @@ def _log_to_file(message: str):
 
 def _sanitize_for_windows(message: str) -> str:
     """Remove non-ASCII characters on Windows to avoid encoding issues"""
-    if sys.platform == "win32":
+    # Import here to avoid circular dependency
+    from .utils import IS_WINDOWS
+    if IS_WINDOWS():
         # Remove all non-ASCII characters
         return "".join(char for char in message if ord(char) < 128)
     return message
@@ -57,7 +59,8 @@ def log_info(message: str):
 
 def log_warning(message: str):
     """Print warning message"""
-    if sys.platform == "win32":
+    from .utils import IS_WINDOWS
+    if IS_WINDOWS():
         print(f"[WARN] {_sanitize_for_windows(message)}")
     else:
         print(f"⚠️ {message}")
@@ -66,7 +69,8 @@ def log_warning(message: str):
 
 def log_error(message: str):
     """Print error message"""
-    if sys.platform == "win32":
+    from .utils import IS_WINDOWS
+    if IS_WINDOWS():
         print(f"[ERROR] {_sanitize_for_windows(message)}")
     else:
         print(f"❌ {message}")
@@ -75,7 +79,8 @@ def log_error(message: str):
 
 def log_success(message: str):
     """Print success message"""
-    if sys.platform == "win32":
+    from .utils import IS_WINDOWS
+    if IS_WINDOWS():
         print(f"[SUCCESS] {_sanitize_for_windows(message)}")
     else:
         print(f"✅ {message}")
@@ -85,7 +90,8 @@ def log_success(message: str):
 def log_debug(message: str, enabled: bool = False):
     """Print debug message if enabled"""
     if enabled:
-        if sys.platform == "win32":
+        from .utils import IS_WINDOWS
+        if IS_WINDOWS():
             print(f"[DEBUG] {_sanitize_for_windows(message)}")
         else:
             print(f"🔍 {message}")
