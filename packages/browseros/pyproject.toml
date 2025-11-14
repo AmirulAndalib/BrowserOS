@@ -15,7 +15,20 @@ dependencies = [
 browseros = "build.browseros:app"
 
 [tool.setuptools]
-packages = ["build", "build.cli", "build.modules", "build.modules.dev_cli"]
+packages = [
+    "build",
+    "build.cli",
+    "build.common",
+    "build.modules",
+    "build.modules.resources",
+    "build.modules.patches",
+    "build.modules.setup",
+    "build.modules.package",
+    "build.modules.sign",
+    "build.modules.extract",
+    "build.modules.apply",
+    "build.modules.feature"
+]
 
 [tool.black]
 line-length = 88
