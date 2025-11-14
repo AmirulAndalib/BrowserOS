@@ -15,10 +15,11 @@ app.add_typer(apply_app, name="apply")
 
 @apply_app.command("all")
 def apply_all(
+    chromium_src: Path = typer.Option(..., "--chromium-src", "-S", help="Path to Chromium source directory"),
     commit: bool = typer.Option(False, "--commit", help="Auto-commit after applying")
 ):
     """Apply all patches (default behavior)."""
-    ctx = _create_dev_context()
+    ctx = _create_dev_context(chromium_src)
 
     from cli.modules.dev.apply import apply_all_patches
     result = apply_all_patches(ctx)
@@ -35,10 +36,11 @@ def apply_all(
 @apply_app.command("feature")
 def apply_feature(
     name: str = typer.Argument(..., help="Feature name from features.yaml"),
+    chromium_src: Path = typer.Option(..., "--chromium-src", "-S", help="Path to Chromium source directory"),
     commit: bool = typer.Option(False, "--commit", help="Auto-commit after applying")
 ):
     """Apply patches for a specific feature defined in features.yaml."""
-    ctx = _create_dev_context()
+    ctx = _create_dev_context(chromium_src)
 
     from cli.modules.dev.apply import apply_feature_patches
     result = apply_feature_patches(ctx, name)
@@ -54,10 +56,11 @@ def apply_feature(
 
 @apply_app.command("selective")
 def apply_selective(
-    patches: List[str] = typer.Argument(..., help="Specific patch IDs to apply")
+    patches: List[str] = typer.Argument(..., help="Specific patch IDs to apply"),
+    chromium_src: Path = typer.Option(..., "--chromium-src", "-S", help="Path to Chromium source directory")
 ):
     """Apply only selected patches by ID."""
-    ctx = _create_dev_context()
+    ctx = _create_dev_context(chromium_src)
 
     from cli.modules.dev.apply import apply_selective_patches
     result = apply_selective_patches(ctx, patches)
@@ -71,10 +74,11 @@ def apply_selective(
 
 @apply_app.command("overwrite")
 def apply_overwrite(
+    chromium_src: Path = typer.Option(..., "--chromium-src", "-S", help="Path to Chromium source directory"),
     force: bool = typer.Option(False, "--force", help="Force overwrite without confirmation")
 ):
     """Force overwrite existing patches."""
-    ctx = _create_dev_context()
+    ctx = _create_dev_context(chromium_src)
 
     if not force:
         confirm = typer.confirm("This will overwrite existing patches. Continue?")
@@ -92,9 +96,11 @@ def apply_overwrite(
 
 
 @app.command("list")
-def list_patches():
+def list_patches(
+    chromium_src: Path = typer.Option(..., "--chromium-src", "-S", help="Path to Chromium source directory")
+):
     """List available patches."""
-    ctx = _create_dev_context()
+    ctx = _create_dev_context(chromium_src)
 
     from cli.modules.dev.patches import list_available_patches
     patches = list_available_patches(ctx)
@@ -110,10 +116,11 @@ def list_patches():
 
 @app.command("reset")
 def reset_patches(
+    chromium_src: Path = typer.Option(..., "--chromium-src", "-S", help="Path to Chromium source directory"),
     hard: bool = typer.Option(False, "--hard", help="Hard reset, removing all changes")
 ):
     """Reset patch state."""
-    ctx = _create_dev_context()
+    ctx = _create_dev_context(chromium_src)
 
     if hard:
         confirm = typer.confirm("This will remove all patch changes. Continue?")
@@ -130,8 +137,13 @@ def reset_patches(
         raise typer.Exit(1)
 
 
-def _create_dev_context() -> BuildContext:
+def _create_dev_context(chromium_src: Path) -> BuildContext:
     """Create a development context for patch operations."""
+    # Validate chromium_src path exists
+    if not chromium_src.exists():
+        typer.echo(f"Error: Chromium source directory does not exist: {chromium_src}", err=True)
+        raise typer.Exit(1)
+
     pipeline_ctx = PipelineContext(
         root_path=Path.cwd(),
         config_path=Path("build/config/default.yaml"),
@@ -142,7 +154,8 @@ def _create_dev_context() -> BuildContext:
         pipeline_ctx=pipeline_ctx,
         architecture="x64",  # Not relevant for patches
         build_type="debug",   # Default for dev
-        platform=_detect_platform()
+        platform=_detect_platform(),
+        chromium_path=chromium_src
     )
 
 

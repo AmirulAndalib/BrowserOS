@@ -1,4 +1,8 @@
 # Example pipeline configuration
+# Path to chromium source (can be overridden with --chromium-src)
+paths:
+  chromium_src: /path/to/chromium/src
+
 pipelines:
   macos-debug:
     matrix:

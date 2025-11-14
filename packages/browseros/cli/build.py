@@ -15,6 +15,7 @@ app = typer.Typer(no_args_is_help=True)
 @app.command("run")
 def run(
     config: Path = typer.Option(..., "--config", help="Path to pipeline YAML config"),
+    chromium_src: Optional[Path] = typer.Option(None, "--chromium-src", "-S", help="Path to Chromium source directory"),
     arch: Optional[str] = typer.Option(None, "--arch", help="Architecture (x64, arm64)"),
     build_type: Optional[str] = typer.Option("release", "--build-type", help="Build type (release, debug)"),
 
@@ -39,9 +40,27 @@ def run(
 ):
     """Run a build pipeline from configuration."""
 
-    # Load configuration
+    # Load configuration first to check for chromium_src
     loader = ConfigLoader()
     pipeline_config = loader.load_config(config)
+
+    # Get chromium_src from config if not provided via CLI
+    if not chromium_src and "paths" in pipeline_config and "chromium_src" in pipeline_config["paths"]:
+        chromium_src = Path(pipeline_config["paths"]["chromium_src"])
+        typer.echo(f"Using chromium_src from config: {chromium_src}")
+
+    # Enforce chromium_src requirement
+    if not chromium_src:
+        typer.echo("Error: Chromium source directory is required!", err=True)
+        typer.echo("Provide it via --chromium-src CLI option or paths.chromium_src in config YAML", err=True)
+        typer.echo("Example: browseros-cli build run --config config.yaml --chromium-src /path/to/chromium/src", err=True)
+        raise typer.Exit(1)
+
+    # Validate chromium_src path exists
+    if not chromium_src.exists():
+        typer.echo(f"Error: Chromium source directory does not exist: {chromium_src}", err=True)
+        typer.echo("Please provide a valid chromium source path", err=True)
+        raise typer.Exit(1)
 
     # Create pipeline context
     pipeline_ctx = PipelineContext(
@@ -82,7 +101,8 @@ def run(
         build_type=build_type,
         platform=_detect_platform(),
         skip_modules=skip or [],
-        only_modules=only or selected_modules
+        only_modules=only or selected_modules,
+        chromium_path=chromium_src  # Set the chromium source path
     )
 
     # Build execution plan
@@ -103,11 +123,17 @@ def run(
 @app.command("step")
 def step(
     module: str = typer.Argument(..., help="Module name to execute"),
+    chromium_src: Path = typer.Option(..., "--chromium-src", "-S", help="Path to Chromium source directory"),
     arch: Optional[str] = typer.Option("x64", "--arch", help="Architecture"),
     build_type: Optional[str] = typer.Option("release", "--build-type", help="Build type"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Simulate execution"),
 ):
     """Execute a single build module for debugging."""
+
+    # Validate chromium_src path exists
+    if not chromium_src.exists():
+        typer.echo(f"Error: Chromium source directory does not exist: {chromium_src}", err=True)
+        raise typer.Exit(1)
 
     pipeline_ctx = PipelineContext(
         root_path=Path.cwd(),
@@ -119,7 +145,8 @@ def step(
         pipeline_ctx=pipeline_ctx,
         architecture=arch,
         build_type=build_type,
-        platform=_detect_platform()
+        platform=_detect_platform(),
+        chromium_path=chromium_src
     )
 
     # Get module from registry and execute

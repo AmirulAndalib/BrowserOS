@@ -48,10 +48,11 @@ class BuildContext:
 
     def __post_init__(self):
         """Initialize computed paths."""
-        if self.chromium_path is None:
-            self.chromium_path = self.pipeline_ctx.root_path / "chromium" / "src"
+        # Chromium path must be explicitly provided
+        if self.chromium_path is not None:
+            self.chromium_path = Path(self.chromium_path)
 
-        if self.output_path is None:
+        if self.output_path is None and self.chromium_path is not None:
             self.output_path = self.chromium_path / "out" / f"{self.build_type}_{self.architecture}"
 
         # Merge environment overrides

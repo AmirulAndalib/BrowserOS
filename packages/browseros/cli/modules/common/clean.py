@@ -32,12 +32,12 @@ class CleanModule(BuildModule):
 
         try:
             # Clean output directory
-            if ctx.output_path.exists():
+            if ctx.output_path and ctx.output_path.exists():
                 print(f"  Cleaning {ctx.output_path}")
                 shutil.rmtree(ctx.output_path, ignore_errors=True)
 
             # Git reset in chromium directory
-            if (ctx.chromium_path / ".git").exists():
+            if ctx.chromium_path and (ctx.chromium_path / ".git").exists():
                 self._git_reset(ctx)
 
             # Clean Sparkle artifacts on macOS
@@ -58,6 +58,10 @@ class CleanModule(BuildModule):
     def _git_reset(self, ctx: BuildContext):
         """Reset git repository to clean state."""
         import subprocess
+
+        if not ctx.chromium_path:
+            print("  Warning: No chromium_path set, skipping git reset")
+            return
 
         # Save current directory
         original_dir = os.getcwd()
@@ -94,6 +98,9 @@ class CleanModule(BuildModule):
 
     def _clean_sparkle(self, ctx: BuildContext):
         """Clean Sparkle build artifacts on macOS."""
+        if not ctx.chromium_path:
+            return
+
         sparkle_dir = ctx.chromium_path.parent.parent / "Sparkle"
         if sparkle_dir.exists():
             print(f"  Cleaning Sparkle: {sparkle_dir}")
