@@ -4,7 +4,15 @@
 **/env
 **/logs
 **/old-scripts
+
+# Python
 **/__pycache__/
+**/*.egg-info/
+**/*.egg
+**/.pytest_cache/
+**/dist/
+**/build/
+
 nxtscape-cli-access.json
 gclient.json
 .env

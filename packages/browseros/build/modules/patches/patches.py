@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Patch management module for BrowserOS build system"""
 
-import sys
 import shutil
 from pathlib import Path
 from ...common.module import CommandModule, ValidationError
@@ -40,9 +39,8 @@ def apply_patches_impl(
         log_error("Please install Git to apply patches")
         raise RuntimeError("Git not found in PATH")
 
-    # Import apply module
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-    from apply.apply import apply_all_patches
+    # Import apply module via package path so relative imports work
+    from build.modules.apply.apply import apply_all_patches
 
     # Call the dev CLI function directly
     _, failed = apply_all_patches(
