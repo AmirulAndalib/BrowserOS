@@ -40,9 +40,9 @@ def apply_patches_impl(
         log_error("Please install Git to apply patches")
         raise RuntimeError("Git not found in PATH")
 
-    # Import dev CLI module
+    # Import apply module
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    from modules.dev_cli.apply import apply_all_patches
+    from apply.apply import apply_all_patches
 
     # Call the dev CLI function directly
     _, failed = apply_all_patches(
