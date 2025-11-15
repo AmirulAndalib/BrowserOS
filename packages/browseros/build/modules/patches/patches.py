@@ -30,7 +30,14 @@ class PatchesModule(CommandModule):
 def apply_patches_impl(
     ctx: Context, interactive: bool = False, commit_each: bool = False
 ) -> bool:
-    """Apply patches using the dev CLI patch system"""
+    """Apply patches using the dev CLI patch system
+
+    Returns:
+        True if patches applied successfully (or interactively handled)
+
+    Raises:
+        RuntimeError: If patches fail in non-interactive mode
+    """
     log_info("\n🩹 Applying patches using dev CLI system...")
 
     # Check if git is available
@@ -54,3 +61,6 @@ def apply_patches_impl(
     if failed and not interactive:
         # In non-interactive mode, fail if any patches failed
         raise RuntimeError(f"Failed to apply {len(failed)} patches")
+
+    # Success: patches applied or interactively handled
+    return True
