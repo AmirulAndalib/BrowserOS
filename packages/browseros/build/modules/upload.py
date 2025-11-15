@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""
-Google Cloud Storage upload module for Nxtscape build artifacts
-"""
+"""Google Cloud Storage upload module for BrowserOS build artifacts"""
 
 import os
 import sys
 from pathlib import Path
 from typing import List, Optional, Tuple
+from ..common.module import BuildModule, ValidationError
 from ..common.context import BuildContext
 from ..common.utils import (
     log_info,
@@ -18,6 +17,26 @@ from ..common.utils import (
     IS_LINUX,
     join_paths,
 )
+
+
+class GCSUploadModule(BuildModule):
+    produces = []
+    requires = []
+    description = "Upload build artifacts to Google Cloud Storage"
+
+    def validate(self, ctx: BuildContext) -> None:
+        if not GCS_AVAILABLE:
+            raise ValidationError("google-cloud-storage library not installed - run: pip install google-cloud-storage")
+
+        service_account_path = join_paths(ctx.root_dir, SERVICE_ACCOUNT_FILE)
+        if not service_account_path.exists():
+            raise ValidationError(f"Service account file not found: {SERVICE_ACCOUNT_FILE}")
+
+    def execute(self, ctx: BuildContext) -> None:
+        log_info("\n☁️  Uploading package artifacts to GCS...")
+        success, uris = upload_package_artifacts_impl(ctx)
+        if not success:
+            raise RuntimeError("Failed to upload artifacts to GCS")
 
 # Try to import google-cloud-storage
 try:
@@ -142,10 +161,9 @@ def upload_to_gcs(
         return False, []
 
 
-def upload_package_artifacts(ctx: BuildContext) -> tuple[bool, List[str]]:
-    """Upload package artifacts (DMG, ZIP, EXE) to GCS
+def upload_package_artifacts_impl(ctx: BuildContext) -> tuple[bool, List[str]]:
+    """Internal implementation for uploading package artifacts to GCS
     Returns: (success, list of GCS URIs)"""
-    log_info("\n☁️  Preparing to upload package artifacts to GCS...")
 
     artifacts = []
 
@@ -179,7 +197,15 @@ def upload_signed_artifacts(ctx: BuildContext) -> bool:
     """Upload signed artifacts to GCS"""
     # For now, this is the same as package artifacts
     # Can be extended in the future for specific signed artifacts
-    return upload_package_artifacts(ctx)
+    return upload_package_artifacts_impl(ctx)[0]
+
+
+def upload_package_artifacts(ctx: BuildContext) -> tuple[bool, List[str]]:
+    """Legacy function interface"""
+    module = GCSUploadModule()
+    module.validate(ctx)
+    module.execute(ctx)
+    return True, []
 
 
 def download_from_gcs(

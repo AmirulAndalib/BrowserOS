@@ -1,16 +1,30 @@
 #!/usr/bin/env python3
-"""
-Chromium file replacement module for Nxtscape build system
-"""
+"""Chromium file replacement module for BrowserOS build system"""
 
 import sys
 import shutil
 from pathlib import Path
+from ...common.module import BuildModule, ValidationError
 from ...common.context import BuildContext
 from ...common.utils import log_info, log_success, log_error, log_warning
 
 
-def replace_chromium_files(ctx: BuildContext, replacements=None) -> bool:
+class ChromiumReplaceModule(BuildModule):
+    produces = []
+    requires = []
+    description = "Replace Chromium source files with custom versions"
+
+    def validate(self, ctx: BuildContext) -> None:
+        if not ctx.chromium_src.exists():
+            raise ValidationError(f"Chromium source not found: {ctx.chromium_src}")
+
+    def execute(self, ctx: BuildContext) -> None:
+        log_info("\n🔄 Replacing chromium files...")
+        if not replace_chromium_files_impl(ctx):
+            raise RuntimeError("Failed to replace chromium files")
+
+
+def replace_chromium_files_impl(ctx: BuildContext, replacements=None) -> bool:
     """Replace files in chromium source with custom files from chromium_files directory"""
     log_info("\n🔄 Replacing chromium files...")
     log_info(f"  Build type: {ctx.build_type}")
@@ -128,3 +142,12 @@ def add_file_to_replacements(
     except Exception as e:
         log_error(f"Failed to add file: {e}")
         return False
+
+
+
+def replace_chromium_files(ctx: BuildContext, replacements=None) -> bool:
+    """Legacy function interface"""
+    module = ChromiumReplaceModule()
+    module.validate(ctx)
+    module.execute(ctx)
+    return True
