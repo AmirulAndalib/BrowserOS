@@ -1,12 +1,26 @@
 #!/usr/bin/env python3
-"""
-String replacement module for BrowserOS build system
-"""
+"""String replacement module for BrowserOS build system"""
 
 import re
 from pathlib import Path
+from ...common.module import BuildModule, ValidationError
 from ...common.context import BuildContext
 from ...common.utils import log_info, log_success, log_error, log_warning
+
+
+class StringReplacesModule(BuildModule):
+    produces = []
+    requires = []
+    description = "Apply branding string replacements in Chromium"
+
+    def validate(self, ctx: BuildContext) -> None:
+        if not ctx.chromium_src.exists():
+            raise ValidationError(f"Chromium source not found: {ctx.chromium_src}")
+
+    def execute(self, ctx: BuildContext) -> None:
+        log_info("\n🔤 Applying string replacements...")
+        if not apply_string_replacements_impl(ctx):
+            raise RuntimeError("Failed to apply string replacements")
 
 
 # Strings we want to replace but that we also replace automatically
@@ -34,9 +48,8 @@ target_files = [
 ]
 
 
-def apply_string_replacements(ctx: BuildContext) -> bool:
-    """Apply string replacements to specified files"""
-    log_info("\n🔤 Applying string replacements...")
+def apply_string_replacements_impl(ctx: BuildContext) -> bool:
+    """Internal implementation for applying string replacements"""
 
     success = True
 
@@ -83,3 +96,12 @@ def apply_string_replacements(ctx: BuildContext) -> bool:
         log_error("String replacements failed")
 
     return success
+
+
+
+def apply_string_replacements(ctx: BuildContext) -> bool:
+    """Legacy function interface"""
+    module = StringReplacesModule()
+    module.validate(ctx)
+    module.execute(ctx)
+    return True

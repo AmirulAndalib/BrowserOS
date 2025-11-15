@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-Resource management module for Nxtscape build system
-"""
+"""Resource management module for BrowserOS build system"""
 
 import sys
 import glob
@@ -9,11 +7,28 @@ import shutil
 import yaml
 import subprocess
 from pathlib import Path
+from ...common.module import BuildModule, ValidationError
 from ...common.context import BuildContext
 from ...common.utils import log_info, log_success, log_error, log_warning, get_platform
 
 
-def copy_resources(ctx: BuildContext, commit_each: bool = False) -> bool:
+class ResourcesModule(BuildModule):
+    produces = []
+    requires = []
+    description = "Copy resources (icons, extensions) to Chromium"
+
+    def validate(self, ctx: BuildContext) -> None:
+        copy_config_path = ctx.get_copy_resources_config()
+        if not copy_config_path.exists():
+            raise ValidationError(f"Copy configuration file not found: {copy_config_path}")
+
+    def execute(self, ctx: BuildContext) -> None:
+        log_info("\n📦 Copying resources...")
+        if not copy_resources_impl(ctx, commit_each=False):
+            raise RuntimeError("Failed to copy resources")
+
+
+def copy_resources_impl(ctx: BuildContext, commit_each: bool = False) -> bool:
     """Copy AI extensions and icons based on YAML configuration"""
     log_info("\n📦 Copying resources...")
 
@@ -168,3 +183,12 @@ def commit_resource_copy(
     except Exception as e:
         log_warning(f"Error creating commit for resource {name}: {e}")
         return False
+
+
+
+def copy_resources(ctx: BuildContext, commit_each: bool = False) -> bool:
+    """Legacy function interface"""
+    module = ResourcesModule()
+    module.validate(ctx)
+    module.execute(ctx)
+    return True

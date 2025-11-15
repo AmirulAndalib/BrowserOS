@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-"""
-Patch management module for Nxtscape build system
-"""
+"""Patch management module for BrowserOS build system"""
 
 import sys
 import shutil
 import subprocess
 from pathlib import Path
 from typing import Iterator, List, Tuple, Optional
+from ...common.module import BuildModule, ValidationError
 from ...common.context import BuildContext
 from ...common.utils import (
     log_info,
@@ -21,6 +20,25 @@ from ...common.utils import (
 
 # Switch to new patching system using dev CLI
 NEW_PATCHING = True
+
+
+class PatchesModule(BuildModule):
+    produces = []
+    requires = []
+    description = "Apply BrowserOS patches to Chromium"
+
+    def validate(self, ctx: BuildContext) -> None:
+        if not shutil.which("git"):
+            raise ValidationError("Git is not available in PATH - required for applying patches")
+
+        patches_dir = ctx.get_browseros_patches_dir()
+        if not patches_dir.exists():
+            raise ValidationError(f"Patches directory not found: {patches_dir}")
+
+    def execute(self, ctx: BuildContext) -> None:
+        log_info("\n🩹 Applying patches...")
+        if not apply_patches_impl(ctx, interactive=False, commit_each=False):
+            raise RuntimeError("Failed to apply patches")
 
 
 def apply_patches_with_dev_cli(
@@ -59,18 +77,15 @@ def apply_patches_with_dev_cli(
     return True
 
 
-def apply_patches(
+def apply_patches_impl(
     ctx: BuildContext, interactive: bool = False, commit_each: bool = False
 ) -> bool:
-    """Apply Nxtscape patches"""
+    """Internal implementation for applying patches"""
     # Use new patching system if enabled
     if NEW_PATCHING:
         return apply_patches_with_dev_cli(ctx, interactive, commit_each)
 
     # Otherwise, use the legacy patching system
-    if not ctx.apply_patches:
-        log_info("\n⏭️  Skipping patches")
-        return True
 
     log_info("\n🩹 Applying patches...")
 
@@ -349,3 +364,14 @@ def commit_patch(patch_path: Path, tree_path: Path) -> bool:
     except Exception as e:
         log_warning(f"Error creating commit for patch {patch_path.name}: {e}")
         return False
+
+
+
+def apply_patches(
+    ctx: BuildContext, interactive: bool = False, commit_each: bool = False
+) -> bool:
+    """Legacy function interface"""
+    module = PatchesModule()
+    module.validate(ctx)
+    module.execute(ctx)
+    return True
