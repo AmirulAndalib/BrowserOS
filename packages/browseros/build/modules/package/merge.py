@@ -107,10 +107,6 @@ def create_minimal_context(
         chromium_src=chromium_src,
         architecture=architecture,
         build_type="release",  # Assume release for universal builds
-        apply_patches=False,
-        sign_package=True,
-        package=True,
-        build=False,
     )
 
     # Override out_dir to match the actual location
