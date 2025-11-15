@@ -129,15 +129,30 @@ def main(
         help="Path to Chromium source directory",
     ),
 ):
-    """BrowserOS modular build system
-    
-    Build BrowserOS using explicit module pipelines or YAML configs.
-    
-    Examples:
-        browseros build --list
-        browseros build --modules clean,compile,sign,package
-        browseros build --config release.yaml
-        browseros build --config ci.yaml --arch x64
+    """BrowserOS Build System - Modular pipeline executor
+
+    Build BrowserOS by running modules in sequence. Use explicit module lists
+    for development or YAML configs for CI/CD and releases.
+
+    \b
+    Quick Start:
+      browseros build --list                    # List all available modules
+      browseros build --modules clean,compile   # Run specific modules
+      browseros build --config release.yaml     # Use YAML config
+
+    \b
+    Common Workflows:
+      # Development build
+      browseros build --modules compile,sign_macos,package_macos
+
+      # Clean build
+      browseros build --modules clean,git_setup,configure,compile
+
+      # Release build (with config)
+      browseros build --config configs/release.yaml --arch x64
+
+      # CI build (override arch)
+      browseros build --config ci.yaml --arch universal
     """
     
     # Handle --list flag
