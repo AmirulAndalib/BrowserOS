@@ -4,12 +4,12 @@
 import sys
 import shutil
 from pathlib import Path
-from ...common.module import BuildModule, ValidationError
+from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
 from ...common.utils import log_info, log_success, log_error, log_warning
 
 
-class ChromiumReplaceModule(BuildModule):
+class ChromiumReplaceModule(CommandModule):
     produces = []
     requires = []
     description = "Replace Chromium source files with custom versions"

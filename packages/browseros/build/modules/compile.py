@@ -4,7 +4,7 @@
 import tempfile
 import shutil
 from pathlib import Path
-from ..common.module import BuildModule, ValidationError
+from ..common.module import CommandModule, ValidationError
 from ..common.context import Context
 from ..common.utils import (
     run_command,
@@ -16,7 +16,7 @@ from ..common.utils import (
 )
 
 
-class CompileModule(BuildModule):
+class CompileModule(CommandModule):
     produces = ["built_app"]
     requires = []
     description = "Build BrowserOS using autoninja"

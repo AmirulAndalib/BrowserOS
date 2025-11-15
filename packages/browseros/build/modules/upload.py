@@ -5,7 +5,7 @@ import os
 import sys
 from pathlib import Path
 from typing import List, Optional, Tuple
-from ..common.module import BuildModule, ValidationError
+from ..common.module import CommandModule, ValidationError
 from ..common.context import Context
 from ..common.utils import (
     log_info,
@@ -19,7 +19,7 @@ from ..common.utils import (
 )
 
 
-class GCSUploadModule(BuildModule):
+class GCSUploadModule(CommandModule):
     produces = []
     requires = []
     description = "Upload build artifacts to Google Cloud Storage"

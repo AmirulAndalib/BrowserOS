@@ -3,12 +3,12 @@
 
 from pathlib import Path
 from typing import Optional
-from ...common.module import BuildModule, ValidationError
+from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
 from ...common.utils import run_command, log_info, log_success, join_paths, IS_WINDOWS
 
 
-class ConfigureModule(BuildModule):
+class ConfigureModule(CommandModule):
     produces = []
     requires = []
     description = "Configure build with GN"

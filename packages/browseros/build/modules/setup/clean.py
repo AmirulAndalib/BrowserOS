@@ -2,12 +2,12 @@
 """Clean module for BrowserOS build system"""
 
 from pathlib import Path
-from ...common.module import BuildModule, ValidationError
+from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
 from ...common.utils import run_command, log_info, log_success, safe_rmtree
 
 
-class CleanModule(BuildModule):
+class CleanModule(CommandModule):
     produces = []
     requires = []
     description = "Clean build artifacts and reset git state"

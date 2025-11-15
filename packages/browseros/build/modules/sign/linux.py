@@ -2,12 +2,12 @@
 """Linux signing module for BrowserOS"""
 
 from typing import List
-from ...common.module import BuildModule
+from ...common.module import CommandModule
 from ...common.context import Context
 from ...common.utils import log_info, log_warning
 
 
-class LinuxSignModule(BuildModule):
+class LinuxSignModule(CommandModule):
     produces = []
     requires = []
     description = "Linux code signing (no-op)"

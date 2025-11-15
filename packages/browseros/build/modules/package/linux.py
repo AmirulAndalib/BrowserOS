@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 from typing import List, Tuple, Optional
 
-from ...common.module import BuildModule, ValidationError
+from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
 from ...common.utils import (
     log_info,
@@ -21,7 +21,7 @@ from ...common.utils import (
 )
 
 
-class LinuxPackageModule(BuildModule):
+class LinuxPackageModule(CommandModule):
     produces = ["appimage", "deb"]
     requires = []
     description = "Create AppImage and .deb packages for Linux"

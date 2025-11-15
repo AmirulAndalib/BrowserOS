@@ -6,7 +6,7 @@ import shutil
 import subprocess
 from pathlib import Path
 from typing import Iterator, List, Tuple, Optional
-from ...common.module import BuildModule, ValidationError
+from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
 from ...common.utils import (
     log_info,
@@ -22,7 +22,7 @@ from ...common.utils import (
 NEW_PATCHING = True
 
 
-class PatchesModule(BuildModule):
+class PatchesModule(CommandModule):
     produces = []
     requires = []
     description = "Apply BrowserOS patches to Chromium"

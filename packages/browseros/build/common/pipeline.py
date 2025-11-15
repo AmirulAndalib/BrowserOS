@@ -2,11 +2,11 @@
 """Pipeline validation for BrowserOS build system"""
 
 from typing import Dict, List, Type
-from .module import BuildModule
+from .module import CommandModule
 from .utils import log_error, log_info
 
 
-def validate_pipeline(pipeline: List[str], available_modules: Dict[str, Type[BuildModule]]) -> None:
+def validate_pipeline(pipeline: List[str], available_modules: Dict[str, Type[CommandModule]]) -> None:
     """Validate that all modules in pipeline exist in available_modules
     
     Raises SystemExit if validation fails
@@ -30,7 +30,7 @@ def validate_pipeline(pipeline: List[str], available_modules: Dict[str, Type[Bui
         raise SystemExit(1)
 
 
-def show_available_modules(available_modules: Dict[str, Type[BuildModule]]) -> None:
+def show_available_modules(available_modules: Dict[str, Type[CommandModule]]) -> None:
     """Display all available modules with descriptions"""
     log_info("\nAvailable modules:\n")
     
