@@ -173,7 +173,7 @@ def extract_commit(
     if not ctx:
         raise typer.Exit(1)
 
-    from ..modules.extract import ExtractCommitModule
+    from ..modules.extract.extract import ExtractCommitModule
 
     module = ExtractCommitModule()
     try:
@@ -198,7 +198,7 @@ def extract_range(
     if not ctx:
         raise typer.Exit(1)
 
-    from ..modules.extract import ExtractRangeModule
+    from ..modules.extract.extract import ExtractRangeModule
 
     module = ExtractRangeModule()
     try:
@@ -224,7 +224,7 @@ def apply_all(
     if not ctx:
         raise typer.Exit(1)
 
-    from ..modules.apply import ApplyAllModule
+    from ..modules.apply.apply import ApplyAllModule
 
     module = ApplyAllModule()
     try:
@@ -248,7 +248,7 @@ def apply_feature(
     if not ctx:
         raise typer.Exit(1)
 
-    from ..modules.apply import ApplyFeatureModule
+    from ..modules.apply.apply import ApplyFeatureModule
 
     module = ApplyFeatureModule()
     try:
@@ -269,7 +269,7 @@ def feature_list():
     if not ctx:
         raise typer.Exit(1)
 
-    from ..modules.feature import ListFeaturesModule
+    from ..modules.feature.feature import ListFeaturesModule
 
     module = ListFeaturesModule()
     try:
@@ -289,7 +289,7 @@ def feature_show(
     if not ctx:
         raise typer.Exit(1)
 
-    from ..modules.feature import ShowFeatureModule
+    from ..modules.feature.feature import ShowFeatureModule
 
     module = ShowFeatureModule()
     try:
@@ -313,7 +313,7 @@ def feature_add(
     if not ctx:
         raise typer.Exit(1)
 
-    from ..modules.feature import AddFeatureModule
+    from ..modules.feature.feature import AddFeatureModule
 
     module = AddFeatureModule()
     try:
@@ -328,4 +328,3 @@ def feature_add(
 
 if __name__ == "__main__":
     app()
-

@@ -253,16 +253,3 @@ def check_signing_environment() -> bool:
         return False
 
     return True
-
-
-def sign(ctx: Context, certificate_name: Optional[str] = None) -> bool:
-    """Legacy function interface"""
-    module = WindowsSignModule()
-    module.validate(ctx)
-    module.execute(ctx)
-    return True
-
-
-def sign_binaries(ctx: Context, certificate_name: Optional[str] = None) -> bool:
-    """Legacy function interface"""
-    return sign(ctx, certificate_name)

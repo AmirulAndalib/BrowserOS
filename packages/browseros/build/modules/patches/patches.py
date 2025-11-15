@@ -60,13 +60,3 @@ def apply_patches_impl(
     if failed and not interactive:
         # In non-interactive mode, fail if any patches failed
         raise RuntimeError(f"Failed to apply {len(failed)} patches")
-
-
-def apply_patches(
-    ctx: Context, interactive: bool = False, commit_each: bool = False
-) -> bool:
-    """Legacy function interface"""
-    module = PatchesModule()
-    module.validate(ctx)
-    module.execute(ctx)
-    return True

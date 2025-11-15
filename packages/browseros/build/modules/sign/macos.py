@@ -100,23 +100,6 @@ class MacOSSignModule(CommandModule):
     def _notarize(self, app_path: Path, env_vars: Dict[str, str], ctx: Context) -> None:
         if not notarize_app(app_path, ctx.root_dir, env_vars, ctx):
             raise RuntimeError("Notarization failed")
-
-
-def sign(ctx: Context) -> bool:
-    """Legacy function interface"""
-    if not ctx.sign_package:
-        log_info("\n⏭️  Skipping signing")
-        return True
-
-    log_info("\n🔏 Signing application...")
-
-    module = MacOSSignModule()
-    module.validate(ctx)
-    module.execute(ctx)
-
-    return True
-
-
 def check_signing_environment() -> bool:
     """Check if all required environment variables are set for signing (early check)"""
     # Only check on macOS

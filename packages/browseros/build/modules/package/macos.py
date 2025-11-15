@@ -60,16 +60,6 @@ class MacOSPackageModule(CommandModule):
             app_path, dmg_path, certificate_name, "BrowserOS", pkg_dmg_path, keychain_profile
         ):
             raise RuntimeError("Failed to create signed and notarized DMG")
-
-
-def package(ctx: Context) -> bool:
-    """Legacy function interface"""
-    module = MacOSPackageModule()
-    module.validate(ctx)
-    module.execute(ctx)
-    return True
-
-
 def create_dmg(
     app_path: Path,
     dmg_path: Path,

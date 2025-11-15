@@ -96,18 +96,3 @@ class SparkleSetupModule(CommandModule):
         sparkle_archive.unlink()
 
         log_success("Sparkle setup complete")
-
-
-# Legacy function interface - maintained for backward compatibility
-def setup_git(ctx: Context) -> bool:
-    module = GitSetupModule()
-    module.validate(ctx)
-    module.execute(ctx)
-    return True
-
-
-def setup_sparkle(ctx: Context) -> bool:
-    module = SparkleSetupModule()
-    module.validate(ctx)
-    module.execute(ctx)
-    return True

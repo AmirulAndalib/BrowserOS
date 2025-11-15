@@ -183,12 +183,3 @@ def commit_resource_copy(
     except Exception as e:
         log_warning(f"Error creating commit for resource {name}: {e}")
         return False
-
-
-
-def copy_resources(ctx: Context, commit_each: bool = False) -> bool:
-    """Legacy function interface"""
-    module = ResourcesModule()
-    module.validate(ctx)
-    module.execute(ctx)
-    return True

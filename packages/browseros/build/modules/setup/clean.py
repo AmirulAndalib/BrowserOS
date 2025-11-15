@@ -57,23 +57,3 @@ class CleanModule(CommandModule):
             cwd=ctx.chromium_src,
         )
         log_success("Git reset and clean complete")
-
-
-# Legacy function interface - maintained for backward compatibility
-def clean(ctx: Context) -> bool:
-    module = CleanModule()
-    module.validate(ctx)
-    module.execute(ctx)
-    return True
-
-
-def clean_sparkle(ctx: Context) -> bool:
-    module = CleanModule()
-    module._clean_sparkle(ctx)
-    return True
-
-
-def git_reset(ctx: Context) -> bool:
-    module = CleanModule()
-    module._git_reset(ctx)
-    return True

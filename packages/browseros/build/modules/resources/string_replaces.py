@@ -96,12 +96,3 @@ def apply_string_replacements_impl(ctx: Context) -> bool:
         log_error("String replacements failed")
 
     return success
-
-
-
-def apply_string_replacements(ctx: Context) -> bool:
-    """Legacy function interface"""
-    module = StringReplacesModule()
-    module.validate(ctx)
-    module.execute(ctx)
-    return True

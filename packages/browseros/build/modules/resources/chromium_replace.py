@@ -142,12 +142,3 @@ def add_file_to_replacements(
     except Exception as e:
         log_error(f"Failed to add file: {e}")
         return False
-
-
-
-def replace_chromium_files(ctx: Context, replacements=None) -> bool:
-    """Legacy function interface"""
-    module = ChromiumReplaceModule()
-    module.validate(ctx)
-    module.execute(ctx)
-    return True
