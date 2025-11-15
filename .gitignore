@@ -7,11 +7,12 @@
 
 # Python
 **/__pycache__/
+**/*.pyc
+**/*.pyo
 **/*.egg-info/
 **/*.egg
 **/.pytest_cache/
 **/dist/
-**/build/
 
 nxtscape-cli-access.json
 gclient.json
