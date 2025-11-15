@@ -8,6 +8,7 @@ import yaml
 from pathlib import Path
 from typing import Dict, List, Optional
 from ...common.context import Context
+from ...common.module import CommandModule, ValidationError
 from ..extract.utils import get_commit_changed_files, run_git_command
 from ...common.utils import log_info, log_error, log_success, log_warning
 
@@ -102,3 +103,53 @@ def show_feature(ctx: Context, feature_name: str):
     log_info(f"Files ({len(feature.get('files', []))}):")
     for file_path in feature.get("files", []):
         log_info(f"  - {file_path}")
+
+
+# CommandModule wrappers for dev CLI
+
+class ListFeaturesModule(CommandModule):
+    """List all defined features"""
+    produces = []
+    requires = []
+    description = "List all defined features"
+
+    def validate(self, ctx: Context) -> None:
+        """No validation needed - will show warning if no features exist"""
+        pass
+
+    def execute(self, ctx: Context, **kwargs) -> None:
+        list_features(ctx)
+
+
+class ShowFeatureModule(CommandModule):
+    """Show details of a specific feature"""
+    produces = []
+    requires = []
+    description = "Show details of a specific feature"
+
+    def validate(self, ctx: Context) -> None:
+        """Validation happens in execute (feature existence check)"""
+        pass
+
+    def execute(self, ctx: Context, feature_name: str, **kwargs) -> None:
+        show_feature(ctx, feature_name)
+
+
+class AddFeatureModule(CommandModule):
+    """Add files from a commit to a feature"""
+    produces = []
+    requires = []
+    description = "Add files from a commit to a feature"
+
+    def validate(self, ctx: Context) -> None:
+        """Validate git is available"""
+        import shutil
+        if not shutil.which("git"):
+            raise ValidationError("Git is not available in PATH")
+        if not ctx.chromium_src.exists():
+            raise ValidationError(f"Chromium source not found: {ctx.chromium_src}")
+
+    def execute(self, ctx: Context, feature_name: str, commit: str, description: Optional[str] = None, **kwargs) -> None:
+        success = add_feature(ctx, feature_name, commit, description)
+        if not success:
+            raise RuntimeError(f"Failed to add feature '{feature_name}'")

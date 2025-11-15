@@ -9,6 +9,7 @@ import yaml
 from pathlib import Path
 from typing import List, Tuple, Optional
 from ...common.context import Context
+from ...common.module import CommandModule, ValidationError
 from .utils import run_git_command, GitError
 from ...common.utils import log_info, log_error, log_success, log_warning
 
@@ -442,3 +443,68 @@ def apply_feature(ctx, feature_name, commit_each, dry_run):
     # Exit with error code if any patches failed
     if failed:
         ctx.exit(1)
+
+
+# CommandModule wrappers for dev CLI
+
+class ApplyAllModule(CommandModule):
+    """Apply all patches from chromium_patches/"""
+    produces = []
+    requires = []
+    description = "Apply all patches from chromium_patches/"
+
+    def validate(self, ctx: Context) -> None:
+        """Validate git is available"""
+        import shutil
+        if not shutil.which("git"):
+            raise ValidationError("Git is not available in PATH")
+        if not ctx.chromium_src.exists():
+            raise ValidationError(f"Chromium source not found: {ctx.chromium_src}")
+
+    def execute(self, ctx: Context, interactive: bool = True, commit: bool = False, **kwargs) -> None:
+        """Execute apply all patches
+
+        Args:
+            interactive: Interactive mode (ask before each patch)
+            commit: Create git commit after each patch
+        """
+        applied, failed = apply_all_patches(
+            ctx,
+            commit_each=commit,
+            dry_run=False,
+            interactive=interactive
+        )
+        if failed:
+            raise RuntimeError(f"Failed to apply {len(failed)} patches")
+
+
+class ApplyFeatureModule(CommandModule):
+    """Apply patches for a specific feature"""
+    produces = []
+    requires = []
+    description = "Apply patches for a specific feature"
+
+    def validate(self, ctx: Context) -> None:
+        """Validate git is available"""
+        import shutil
+        if not shutil.which("git"):
+            raise ValidationError("Git is not available in PATH")
+        if not ctx.chromium_src.exists():
+            raise ValidationError(f"Chromium source not found: {ctx.chromium_src}")
+
+    def execute(self, ctx: Context, feature_name: str, interactive: bool = True, commit: bool = False, **kwargs) -> None:
+        """Execute apply feature patches
+
+        Args:
+            feature_name: Name of the feature to apply
+            interactive: Interactive mode (ask before each patch)
+            commit: Create git commit after applying
+        """
+        applied, failed = apply_feature_patches(
+            ctx,
+            feature_name,
+            commit_each=commit,
+            dry_run=False
+        )
+        if failed:
+            raise RuntimeError(f"Failed to apply {len(failed)} patches for feature '{feature_name}'")

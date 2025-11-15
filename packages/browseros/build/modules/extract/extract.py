@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 from typing import Optional, List, Dict
 from ...common.context import Context
+from ...common.module import CommandModule, ValidationError
 from .utils import (
     FilePatch,
     FileOperation,
@@ -676,3 +677,101 @@ def extract_commits_individually(
             log_warning(f"  ... and {len(failed_commits) - 5} more")
 
     return total_extracted
+
+
+# CommandModule wrappers for dev CLI
+
+class ExtractCommitModule(CommandModule):
+    """Extract patches from a single commit"""
+    produces = []
+    requires = []
+    description = "Extract patches from a single commit"
+
+    def validate(self, ctx: Context) -> None:
+        """Validate git repository"""
+        import shutil
+        if not shutil.which("git"):
+            raise ValidationError("Git is not available in PATH")
+        if not validate_git_repository(ctx.chromium_src):
+            raise ValidationError(f"Not a git repository: {ctx.chromium_src}")
+
+    def execute(
+        self,
+        ctx: Context,
+        commit: str,
+        output: Optional[Path] = None,
+        interactive: bool = True,
+        **kwargs
+    ) -> None:
+        """Execute extract commit
+
+        Args:
+            commit: Git commit reference (e.g., HEAD)
+            output: Output directory (unused, kept for compatibility)
+            interactive: Interactive mode (unused, kept for compatibility)
+        """
+        try:
+            count = extract_single_commit(
+                ctx,
+                commit_hash=commit,
+                verbose=False,
+                force=False,
+                include_binary=False,
+                base=None
+            )
+            if count == 0:
+                log_warning(f"No patches extracted from {commit}")
+            else:
+                log_success(f"Successfully extracted {count} patches from {commit}")
+        except GitError as e:
+            raise RuntimeError(f"Git error: {e}")
+
+
+class ExtractRangeModule(CommandModule):
+    """Extract patches from a range of commits"""
+    produces = []
+    requires = []
+    description = "Extract patches from a range of commits"
+
+    def validate(self, ctx: Context) -> None:
+        """Validate git repository"""
+        import shutil
+        if not shutil.which("git"):
+            raise ValidationError("Git is not available in PATH")
+        if not validate_git_repository(ctx.chromium_src):
+            raise ValidationError(f"Not a git repository: {ctx.chromium_src}")
+
+    def execute(
+        self,
+        ctx: Context,
+        start: str,
+        end: str,
+        output: Optional[Path] = None,
+        interactive: bool = True,
+        **kwargs
+    ) -> None:
+        """Execute extract range
+
+        Args:
+            start: Start commit (exclusive)
+            end: End commit (inclusive)
+            output: Output directory (unused, kept for compatibility)
+            interactive: Interactive mode (unused, kept for compatibility)
+        """
+        try:
+            count = extract_commit_range(
+                ctx,
+                base_commit=start,
+                head_commit=end,
+                verbose=False,
+                force=False,
+                include_binary=False,
+                squash=False,
+                base=None
+            )
+            if count == 0:
+                log_warning(f"No patches extracted from range {start}..{end}")
+            else:
+                log_success(f"Successfully extracted {count} patches from {start}..{end}")
+        except GitError as e:
+            raise RuntimeError(f"Git error: {e}")

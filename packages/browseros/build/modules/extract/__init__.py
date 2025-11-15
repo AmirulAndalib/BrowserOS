@@ -2,6 +2,18 @@
 Extract module for dev CLI - Extract patches from git commits
 """
 
-from .extract import extract_commit, extract_range
+from .extract import (
+    extract_commit,
+    extract_range,
+    ExtractCommitModule,
+    ExtractRangeModule,
+)
 
-__all__ = ['extract_commit', 'extract_range']
+__all__ = [
+    # Legacy functions (Click commands)
+    'extract_commit',
+    'extract_range',
+    # CommandModule classes
+    'ExtractCommitModule',
+    'ExtractRangeModule',
+]
