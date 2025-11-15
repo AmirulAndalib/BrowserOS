@@ -24,7 +24,9 @@ def create_build_context(chromium_src: Optional[Path] = None) -> Optional[Contex
     try:
         if not chromium_src:
             log_error("Chromium source directory not specified")
-            log_info("Use --chromium-src option to specify the Chromium source directory")
+            log_info(
+                "Use --chromium-src option to specify the Chromium source directory"
+            )
             return None
 
         if not chromium_src.exists():
@@ -47,11 +49,12 @@ def create_build_context(chromium_src: Optional[Path] = None) -> Optional[Contex
 # Create the Typer app
 app = Typer(
     name="dev",
-    help="Chromium patch management tool",
+    help="BrowserOS dev CLI",
     no_args_is_help=True,
     pretty_exceptions_enable=False,
     pretty_exceptions_show_locals=False,
 )
+
 
 # State class to hold global options
 class State:
@@ -59,6 +62,7 @@ class State:
         self.chromium_src: Optional[Path] = None
         self.verbose: bool = False
         self.quiet: bool = False
+
 
 state = State()
 
@@ -160,16 +164,23 @@ app.add_typer(feature_app, name="feature")
 def extract_commit(
     commit: str = Argument(..., help="Git commit reference (e.g., HEAD)"),
     output: Optional[Path] = Option(None, "--output", "-o", help="Output directory"),
-    interactive: bool = Option(True, "--interactive/--no-interactive", "-i/-n", help="Interactive mode"),
+    interactive: bool = Option(
+        True, "--interactive/--no-interactive", "-i/-n", help="Interactive mode"
+    ),
 ):
     """Extract patches from a single commit"""
     ctx = create_build_context(state.chromium_src)
     if not ctx:
         raise typer.Exit(1)
 
-    from ..modules.extract import extract_commit as extract_commit_impl
-    success = extract_commit_impl(ctx, commit, output, interactive)
-    if not success:
+    from ..modules.extract import ExtractCommitModule
+
+    module = ExtractCommitModule()
+    try:
+        module.validate(ctx)
+        module.execute(ctx, commit=commit, output=output, interactive=interactive)
+    except Exception as e:
+        log_error(f"Failed to extract commit: {e}")
         raise typer.Exit(1)
 
 
@@ -178,23 +189,34 @@ def extract_range(
     start: str = Argument(..., help="Start commit (exclusive)"),
     end: str = Argument(..., help="End commit (inclusive)"),
     output: Optional[Path] = Option(None, "--output", "-o", help="Output directory"),
-    interactive: bool = Option(True, "--interactive/--no-interactive", "-i/-n", help="Interactive mode"),
+    interactive: bool = Option(
+        True, "--interactive/--no-interactive", "-i/-n", help="Interactive mode"
+    ),
 ):
     """Extract patches from a range of commits"""
     ctx = create_build_context(state.chromium_src)
     if not ctx:
         raise typer.Exit(1)
 
-    from ..modules.extract import extract_range as extract_range_impl
-    success = extract_range_impl(ctx, start, end, output, interactive)
-    if not success:
+    from ..modules.extract import ExtractRangeModule
+
+    module = ExtractRangeModule()
+    try:
+        module.validate(ctx)
+        module.execute(
+            ctx, start=start, end=end, output=output, interactive=interactive
+        )
+    except Exception as e:
+        log_error(f"Failed to extract range: {e}")
         raise typer.Exit(1)
 
 
 # Apply commands
 @apply_app.command(name="all")
 def apply_all(
-    interactive: bool = Option(True, "--interactive/--no-interactive", "-i/-n", help="Interactive mode"),
+    interactive: bool = Option(
+        True, "--interactive/--no-interactive", "-i/-n", help="Interactive mode"
+    ),
     commit: bool = Option(False, "--commit", "-c", help="Commit after each patch"),
 ):
     """Apply all patches from chromium_patches/"""
@@ -202,16 +224,23 @@ def apply_all(
     if not ctx:
         raise typer.Exit(1)
 
-    from ..modules.apply import apply_all as apply_all_impl
-    success = apply_all_impl(ctx, interactive, commit)
-    if not success:
+    from ..modules.apply import ApplyAllModule
+
+    module = ApplyAllModule()
+    try:
+        module.validate(ctx)
+        module.execute(ctx, interactive=interactive, commit=commit)
+    except Exception as e:
+        log_error(f"Failed to apply patches: {e}")
         raise typer.Exit(1)
 
 
 @apply_app.command(name="feature")
 def apply_feature(
     feature_name: str = Argument(..., help="Feature name to apply"),
-    interactive: bool = Option(True, "--interactive/--no-interactive", "-i/-n", help="Interactive mode"),
+    interactive: bool = Option(
+        True, "--interactive/--no-interactive", "-i/-n", help="Interactive mode"
+    ),
     commit: bool = Option(False, "--commit", "-c", help="Commit after applying"),
 ):
     """Apply patches for a specific feature"""
@@ -219,9 +248,16 @@ def apply_feature(
     if not ctx:
         raise typer.Exit(1)
 
-    from ..modules.apply import apply_feature as apply_feature_impl
-    success = apply_feature_impl(ctx, feature_name, interactive, commit)
-    if not success:
+    from ..modules.apply import ApplyFeatureModule
+
+    module = ApplyFeatureModule()
+    try:
+        module.validate(ctx)
+        module.execute(
+            ctx, feature_name=feature_name, interactive=interactive, commit=commit
+        )
+    except Exception as e:
+        log_error(f"Failed to apply feature: {e}")
         raise typer.Exit(1)
 
 
@@ -233,8 +269,15 @@ def feature_list():
     if not ctx:
         raise typer.Exit(1)
 
-    from ..modules.feature import list_features
-    list_features(ctx)
+    from ..modules.feature import ListFeaturesModule
+
+    module = ListFeaturesModule()
+    try:
+        module.validate(ctx)
+        module.execute(ctx)
+    except Exception as e:
+        log_error(f"Failed to list features: {e}")
+        raise typer.Exit(1)
 
 
 @feature_app.command(name="show")
@@ -246,26 +289,43 @@ def feature_show(
     if not ctx:
         raise typer.Exit(1)
 
-    from ..modules.feature import show_feature
-    show_feature(ctx, feature_name)
+    from ..modules.feature import ShowFeatureModule
+
+    module = ShowFeatureModule()
+    try:
+        module.validate(ctx)
+        module.execute(ctx, feature_name=feature_name)
+    except Exception as e:
+        log_error(f"Failed to show feature: {e}")
+        raise typer.Exit(1)
 
 
 @feature_app.command(name="add")
 def feature_add(
     feature_name: str = Argument(..., help="Feature name to add"),
     commit: str = Argument(..., help="Git commit reference"),
-    description: Optional[str] = Option(None, "--description", "-d", help="Feature description"),
+    description: Optional[str] = Option(
+        None, "--description", "-d", help="Feature description"
+    ),
 ):
     """Add a new feature from a commit"""
     ctx = create_build_context(state.chromium_src)
     if not ctx:
         raise typer.Exit(1)
 
-    from ..modules.feature import add_feature
-    success = add_feature(ctx, feature_name, commit, description)
-    if not success:
+    from ..modules.feature import AddFeatureModule
+
+    module = AddFeatureModule()
+    try:
+        module.validate(ctx)
+        module.execute(
+            ctx, feature_name=feature_name, commit=commit, description=description
+        )
+    except Exception as e:
+        log_error(f"Failed to add feature: {e}")
         raise typer.Exit(1)
 
 
 if __name__ == "__main__":
     app()
+
