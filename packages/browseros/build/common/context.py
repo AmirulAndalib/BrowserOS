@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """
 Build context dataclass to hold all build state
+
+REFACTOR NOTE: This module is being refactored to use sub-components (PathConfig,
+BuildConfig, ArtifactRegistry, EnvConfig) to avoid god object anti-pattern.
+The old interface is maintained for backward compatibility during the migration.
 """
 
 import time
-from enum import Enum
 from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, List, Optional
 from .utils import (
     log_error,
     log_warning,
@@ -18,32 +21,192 @@ from .utils import (
     IS_WINDOWS,
     IS_MACOS,
 )
+from .env import EnvConfig
 
 
-class ArtifactType(str, Enum):
-    """Well-known artifact types produced during build"""
+# =============================================================================
+# Sub-Components - New modular structure
+# =============================================================================
 
-    # Signing outputs
-    SIGNED_APP = "sign:app"
-    SIGNED_DMG = "sign:dmg"
-    SIGNED_INSTALLER = "sign:installer"
-    SIGNED_APPIMAGE = "sign:appimage"
-    NOTARIZATION_ZIP = "sign:notarization_zip"
 
-    # Packaging outputs
-    PACKAGE_DMG = "package:dmg"
-    PACKAGE_INSTALLER = "package:installer"
-    PACKAGE_APPIMAGE = "package:appimage"
-    PACKAGE_UNIVERSAL = "package:universal"
+class ArtifactRegistry:
+    """
+    Simple artifact tracking registry
 
-    # Build outputs
-    BUILD_APP = "build:app"
-    BUILD_BINARY = "build:binary"
+    Tracks artifacts produced during the build process. Each artifact has a unique
+    name (string) and a path (Path object). If you need to track multiple paths
+    for the same logical artifact, use different names (e.g., "signed_app_arm64",
+    "signed_app_x64").
+
+    Example:
+        artifacts = ArtifactRegistry()
+        artifacts.add("built_app", Path("/path/to/BrowserOS.app"))
+        app_path = artifacts.get("built_app")
+        if artifacts.has("signed_app"):
+            ...
+    """
+
+    def __init__(self):
+        self._artifacts: Dict[str, Path] = {}
+
+    def add(self, name: str, path: Path) -> None:
+        """
+        Register an artifact
+
+        Args:
+            name: Unique artifact name (e.g., "built_app", "signed_dmg")
+            path: Path to the artifact
+
+        Note:
+            If an artifact with the same name already exists, it will be overwritten.
+        """
+        self._artifacts[name] = path
+
+    def get(self, name: str) -> Path:
+        """
+        Get artifact path by name
+
+        Args:
+            name: Artifact name
+
+        Returns:
+            Path to the artifact
+
+        Raises:
+            KeyError: If artifact not found
+        """
+        return self._artifacts[name]
+
+    def has(self, name: str) -> bool:
+        """
+        Check if artifact exists
+
+        Args:
+            name: Artifact name
+
+        Returns:
+            True if artifact exists, False otherwise
+        """
+        return name in self._artifacts
+
+    def all(self) -> Dict[str, Path]:
+        """Get all artifacts as a dictionary"""
+        return self._artifacts.copy()
+
+
+class PathConfig:
+    """
+    Path-related configuration
+
+    Centralizes all path construction and validation logic. This prevents the
+    BuildContext from becoming a god object with dozens of path-related methods.
+    """
+
+    def __init__(self, root_dir: Path, chromium_src: Optional[Path] = None):
+        self.root_dir = root_dir
+        self._chromium_src = chromium_src or Path()
+        self._out_dir = "out/Default"
+
+    @property
+    def chromium_src(self) -> Path:
+        """Chromium source directory"""
+        return self._chromium_src
+
+    @chromium_src.setter
+    def chromium_src(self, value: Path):
+        """Set chromium source directory"""
+        self._chromium_src = value
+
+    @property
+    def out_dir(self) -> str:
+        """Output directory (relative to chromium_src)"""
+        return self._out_dir
+
+    @out_dir.setter
+    def out_dir(self, value: str):
+        """Set output directory"""
+        self._out_dir = value
+
+
+class BuildConfig:
+    """
+    Build-specific configuration
+
+    Contains all build-related settings like architecture, build type, versions, etc.
+    """
+
+    def __init__(
+        self,
+        architecture: Optional[str] = None,
+        build_type: str = "debug",
+    ):
+        self.architecture = architecture or get_platform_arch()
+        self.build_type = build_type
+        self.chromium_version = ""
+        self.browseros_version = ""
+        self.browseros_chromium_version = ""
+
+        # App names - will be set based on platform
+        self.CHROMIUM_APP_NAME = ""
+        self.BROWSEROS_APP_NAME = ""
+        self.BROWSEROS_APP_BASE_NAME = "BrowserOS"
+
+        # Third party versions
+        self.SPARKLE_VERSION = "2.7.0"
+
+        # Set platform-specific app names
+        self._set_app_names()
+
+    def _set_app_names(self):
+        """Set platform-specific application names"""
+        if IS_WINDOWS():
+            self.CHROMIUM_APP_NAME = f"chrome{get_executable_extension()}"
+            self.BROWSEROS_APP_NAME = (
+                f"{self.BROWSEROS_APP_BASE_NAME}{get_executable_extension()}"
+            )
+        elif IS_MACOS():
+            self.CHROMIUM_APP_NAME = "Chromium.app"
+            self.BROWSEROS_APP_NAME = f"{self.BROWSEROS_APP_BASE_NAME}.app"
+        else:
+            self.CHROMIUM_APP_NAME = "chrome"
+            self.BROWSEROS_APP_NAME = self.BROWSEROS_APP_BASE_NAME.lower()
+
+
+# =============================================================================
+# Legacy BuildContext - Maintained for backward compatibility
+# =============================================================================
 
 
 @dataclass
 class BuildContext:
-    """Context Object pattern - ONE place for all build state"""
+    """
+    Context Object pattern - ONE place for all build state
+
+    REFACTOR NOTE: This class now uses sub-components (paths, build, artifact_registry, env)
+    to organize related functionality. The old interface is maintained for backward compatibility.
+
+    New interface (use this in new modules):
+        ctx.paths.root_dir - Path configuration
+        ctx.paths.chromium_src - Chromium source directory
+        ctx.paths.out_dir - Output directory
+
+        ctx.build.architecture - Build configuration
+        ctx.build.build_type - Build type (debug/release)
+        ctx.build.chromium_version - Chromium version
+
+        ctx.artifact_registry.add("built_app", path) - Register artifact
+        ctx.artifact_registry.get("built_app") - Get artifact path
+        ctx.artifact_registry.has("built_app") - Check if artifact exists
+
+        ctx.env.chromium_src - Environment variables
+        ctx.env.macos_certificate_name - macOS signing cert
+        ctx.env.gcs_bucket - GCS bucket for uploads
+
+    Old interface (still works, but deprecated):
+        ctx.root_dir - Direct access to root directory
+        ctx.architecture - Direct access to architecture
+        ctx.add_artifact(ArtifactType.BUILD_APP, path) - Legacy artifact method
+    """
 
     root_dir: Path
     chromium_src: Path = Path()
@@ -67,14 +230,28 @@ class BuildContext:
     # Third party
     SPARKLE_VERSION: str = "2.7.0"
 
-    # Build artifacts (steps populate this)
+    # Legacy artifacts dict - kept for backward compatibility
+    # New code should use ctx.artifacts (ArtifactRegistry) instead
     artifacts: Dict[str, List[Path]] = field(default_factory=dict)
+
+    # New sub-components (initialized in __post_init__)
+    paths: PathConfig = field(init=False)
+    build: BuildConfig = field(init=False)
+    artifact_registry: ArtifactRegistry = field(init=False)  # New artifact system
+    env: EnvConfig = field(init=False)
 
     def __post_init__(self):
         """Load version files and set platform/architecture-specific configurations"""
+        # Initialize new sub-components
+        self.paths = PathConfig(self.root_dir, self.chromium_src)
+        self.build = BuildConfig(self.architecture, self.build_type)
+        self.artifact_registry = ArtifactRegistry()  # New artifact system
+        self.env = EnvConfig()
+
         # Set platform-specific defaults
         if not self.architecture:
             self.architecture = get_platform_arch()
+            self.build.architecture = self.architecture
 
         # Set platform-specific app names
         if IS_WINDOWS():
@@ -89,11 +266,18 @@ class BuildContext:
             self.CHROMIUM_APP_NAME = "chrome"
             self.BROWSEROS_APP_NAME = self.BROWSEROS_APP_BASE_NAME.lower()
 
+        # Sync with BuildConfig
+        self.build.CHROMIUM_APP_NAME = self.CHROMIUM_APP_NAME
+        self.build.BROWSEROS_APP_NAME = self.BROWSEROS_APP_NAME
+
         # Set architecture-specific output directory with platform separator
         if IS_WINDOWS():
             self.out_dir = f"out\\Default_{self.architecture}"
         else:
             self.out_dir = f"out/Default_{self.architecture}"
+
+        # Sync with PathConfig
+        self.paths.out_dir = self.out_dir
 
         # Load version information using static methods
         if not self.chromium_version:
@@ -113,6 +297,11 @@ class BuildContext:
             new_build = int(version_dict["BUILD"]) + int(self.browseros_version)
             self.browseros_chromium_version = f"{version_dict['MAJOR']}.{version_dict['MINOR']}.{new_build}.{version_dict['PATCH']}"
 
+        # Sync versions with BuildConfig
+        self.build.chromium_version = self.chromium_version
+        self.build.browseros_version = self.browseros_version
+        self.build.browseros_chromium_version = self.browseros_chromium_version
+
         # Determine chromium source directory
         if self.chromium_src and self.chromium_src.exists():
             log_warning(f"📁 Using provided Chromium source: {self.chromium_src}")
@@ -127,24 +316,10 @@ class BuildContext:
                     f"Chromium source path does not exist: {self.chromium_src}"
                 )
 
+        # Sync chromium_src with PathConfig
+        self.paths.chromium_src = self.chromium_src
+
         self.start_time = time.time()
-
-    # === Artifact Management ===
-
-    def add_artifact(self, artifact_type: ArtifactType, path: Path):
-        """Add an artifact to tracking"""
-        key = artifact_type.value
-        if key not in self.artifacts:
-            self.artifacts[key] = []
-        self.artifacts[key].append(path)
-
-    def get_artifacts(self, artifact_type: ArtifactType) -> List[Path]:
-        """Get all artifacts of a type"""
-        return self.artifacts.get(artifact_type.value, [])
-
-    def has_artifact(self, artifact_type: ArtifactType) -> bool:
-        """Check if artifact type exists"""
-        return artifact_type.value in self.artifacts
 
     # === Initialization ===
 
