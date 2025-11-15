@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
 Logging utilities for the build system
-Provides consistent logging across all build modules with file output
+Provides consistent logging with Typer output and file logging
 """
 
 import sys
+import typer
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
@@ -27,7 +28,7 @@ def _ensure_log_file():
         # Open with UTF-8 encoding to handle any characters
         _log_file = open(log_file_path, "w", encoding="utf-8")
         _log_file.write(
-            f"Nxtscape Build Log - Started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"BrowserOS Build Log - Started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
         )
         _log_file.write("=" * 80 + "\n\n")
     return _log_file
@@ -41,60 +42,34 @@ def _log_to_file(message: str):
     log_file.flush()
 
 
-def _sanitize_for_windows(message: str) -> str:
-    """Remove non-ASCII characters on Windows to avoid encoding issues"""
-    # Import here to avoid circular dependency
-    from .utils import IS_WINDOWS
-    if IS_WINDOWS():
-        # Remove all non-ASCII characters
-        return "".join(char for char in message if ord(char) < 128)
-    return message
-
-
 def log_info(message: str):
-    """Print info message"""
-    print(_sanitize_for_windows(message))
+    """Print info message using Typer"""
+    typer.echo(message)
     _log_to_file(f"INFO: {message}")
 
 
 def log_warning(message: str):
-    """Print warning message"""
-    from .utils import IS_WINDOWS
-    if IS_WINDOWS():
-        print(f"[WARN] {_sanitize_for_windows(message)}")
-    else:
-        print(f"⚠️ {message}")
+    """Print warning message with color"""
+    typer.secho(f"⚠️  {message}", fg=typer.colors.YELLOW)
     _log_to_file(f"WARNING: {message}")
 
 
 def log_error(message: str):
-    """Print error message"""
-    from .utils import IS_WINDOWS
-    if IS_WINDOWS():
-        print(f"[ERROR] {_sanitize_for_windows(message)}")
-    else:
-        print(f"❌ {message}")
+    """Print error message to stderr with color"""
+    typer.secho(f"❌ {message}", fg=typer.colors.RED, err=True)
     _log_to_file(f"ERROR: {message}")
 
 
 def log_success(message: str):
-    """Print success message"""
-    from .utils import IS_WINDOWS
-    if IS_WINDOWS():
-        print(f"[SUCCESS] {_sanitize_for_windows(message)}")
-    else:
-        print(f"✅ {message}")
+    """Print success message with color"""
+    typer.secho(f"✅ {message}", fg=typer.colors.GREEN)
     _log_to_file(f"SUCCESS: {message}")
 
 
 def log_debug(message: str, enabled: bool = False):
     """Print debug message if enabled"""
     if enabled:
-        from .utils import IS_WINDOWS
-        if IS_WINDOWS():
-            print(f"[DEBUG] {_sanitize_for_windows(message)}")
-        else:
-            print(f"🔍 {message}")
+        typer.secho(f"🔍 {message}", fg=typer.colors.BLUE, dim=True)
         _log_to_file(f"DEBUG: {message}")
 
 
