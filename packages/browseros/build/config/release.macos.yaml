@@ -1,4 +1,10 @@
-# Nxtscape Release Build Configuration
+# BrwoserOS Release Build Configuration
+#
+# Environment Variables:
+#   Use !env tag to reference environment variables:
+#     chromium_src: !env CHROMIUM_SRC
+#     custom_path: !env MY_CUSTOM_PATH
+
 build:
   type: release
   # architecture: arm64  # Default single architecture
@@ -21,7 +27,7 @@ steps:
 
 paths:
   root_dir: .
-  # chromium_src: ../chromium-src
+  # chromium_src: !env CHROMIUM_SRC  # Example: use env var instead of hardcoded path
 
 # Environment-specific settings
 env:

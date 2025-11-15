@@ -32,10 +32,6 @@ def apply_patches_impl(
     ctx: Context, interactive: bool = False, commit_each: bool = False
 ) -> bool:
     """Apply patches using the dev CLI patch system"""
-    if not ctx.apply_patches:
-        log_info("\n⏭️  Skipping patches")
-        return True
-
     log_info("\n🩹 Applying patches using dev CLI system...")
 
     # Check if git is available

@@ -32,7 +32,9 @@ class MacOSPackageModule(CommandModule):
         dmg_path = dmg_dir / dmg_name
         pkg_dmg_path = ctx.get_pkg_dmg_path()
 
-        if ctx.sign_package:
+        # Determine if we should create signed DMG based on whether app was signed
+        # If signed_app artifact exists, the MacOSSignModule ran and we should sign the DMG
+        if ctx.artifact_registry.has("signed_app"):
             self._create_signed_notarized_dmg(app_path, dmg_path, pkg_dmg_path, ctx)
         else:
             self._create_dmg(app_path, dmg_path, pkg_dmg_path)
@@ -309,10 +311,6 @@ def package_universal(contexts: List[Context]) -> bool:
         chromium_src=contexts[0].chromium_src,
         architecture="universal",
         build_type=contexts[0].build_type,
-        apply_patches=False,
-        sign_package=contexts[0].sign_package,
-        package=False,
-        build=False,
     )
 
     # Create DMG in dist/<version> directory
