@@ -76,3 +76,14 @@ def build(ctx: BuildContext) -> bool:
     module.validate(ctx)
     module.execute(ctx)
     return True
+
+
+def build_target(ctx: BuildContext, target: str) -> bool:
+    """Build a specific target (e.g., mini_installer)"""
+    log_info(f"\n🔨 Building target: {target}")
+
+    autoninja_cmd = "autoninja.bat" if IS_WINDOWS else "autoninja"
+    run_command([autoninja_cmd, "-C", ctx.out_dir, target], cwd=ctx.chromium_src)
+
+    log_success(f"Target {target} built successfully")
+    return True

@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Application signing and notarization module for BrowserOS (macOS)"""
+"""
+Application signing and notarization module for BrowserOS
+NOTE: This module is macOS-specific. Windows signing would require signtool.exe
+"""
 
 import os
 import sys
@@ -8,7 +11,6 @@ import glob
 import shutil
 from pathlib import Path
 from typing import Optional, List, Dict, Tuple
-from ...common.module import BuildModule, ValidationError
 from ...common.context import BuildContext
 from ...common.utils import (
     run_command as utils_run_command,
@@ -52,68 +54,20 @@ def run_command(
     return utils_run_command(cmd, cwd=cwd, check=check)
 
 
-class MacOSSignModule(BuildModule):
-    produces = ["signed_app"]
-    requires = ["built_app"]
-    description = "Sign and notarize macOS application"
-
-    def validate(self, ctx: BuildContext) -> None:
-        if not IS_MACOS:
-            raise ValidationError("macOS signing requires macOS")
-
-        app_path = ctx.get_app_path()
-        if not app_path.exists():
-            raise ValidationError(f"App not found at: {app_path}")
-
-        env_ok, env_vars = check_environment()
-        if not env_ok:
-            raise ValidationError("Required signing environment variables not set")
-
-    def execute(self, ctx: BuildContext) -> None:
-        log_info("=" * 70)
-        log_info("🚀 Starting signing process for BrowserOS...")
-        log_info("=" * 70)
-
-        app_path = ctx.get_app_path()
-        env_ok, env_vars = check_environment()
-
-        self._clear_extended_attributes(app_path)
-        self._sign_all_components(app_path, env_vars["certificate_name"], ctx)
-        self._verify_signature(app_path)
-        self._notarize(app_path, env_vars, ctx)
-
-        ctx.artifact_registry.add("signed_app", app_path)
-        log_success("Application signed and notarized successfully")
-
-    def _clear_extended_attributes(self, app_path: Path) -> None:
-        log_info("🧹 Clearing extended attributes...")
-        run_command(["xattr", "-cs", str(app_path)])
-
-    def _sign_all_components(self, app_path: Path, certificate_name: str, ctx: BuildContext) -> None:
-        if not sign_all_components(app_path, certificate_name, ctx.root_dir, ctx):
-            raise RuntimeError("Failed to sign all components")
-
-    def _verify_signature(self, app_path: Path) -> None:
-        if not verify_signature(app_path):
-            raise RuntimeError("Signature verification failed")
-
-    def _notarize(self, app_path: Path, env_vars: Dict[str, str], ctx: BuildContext) -> None:
-        if not notarize_app(app_path, ctx.root_dir, env_vars, ctx):
-            raise RuntimeError("Notarization failed")
-
-
 def sign(ctx: BuildContext) -> bool:
-    """Legacy function interface"""
+    """Sign the application"""
     if not ctx.sign_package:
         log_info("\n⏭️  Skipping signing")
         return True
 
     log_info("\n🔏 Signing application...")
 
-    module = MacOSSignModule()
-    module.validate(ctx)
-    module.execute(ctx)
+    # When signing is enabled, also create and notarize DMG
+    if not sign_app(ctx, create_dmg=True):
+        log_error("Signing and notarization failed")
+        raise RuntimeError("Signing and notarization failed")
 
+    log_success("Application signed and notarized successfully")
     return True
 
 

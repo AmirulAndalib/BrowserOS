@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Windows packaging module for BrowserOS"""
+"""
+Windows packaging module for Nxtscape Browser
+Based on ungoogled-chromium-windows packaging approach
+"""
 
 import os
 import sys
@@ -7,7 +10,6 @@ import shutil
 import zipfile
 from pathlib import Path
 from typing import Optional, List
-from ...common.module import BuildModule, ValidationError
 from ...common.context import BuildContext
 from ...common.utils import (
     run_command,
@@ -19,80 +21,34 @@ from ...common.utils import (
     IS_WINDOWS,
 )
 
-
-class WindowsPackageModule(BuildModule):
-    produces = ["installer", "installer_zip"]
-    requires = []
-    description = "Create Windows installer and portable ZIP"
-
-    def validate(self, ctx: BuildContext) -> None:
-        if not IS_WINDOWS():
-            raise ValidationError("Windows packaging requires Windows")
-
-        build_output_dir = join_paths(ctx.chromium_src, ctx.out_dir)
-        mini_installer_path = build_output_dir / "mini_installer.exe"
-
-        if not mini_installer_path.exists():
-            raise ValidationError(f"mini_installer.exe not found: {mini_installer_path}")
-
-    def execute(self, ctx: BuildContext) -> None:
-        log_info("\n📦 Creating Windows packages...")
-
-        installer_path = self._create_installer(ctx)
-        zip_path = self._create_portable_zip(ctx)
-
-        ctx.artifact_registry.add("installer", installer_path)
-        ctx.artifact_registry.add("installer_zip", zip_path)
-
-        log_success("Windows packages created successfully")
-
-    def _create_installer(self, ctx: BuildContext) -> Path:
-        build_output_dir = join_paths(ctx.chromium_src, ctx.out_dir)
-        mini_installer_path = build_output_dir / "mini_installer.exe"
-
-        output_dir = ctx.get_dist_dir()
-        output_dir.mkdir(parents=True, exist_ok=True)
-
-        installer_name = f"{ctx.get_app_base_name()}_{ctx.get_browseros_chromium_version()}_{ctx.architecture}_installer.exe"
-        installer_path = output_dir / installer_name
-
-        try:
-            shutil.copy2(mini_installer_path, installer_path)
-            log_success(f"Installer created: {installer_name}")
-            return installer_path
-        except Exception as e:
-            raise RuntimeError(f"Failed to create installer: {e}")
-
-    def _create_portable_zip(self, ctx: BuildContext) -> Path:
-        build_output_dir = join_paths(ctx.chromium_src, ctx.out_dir)
-        mini_installer_path = build_output_dir / "mini_installer.exe"
-
-        output_dir = ctx.get_dist_dir()
-        output_dir.mkdir(parents=True, exist_ok=True)
-
-        zip_name = f"{ctx.get_app_base_name()}_{ctx.get_browseros_chromium_version()}_{ctx.architecture}_installer.zip"
-        zip_path = output_dir / zip_name
-
-        try:
-            with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
-                installer_name = f"{ctx.get_app_base_name()}_{ctx.get_browseros_version()}_{ctx.architecture}_installer.exe"
-                zipf.write(mini_installer_path, installer_name)
-
-                file_size = mini_installer_path.stat().st_size
-                log_info(f"Added installer to ZIP ({file_size // (1024*1024)} MB)")
-
-            log_success(f"Installer ZIP created: {zip_name}")
-            return zip_path
-        except Exception as e:
-            raise RuntimeError(f"Failed to create installer ZIP: {e}")
+# BrowserOS Server binary definitions moved to sign/windows.py
 
 
 def package(ctx: BuildContext) -> bool:
-    """Legacy function interface"""
-    module = WindowsPackageModule()
-    module.validate(ctx)
-    module.execute(ctx)
-    return True
+    """Create Windows packages (installer and portable zip)"""
+    log_info("\n📦 Creating Windows packages...")
+
+    # First, ensure mini_installer is built
+    # if not build_mini_installer(ctx):
+    #     log_error("Failed to build mini_installer")
+    #     return False
+
+    # Create both installer and portable zip
+    success = True
+
+    if create_installer(ctx):
+        log_success("Installer created successfully")
+    else:
+        log_error("Failed to create installer")
+        success = False
+
+    if create_portable_zip(ctx):
+        log_success("Portable ZIP created successfully")
+    else:
+        log_error("Failed to create portable ZIP")
+        success = False
+
+    return success
 
 
 def build_mini_installer(ctx: BuildContext) -> bool:

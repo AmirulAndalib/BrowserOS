@@ -1,9 +1,14 @@
-"""
-Platform-specific signing module for BrowserOS
-Automatically imports the correct signing functions based on the platform
-"""
+"""Platform-specific signing module for BrowserOS"""
 
 from ...common.utils import IS_MACOS, IS_WINDOWS, IS_LINUX
+
+# Import module classes
+if IS_MACOS():
+    from .macos import MacOSSignModule
+elif IS_WINDOWS():
+    from .windows import WindowsSignModule
+elif IS_LINUX():
+    from .linux import LinuxSignModule
 
 # Import platform-specific functions
 if IS_MACOS():
@@ -44,15 +49,17 @@ else:
     def check_signing_environment():
         return True
 
-# Export the appropriate functions
+# Export module classes and functions
 __all__ = [
     'sign',
     'sign_universal',
     'check_signing_environment',
 ]
 
-# Platform-specific exports
+# Platform-specific module class exports
 if IS_MACOS():
-    __all__.extend(['sign_app', 'notarize_app', 'verify_signature'])
-if IS_WINDOWS():
-    __all__.append('sign_binaries')
+    __all__.extend(['MacOSSignModule', 'sign_app', 'notarize_app', 'verify_signature'])
+elif IS_WINDOWS():
+    __all__.extend(['WindowsSignModule', 'sign_binaries'])
+elif IS_LINUX():
+    __all__.append('LinuxSignModule')
