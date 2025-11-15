@@ -214,10 +214,6 @@ class Context:
     out_dir: str = "out/Default"
     architecture: str = ""  # Will be set in __post_init__
     build_type: str = "debug"
-    apply_patches: bool = False
-    sign_package: bool = False
-    package: bool = False
-    build: bool = False
     chromium_version: str = ""
     browseros_version: str = ""
     browseros_chromium_version: str = ""
@@ -352,10 +348,6 @@ class Context:
             chromium_src=chromium_src,
             architecture=arch,
             build_type=config.get("build_type", "debug"),
-            apply_patches=config.get("apply_patches", False),
-            sign_package=config.get("sign_package", False),
-            package=config.get("package", False),
-            build=config.get("build", False),
         )
 
         return ctx
