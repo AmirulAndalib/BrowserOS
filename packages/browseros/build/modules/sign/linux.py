@@ -17,21 +17,6 @@ class LinuxSignModule(CommandModule):
 
     def execute(self, ctx: Context) -> None:
         log_info("Code signing is not required for Linux packages")
-
-
-def sign(ctx: Context) -> bool:
-    """Legacy function interface"""
-    module = LinuxSignModule()
-    module.validate(ctx)
-    module.execute(ctx)
-    return True
-
-
-def sign_binaries(ctx: Context) -> bool:
-    """Legacy function interface"""
-    return sign(ctx)
-
-
 def sign_universal(contexts: List[Context]) -> bool:
     """Linux doesn't support universal binaries"""
     log_warning("Universal signing is not supported on Linux")

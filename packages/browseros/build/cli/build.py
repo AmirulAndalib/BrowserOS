@@ -50,10 +50,6 @@ from ..modules.package.macos import MacOSPackageModule
 from ..modules.package.windows import WindowsPackageModule
 from ..modules.package.linux import LinuxPackageModule
 
-# =============================================================================
-# MODULE REGISTRATION - All available modules in one place
-# =============================================================================
-
 AVAILABLE_MODULES = {
     # Setup & Environment
     "clean": CleanModule,
@@ -79,10 +75,6 @@ AVAILABLE_MODULES = {
     "upload_gcs": GCSUploadModule,
 }
 
-# =============================================================================
-# EXECUTION ORDER - Fixed pipeline phases (flags control which phases run)
-# =============================================================================
-
 
 def _get_sign_module():
     """Get platform-specific sign module name"""
@@ -90,8 +82,11 @@ def _get_sign_module():
         return "sign_macos"
     elif IS_WINDOWS():
         return "sign_windows"
-    else:
+    elif IS_LINUX():
         return "sign_linux"
+    else:
+        log_error("Unsupported platform for packaging")
+        sys.exit(1)
 
 
 def _get_package_module():
@@ -100,8 +95,11 @@ def _get_package_module():
         return "package_macos"
     elif IS_WINDOWS():
         return "package_windows"
-    else:
+    elif IS_LINUX():
         return "package_linux"
+    else:
+        log_error("Unsupported platform for packaging")
+        sys.exit(1)
 
 
 # Fixed execution order - flags enable/disable phases, order is always the same
@@ -109,8 +107,10 @@ EXECUTION_ORDER = [
     # Phase 1: Setup & Clean
     ("setup", ["clean", "git_setup", "sparkle_setup"]),
     # Phase 2: Patches & Resources
-    ("prep", ["patches", "chromium_replace", "string_replaces", "resources"]),
-    # Phase 3: Configure & Build
+    (
+        "prep",
+        ["resources", "chromium_replace", "string_replaces", "patches"],
+    ),  # Phase 3: Configure & Build
     ("build", ["configure", "compile"]),
     # Phase 4: Code Signing (platform-aware)
     ("sign", [_get_sign_module()]),
@@ -150,11 +150,6 @@ def build_pipeline_from_flags(
             pipeline.extend(modules)
 
     return pipeline
-
-
-# =============================================================================
-# CLI Interface
-# =============================================================================
 
 
 def main(
@@ -285,10 +280,6 @@ def main(
     log_info("🚀 BrowserOS Build System")
     log_info("=" * 70)
 
-    # =============================================================================
-    # Load Configuration
-    # =============================================================================
-
     root_dir = Path(__file__).parent.parent.parent
     pipeline = []
     required_envs = []
@@ -358,10 +349,6 @@ def main(
         log_info(f"\n  Pipeline: {' → '.join(pipeline)}")
         log_info("-" * 70)
 
-    # =============================================================================
-    # Validate Configuration
-    # =============================================================================
-
     # Validate required environment variables
     if required_envs:
         validate_required_envs(required_envs)
@@ -396,10 +383,6 @@ def main(
         os.environ["DEPOT_TOOLS_WIN_TOOLCHAIN"] = "0"
         log_info("Set DEPOT_TOOLS_WIN_TOOLCHAIN=0 for Windows build")
 
-    # =============================================================================
-    # Build Context
-    # =============================================================================
-
     ctx = Context(
         root_dir=root_dir,
         chromium_src=chromium_src_path,
@@ -414,10 +397,6 @@ def main(
     log_info(f"📍 Output: {ctx.out_dir}")
     log_info(f"📍 Pipeline: {' → '.join(pipeline)}")
     log_info("=" * 70)
-
-    # =============================================================================
-    # Execute Pipeline
-    # =============================================================================
 
     start_time = time.time()
     notify_pipeline_start("build", pipeline)

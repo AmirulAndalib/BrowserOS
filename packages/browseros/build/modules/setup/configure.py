@@ -42,13 +42,3 @@ class ConfigureModule(CommandModule):
         run_command([gn_cmd, "gen", ctx.out_dir, "--fail-on-unused-args"], cwd=ctx.chromium_src)
 
         log_success("Build configured")
-
-
-def configure(ctx: Context, gn_flags_file: Optional[Path] = None) -> bool:
-    if gn_flags_file:
-        ctx.paths.gn_flags_file = gn_flags_file
-
-    module = ConfigureModule()
-    module.validate(ctx)
-    module.execute(ctx)
-    return True

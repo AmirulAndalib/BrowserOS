@@ -69,15 +69,6 @@ class CompileModule(CommandModule):
         Path(temp_path).unlink()
 
         log_info(f"Created VERSION file: {ctx.browseros_chromium_version}")
-
-
-def build(ctx: Context) -> bool:
-    module = CompileModule()
-    module.validate(ctx)
-    module.execute(ctx)
-    return True
-
-
 def build_target(ctx: Context, target: str) -> bool:
     """Build a specific target (e.g., mini_installer)"""
     log_info(f"\n🔨 Building target: {target}")

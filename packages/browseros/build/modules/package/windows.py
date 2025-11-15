@@ -85,16 +85,6 @@ class WindowsPackageModule(CommandModule):
             return zip_path
         except Exception as e:
             raise RuntimeError(f"Failed to create installer ZIP: {e}")
-
-
-def package(ctx: Context) -> bool:
-    """Legacy function interface"""
-    module = WindowsPackageModule()
-    module.validate(ctx)
-    module.execute(ctx)
-    return True
-
-
 def build_mini_installer(ctx: Context) -> bool:
     """Build the mini_installer target if it doesn't exist"""
     log_info("\n🔨 Checking mini_installer build...")

@@ -198,16 +198,6 @@ def upload_signed_artifacts(ctx: Context) -> bool:
     # For now, this is the same as package artifacts
     # Can be extended in the future for specific signed artifacts
     return upload_package_artifacts_impl(ctx)[0]
-
-
-def upload_package_artifacts(ctx: Context) -> tuple[bool, List[str]]:
-    """Legacy function interface"""
-    module = GCSUploadModule()
-    module.validate(ctx)
-    module.execute(ctx)
-    return True, []
-
-
 def download_from_gcs(
     bucket_name: str,
     source_path: str,
