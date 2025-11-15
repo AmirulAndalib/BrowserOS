@@ -13,6 +13,7 @@ import typer
 from ..common.context import Context
 from ..common.config import load_config, validate_required_envs
 from ..common.pipeline import validate_pipeline, show_available_modules
+from ..common.args import BuildArgsResolver, PipelineResolver
 from ..common.notify import (
     notify_pipeline_start,
     notify_pipeline_end,
@@ -121,35 +122,90 @@ EXECUTION_ORDER = [
 ]
 
 
-def build_pipeline_from_flags(
-    setup: bool = False,
-    prep: bool = False,
-    build: bool = False,
-    sign: bool = False,
-    package: bool = False,
-    upload: bool = False,
-) -> list[str]:
-    """Build module pipeline from boolean flags
+def execute_pipeline(
+    ctx: Context,
+    pipeline: list[str],
+    available_modules: dict,
+    pipeline_name: str = "build",
+) -> None:
+    """Execute a build pipeline by running modules sequentially.
 
-    Flags enable/disable phases, execution order is fixed.
-    User can specify flags in any order - system enforces correct sequence.
+    Args:
+        ctx: Build context with paths and configuration
+        pipeline: List of module names to execute in order
+        available_modules: Dictionary mapping module names to module classes
+        pipeline_name: Name of pipeline for notifications (default: "build")
+
+    Raises:
+        typer.Exit: On module validation failure, execution failure, or interrupt
+
+    Design:
+        - Executes modules sequentially in pipeline order
+        - Validates each module before execution (fail fast)
+        - Tracks timing for each module and total pipeline
+        - Sends notifications at key lifecycle events
+        - Handles interrupts (Ctrl+C) gracefully with cleanup
     """
-    pipeline = []
-    enabled_phases = {
-        "setup": setup,
-        "prep": prep,
-        "build": build,
-        "sign": sign,
-        "package": package,
-        "upload": upload,
-    }
+    start_time = time.time()
+    notify_pipeline_start(pipeline_name, pipeline)
 
-    # Execute in predetermined order
-    for phase_name, modules in EXECUTION_ORDER:
-        if enabled_phases.get(phase_name, False):
-            pipeline.extend(modules)
+    try:
+        for module_name in pipeline:
+            log_info(f"\n{'='*70}")
+            log_info(f"🔧 Running module: {module_name}")
+            log_info(f"{'='*70}")
 
-    return pipeline
+            # Instantiate module
+            module_class = available_modules[module_name]
+            module = module_class()
+
+            # Notify module start and track timing
+            notify_module_start(module_name)
+            module_start = time.time()
+
+            # Validate right before executing (fail fast)
+            try:
+                module.validate(ctx)
+            except ValidationError as e:
+                log_error(f"Validation failed for {module_name}: {e}")
+                notify_pipeline_error(
+                    pipeline_name, f"{module_name} validation failed: {e}"
+                )
+                raise typer.Exit(1)
+
+            # Execute module
+            try:
+                module.execute(ctx)
+                module_duration = time.time() - module_start
+                notify_module_completion(module_name, module_duration)
+                log_success(f"Module {module_name} completed in {module_duration:.1f}s")
+            except Exception as e:
+                log_error(f"Module {module_name} failed: {e}")
+                notify_pipeline_error(pipeline_name, f"{module_name} failed: {e}")
+                raise typer.Exit(1)
+
+        # Pipeline completed successfully
+        duration = time.time() - start_time
+        mins = int(duration / 60)
+        secs = int(duration % 60)
+
+        log_info("\n" + "=" * 70)
+        log_success(f"✅ Pipeline completed successfully in {mins}m {secs}s")
+        log_info("=" * 70)
+
+        notify_pipeline_end(pipeline_name, duration)
+
+    except KeyboardInterrupt:
+        log_error("\n❌ Pipeline interrupted")
+        notify_pipeline_error(pipeline_name, "Interrupted by user")
+        raise typer.Exit(130)
+    except typer.Exit:
+        # Re-raise typer.Exit (from validation/execution failures)
+        raise
+    except Exception as e:
+        log_error(f"\n❌ Pipeline failed: {e}")
+        notify_pipeline_error(pipeline_name, str(e))
+        raise typer.Exit(1)
 
 
 def main(
@@ -280,53 +336,45 @@ def main(
     log_info("🚀 BrowserOS Build System")
     log_info("=" * 70)
 
+    # Load YAML config if provided
+    config_data = load_config(config) if config else None
+
+    # Build CLI arguments dictionary for resolver
     root_dir = Path(__file__).parent.parent.parent
-    pipeline = []
-    required_envs = []
-    chromium_src_path = chromium_src
-    architecture = arch
+    cli_args = {
+        "chromium_src": chromium_src,
+        "arch": arch,
+        "build_type": build_type,
+        "modules": modules,
+        "setup": setup,
+        "prep": prep,
+        "build": build,
+        "sign": sign,
+        "package": package,
+        "upload": upload,
+    }
 
-    if config:
-        # Load from YAML config
-        config_data = load_config(config)
+    # Resolve build context using BuildArgsResolver (handles all precedence)
+    try:
+        resolver = BuildArgsResolver(cli_args, config_data, root_dir=root_dir)
+        ctx = resolver.resolve()
+    except ValueError as e:
+        log_error(str(e))
+        raise typer.Exit(1)
 
-        # Extract pipeline
-        if "modules" not in config_data:
-            log_error("Config file must contain 'modules' key")
-            raise typer.Exit(1)
-
-        pipeline = config_data["modules"]
-
-        # Extract required environment variables
-        required_envs = config_data.get("required_envs", [])
-
-        # Extract build settings (CLI args override)
-        if "build" in config_data:
-            if not architecture:
-                architecture = config_data["build"].get("arch") or config_data[
-                    "build"
-                ].get("architecture")
-            if not chromium_src_path and "chromium_src" in config_data["build"]:
-                chromium_src_path = Path(config_data["build"]["chromium_src"])
-            if "type" in config_data["build"]:
-                build_type = config_data["build"]["type"]
-
-    elif modules:
-        # Parse module list from CLI
-        pipeline = [m.strip() for m in modules.split(",")]
-
-    elif has_flags:
-        # Build pipeline from phase flags (auto-ordered)
-        pipeline = build_pipeline_from_flags(
-            setup=setup,
-            prep=prep,
-            build=build,
-            sign=sign,
-            package=package,
-            upload=upload,
+    # Resolve pipeline using PipelineResolver (handles all modes)
+    try:
+        pipeline = PipelineResolver.resolve(
+            cli_args,
+            config_data,
+            execution_order=EXECUTION_ORDER,
         )
+    except ValueError as e:
+        log_error(str(e))
+        raise typer.Exit(1)
 
-        # Show what will execute
+    # Show execution plan for flag-based mode
+    if has_flags:
         log_info("\n📋 Execution Plan (auto-ordered):")
         log_info("-" * 70)
         phase_names = []
@@ -349,46 +397,19 @@ def main(
         log_info(f"\n  Pipeline: {' → '.join(pipeline)}")
         log_info("-" * 70)
 
-    # Validate required environment variables
-    if required_envs:
-        validate_required_envs(required_envs)
+    # Validate required environment variables (YAML-specific)
+    if config_data:
+        required_envs = config_data.get("required_envs", [])
+        if required_envs:
+            validate_required_envs(required_envs)
 
-    # Validate pipeline
+    # Validate pipeline modules exist
     validate_pipeline(pipeline, AVAILABLE_MODULES)
-
-    # Set defaults
-    if not architecture:
-        architecture = get_platform_arch()
-        log_info(f"Using platform default architecture: {architecture}")
-
-    # Validate chromium_src
-    if not chromium_src_path:
-        # Try environment variable
-        chromium_src_env = os.environ.get("CHROMIUM_SRC")
-        if chromium_src_env:
-            chromium_src_path = Path(chromium_src_env)
-        else:
-            log_error("Chromium source directory required!")
-            log_error(
-                "Provide via --chromium-src, config file, or CHROMIUM_SRC environment variable"
-            )
-            raise typer.Exit(1)
-
-    if not chromium_src_path.exists():
-        log_error(f"Chromium source directory does not exist: {chromium_src_path}")
-        raise typer.Exit(1)
 
     # Set Windows-specific environment
     if IS_WINDOWS():
         os.environ["DEPOT_TOOLS_WIN_TOOLCHAIN"] = "0"
         log_info("Set DEPOT_TOOLS_WIN_TOOLCHAIN=0 for Windows build")
-
-    ctx = Context(
-        root_dir=root_dir,
-        chromium_src=chromium_src_path,
-        architecture=architecture,
-        build_type=build_type,
-    )
 
     log_info(f"📍 Root: {root_dir}")
     log_info(f"📍 Chromium: {ctx.chromium_src}")
@@ -398,57 +419,5 @@ def main(
     log_info(f"📍 Pipeline: {' → '.join(pipeline)}")
     log_info("=" * 70)
 
-    start_time = time.time()
-    notify_pipeline_start("build", pipeline)
-
-    try:
-        for module_name in pipeline:
-            log_info(f"\n{'='*70}")
-            log_info(f"🔧 Running module: {module_name}")
-            log_info(f"{'='*70}")
-
-            module_class = AVAILABLE_MODULES[module_name]
-            module = module_class()
-
-            # Notify module start
-            notify_module_start(module_name)
-            module_start = time.time()
-
-            # Validate right before executing
-            try:
-                module.validate(ctx)
-            except ValidationError as e:
-                log_error(f"Validation failed for {module_name}: {e}")
-                notify_pipeline_error("build", f"{module_name} validation failed: {e}")
-                raise typer.Exit(1)
-
-            # Execute
-            try:
-                module.execute(ctx)
-                module_duration = time.time() - module_start
-                notify_module_completion(module_name, module_duration)
-                log_success(f"Module {module_name} completed in {module_duration:.1f}s")
-            except Exception as e:
-                log_error(f"Module {module_name} failed: {e}")
-                notify_pipeline_error("build", f"{module_name} failed: {e}")
-                raise typer.Exit(1)
-
-        # Pipeline complete
-        duration = time.time() - start_time
-        mins = int(duration / 60)
-        secs = int(duration % 60)
-
-        log_info("\n" + "=" * 70)
-        log_success(f"✅ Pipeline completed successfully in {mins}m {secs}s")
-        log_info("=" * 70)
-
-        notify_pipeline_end("build", duration)
-
-    except KeyboardInterrupt:
-        log_error("\n❌ Pipeline interrupted")
-        notify_pipeline_error("build", "Interrupted by user")
-        raise typer.Exit(130)
-    except Exception as e:
-        log_error(f"\n❌ Pipeline failed: {e}")
-        notify_pipeline_error("build", str(e))
-        raise typer.Exit(1)
+    # Execute pipeline
+    execute_pipeline(ctx, pipeline, AVAILABLE_MODULES, pipeline_name="build")
