@@ -851,10 +851,6 @@ def sign_universal(contexts: List[Context]) -> bool:
             chromium_src=contexts[0].chromium_src,
             architecture="universal",
             build_type=contexts[0].build_type,
-            apply_patches=False,
-            sign_package=True,
-            package=False,
-            build=False,
         )
         # Override out_dir for universal
         universal_ctx.out_dir = "out/Default_universal"
