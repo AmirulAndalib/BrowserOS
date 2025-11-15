@@ -7,12 +7,12 @@ Simple feature management with YAML persistence.
 import yaml
 from pathlib import Path
 from typing import Dict, List, Optional
-from ...common.context import BuildContext
+from ...common.context import Context
 from ..extract.utils import get_commit_changed_files, run_git_command
 from ...common.utils import log_info, log_error, log_success, log_warning
 
 
-def add_feature(ctx: BuildContext, feature_name: str, commit: str, description: Optional[str] = None) -> bool:
+def add_feature(ctx: Context, feature_name: str, commit: str, description: Optional[str] = None) -> bool:
     """Add files from a commit to a feature
 
     Examples:
@@ -50,7 +50,7 @@ def add_feature(ctx: BuildContext, feature_name: str, commit: str, description: 
     return True
 
 
-def list_features(ctx: BuildContext):
+def list_features(ctx: Context):
     """List all defined features"""
     features_file = ctx.get_features_yaml_path()
     if not features_file.exists():
@@ -73,7 +73,7 @@ def list_features(ctx: BuildContext):
         log_info(f"  {name}: {file_count} files - {description}")
 
 
-def show_feature(ctx: BuildContext, feature_name: str):
+def show_feature(ctx: Context, feature_name: str):
     """Show details of a specific feature"""
     features_file = ctx.get_features_yaml_path()
     if not features_file.exists():

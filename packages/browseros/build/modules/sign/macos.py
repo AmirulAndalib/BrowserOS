@@ -9,7 +9,7 @@ import shutil
 from pathlib import Path
 from typing import Optional, List, Dict, Tuple
 from ...common.module import BuildModule, ValidationError
-from ...common.context import BuildContext
+from ...common.context import Context
 from ...common.utils import (
     run_command as utils_run_command,
     log_info,
@@ -57,7 +57,7 @@ class MacOSSignModule(BuildModule):
     requires = ["built_app"]
     description = "Sign and notarize macOS application"
 
-    def validate(self, ctx: BuildContext) -> None:
+    def validate(self, ctx: Context) -> None:
         if not IS_MACOS:
             raise ValidationError("macOS signing requires macOS")
 
@@ -69,7 +69,7 @@ class MacOSSignModule(BuildModule):
         if not env_ok:
             raise ValidationError("Required signing environment variables not set")
 
-    def execute(self, ctx: BuildContext) -> None:
+    def execute(self, ctx: Context) -> None:
         log_info("=" * 70)
         log_info("🚀 Starting signing process for BrowserOS...")
         log_info("=" * 70)
@@ -89,7 +89,7 @@ class MacOSSignModule(BuildModule):
         log_info("🧹 Clearing extended attributes...")
         run_command(["xattr", "-cs", str(app_path)])
 
-    def _sign_all_components(self, app_path: Path, certificate_name: str, ctx: BuildContext) -> None:
+    def _sign_all_components(self, app_path: Path, certificate_name: str, ctx: Context) -> None:
         if not sign_all_components(app_path, certificate_name, ctx.root_dir, ctx):
             raise RuntimeError("Failed to sign all components")
 
@@ -97,12 +97,12 @@ class MacOSSignModule(BuildModule):
         if not verify_signature(app_path):
             raise RuntimeError("Signature verification failed")
 
-    def _notarize(self, app_path: Path, env_vars: Dict[str, str], ctx: BuildContext) -> None:
+    def _notarize(self, app_path: Path, env_vars: Dict[str, str], ctx: Context) -> None:
         if not notarize_app(app_path, ctx.root_dir, env_vars, ctx):
             raise RuntimeError("Notarization failed")
 
 
-def sign(ctx: BuildContext) -> bool:
+def sign(ctx: Context) -> bool:
     """Legacy function interface"""
     if not ctx.sign_package:
         log_info("\n⏭️  Skipping signing")
@@ -172,7 +172,7 @@ def check_environment() -> Tuple[bool, Dict[str, str]]:
 
 
 def find_components_to_sign(
-    app_path: Path, ctx: Optional[BuildContext] = None
+    app_path: Path, ctx: Optional[Context] = None
 ) -> Dict[str, List[Path]]:
     """Dynamically find all components that need signing"""
     components = {
@@ -380,7 +380,7 @@ def sign_all_components(
     app_path: Path,
     certificate_name: str,
     root_dir: Path,
-    ctx: Optional[BuildContext] = None,
+    ctx: Optional[Context] = None,
 ) -> bool:
     """Sign all components in the correct order (bottom-up)"""
     log_info("🔍 Discovering components to sign...")
@@ -600,7 +600,7 @@ def notarize_app(
     app_path: Path,
     root_dir: Path,
     env_vars: Dict[str, str],
-    ctx: Optional[BuildContext] = None,
+    ctx: Optional[Context] = None,
 ) -> bool:
     """Notarize the application"""
     log_info("\n📤 Preparing for notarization...")
@@ -705,7 +705,7 @@ def notarize_app(
     return True
 
 
-def sign_app(ctx: BuildContext, create_dmg: bool = True) -> bool:
+def sign_app(ctx: Context, create_dmg: bool = True) -> bool:
     """Main signing function that uses BuildContext from build.py"""
     log_info("=" * 70)
     log_info("🚀 Starting signing process for BrowserOS...")
@@ -809,7 +809,7 @@ def sign_app(ctx: BuildContext, create_dmg: bool = True) -> bool:
     return error_count == 0
 
 
-def sign_universal(contexts: List[BuildContext]) -> bool:
+def sign_universal(contexts: List[Context]) -> bool:
     """Create universal binary and sign it"""
     log_info("=" * 70)
     log_info("🔄 Creating and signing universal binary...")
@@ -863,7 +863,7 @@ def sign_universal(contexts: List[BuildContext]) -> bool:
         log_success(f"Universal binary created: {universal_app_path}")
 
         # Create a temporary context for universal signing
-        universal_ctx = BuildContext(
+        universal_ctx = Context(
             root_dir=contexts[0].root_dir,
             chromium_src=contexts[0].chromium_src,
             architecture="universal",

@@ -4,7 +4,7 @@
 import re
 from pathlib import Path
 from ...common.module import BuildModule, ValidationError
-from ...common.context import BuildContext
+from ...common.context import Context
 from ...common.utils import log_info, log_success, log_error, log_warning
 
 
@@ -13,11 +13,11 @@ class StringReplacesModule(BuildModule):
     requires = []
     description = "Apply branding string replacements in Chromium"
 
-    def validate(self, ctx: BuildContext) -> None:
+    def validate(self, ctx: Context) -> None:
         if not ctx.chromium_src.exists():
             raise ValidationError(f"Chromium source not found: {ctx.chromium_src}")
 
-    def execute(self, ctx: BuildContext) -> None:
+    def execute(self, ctx: Context) -> None:
         log_info("\n🔤 Applying string replacements...")
         if not apply_string_replacements_impl(ctx):
             raise RuntimeError("Failed to apply string replacements")
@@ -48,7 +48,7 @@ target_files = [
 ]
 
 
-def apply_string_replacements_impl(ctx: BuildContext) -> bool:
+def apply_string_replacements_impl(ctx: Context) -> bool:
     """Internal implementation for applying string replacements"""
 
     success = True
@@ -99,7 +99,7 @@ def apply_string_replacements_impl(ctx: BuildContext) -> bool:
 
 
 
-def apply_string_replacements(ctx: BuildContext) -> bool:
+def apply_string_replacements(ctx: Context) -> bool:
     """Legacy function interface"""
     module = StringReplacesModule()
     module.validate(ctx)

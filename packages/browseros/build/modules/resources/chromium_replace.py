@@ -5,7 +5,7 @@ import sys
 import shutil
 from pathlib import Path
 from ...common.module import BuildModule, ValidationError
-from ...common.context import BuildContext
+from ...common.context import Context
 from ...common.utils import log_info, log_success, log_error, log_warning
 
 
@@ -14,17 +14,17 @@ class ChromiumReplaceModule(BuildModule):
     requires = []
     description = "Replace Chromium source files with custom versions"
 
-    def validate(self, ctx: BuildContext) -> None:
+    def validate(self, ctx: Context) -> None:
         if not ctx.chromium_src.exists():
             raise ValidationError(f"Chromium source not found: {ctx.chromium_src}")
 
-    def execute(self, ctx: BuildContext) -> None:
+    def execute(self, ctx: Context) -> None:
         log_info("\n🔄 Replacing chromium files...")
         if not replace_chromium_files_impl(ctx):
             raise RuntimeError("Failed to replace chromium files")
 
 
-def replace_chromium_files_impl(ctx: BuildContext, replacements=None) -> bool:
+def replace_chromium_files_impl(ctx: Context, replacements=None) -> bool:
     """Replace files in chromium source with custom files from chromium_files directory"""
     log_info("\n🔄 Replacing chromium files...")
     log_info(f"  Build type: {ctx.build_type}")
@@ -145,7 +145,7 @@ def add_file_to_replacements(
 
 
 
-def replace_chromium_files(ctx: BuildContext, replacements=None) -> bool:
+def replace_chromium_files(ctx: Context, replacements=None) -> bool:
     """Legacy function interface"""
     module = ChromiumReplaceModule()
     module.validate(ctx)

@@ -6,7 +6,7 @@ import subprocess
 from pathlib import Path
 from typing import Optional, List
 from ...common.module import BuildModule, ValidationError
-from ...common.context import BuildContext
+from ...common.context import Context
 from ...common.utils import (
     run_command,
     log_info,
@@ -28,7 +28,7 @@ class WindowsSignModule(BuildModule):
     requires = ["built_app"]
     description = "Sign Windows binaries and create signed installer"
 
-    def validate(self, ctx: BuildContext) -> None:
+    def validate(self, ctx: Context) -> None:
         if not IS_WINDOWS():
             raise ValidationError("Windows signing requires Windows")
 
@@ -45,7 +45,7 @@ class WindowsSignModule(BuildModule):
         if missing:
             raise ValidationError(f"Missing environment variables: {', '.join(missing)}")
 
-    def execute(self, ctx: BuildContext) -> None:
+    def execute(self, ctx: Context) -> None:
         log_info("\n🔏 Signing Windows binaries...")
 
         build_output_dir = join_paths(ctx.chromium_src, ctx.out_dir)
@@ -76,7 +76,7 @@ class WindowsSignModule(BuildModule):
         if not sign_with_codesigntool(existing_binaries):
             raise RuntimeError("Failed to sign executables")
 
-    def _build_mini_installer(self, ctx: BuildContext) -> None:
+    def _build_mini_installer(self, ctx: Context) -> None:
         log_info("\nStep 2/3: Building mini_installer with signed binaries...")
         if not build_mini_installer(ctx):
             raise RuntimeError("Failed to build mini_installer")
@@ -99,7 +99,7 @@ def get_browseros_server_binary_paths(build_output_dir: Path) -> List[Path]:
     return [server_dir / binary for binary in BROWSEROS_SERVER_BINARIES]
 
 
-def build_mini_installer(ctx: BuildContext) -> bool:
+def build_mini_installer(ctx: Context) -> bool:
     """Build the mini_installer.exe"""
     from ..compile import build_target
     log_info("Building mini_installer target...")
@@ -232,7 +232,7 @@ def sign_with_codesigntool(binaries: List[Path]) -> bool:
     return all_success
 
 
-def sign_universal(contexts: List[BuildContext]) -> bool:
+def sign_universal(contexts: List[Context]) -> bool:
     """Windows doesn't support universal binaries"""
     log_warning("Universal signing is not supported on Windows")
     return True
@@ -255,7 +255,7 @@ def check_signing_environment() -> bool:
     return True
 
 
-def sign(ctx: BuildContext, certificate_name: Optional[str] = None) -> bool:
+def sign(ctx: Context, certificate_name: Optional[str] = None) -> bool:
     """Legacy function interface"""
     module = WindowsSignModule()
     module.validate(ctx)
@@ -263,6 +263,6 @@ def sign(ctx: BuildContext, certificate_name: Optional[str] = None) -> bool:
     return True
 
 
-def sign_binaries(ctx: BuildContext, certificate_name: Optional[str] = None) -> bool:
+def sign_binaries(ctx: Context, certificate_name: Optional[str] = None) -> bool:
     """Legacy function interface"""
     return sign(ctx, certificate_name)

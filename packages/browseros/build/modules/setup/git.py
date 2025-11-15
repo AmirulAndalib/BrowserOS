@@ -6,7 +6,7 @@ import tarfile
 import urllib.request
 from pathlib import Path
 from ...common.module import BuildModule, ValidationError
-from ...common.context import BuildContext
+from ...common.context import Context
 from ...common.utils import run_command, log_info, log_error, log_success, IS_WINDOWS, safe_rmtree
 
 
@@ -15,14 +15,14 @@ class GitSetupModule(BuildModule):
     requires = []
     description = "Checkout Chromium version and sync dependencies"
 
-    def validate(self, ctx: BuildContext) -> None:
+    def validate(self, ctx: Context) -> None:
         if not ctx.chromium_src.exists():
             raise ValidationError(f"Chromium source not found: {ctx.chromium_src}")
 
         if not ctx.chromium_version:
             raise ValidationError("Chromium version not set")
 
-    def execute(self, ctx: BuildContext) -> None:
+    def execute(self, ctx: Context) -> None:
         log_info(f"\n🔀 Setting up Chromium {ctx.chromium_version}...")
 
         log_info("📥 Fetching all tags from remote...")
@@ -41,7 +41,7 @@ class GitSetupModule(BuildModule):
 
         log_success("Git setup complete")
 
-    def _verify_tag_exists(self, ctx: BuildContext) -> None:
+    def _verify_tag_exists(self, ctx: Context) -> None:
         result = subprocess.run(
             ["git", "tag", "-l", ctx.chromium_version],
             text=True,
@@ -68,12 +68,12 @@ class SparkleSetupModule(BuildModule):
     requires = []
     description = "Download and setup Sparkle framework (macOS only)"
 
-    def validate(self, ctx: BuildContext) -> None:
+    def validate(self, ctx: Context) -> None:
         from ...common.utils import IS_MACOS
         if not IS_MACOS():
             raise ValidationError("Sparkle setup requires macOS")
 
-    def execute(self, ctx: BuildContext) -> None:
+    def execute(self, ctx: Context) -> None:
         log_info("\n✨ Setting up Sparkle framework...")
 
         sparkle_dir = ctx.get_sparkle_dir()
@@ -99,14 +99,14 @@ class SparkleSetupModule(BuildModule):
 
 
 # Legacy function interface - maintained for backward compatibility
-def setup_git(ctx: BuildContext) -> bool:
+def setup_git(ctx: Context) -> bool:
     module = GitSetupModule()
     module.validate(ctx)
     module.execute(ctx)
     return True
 
 
-def setup_sparkle(ctx: BuildContext) -> bool:
+def setup_sparkle(ctx: Context) -> bool:
     module = SparkleSetupModule()
     module.validate(ctx)
     module.execute(ctx)

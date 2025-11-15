@@ -3,7 +3,7 @@
 
 from pathlib import Path
 from ...common.module import BuildModule, ValidationError
-from ...common.context import BuildContext
+from ...common.context import Context
 from ...common.utils import run_command, log_info, log_success, safe_rmtree
 
 
@@ -12,11 +12,11 @@ class CleanModule(BuildModule):
     requires = []
     description = "Clean build artifacts and reset git state"
 
-    def validate(self, ctx: BuildContext) -> None:
+    def validate(self, ctx: Context) -> None:
         if not ctx.chromium_src.exists():
             raise ValidationError(f"Chromium source not found: {ctx.chromium_src}")
 
-    def execute(self, ctx: BuildContext) -> None:
+    def execute(self, ctx: Context) -> None:
         log_info("🧹 Cleaning build artifacts...")
 
         out_path = ctx.chromium_src / ctx.out_dir
@@ -30,13 +30,13 @@ class CleanModule(BuildModule):
         log_info("\n🧹 Cleaning Sparkle build artifacts...")
         self._clean_sparkle(ctx)
 
-    def _clean_sparkle(self, ctx: BuildContext) -> None:
+    def _clean_sparkle(self, ctx: Context) -> None:
         sparkle_dir = ctx.get_sparkle_dir()
         if sparkle_dir.exists():
             safe_rmtree(sparkle_dir)
         log_success("Cleaned Sparkle build directory")
 
-    def _git_reset(self, ctx: BuildContext) -> None:
+    def _git_reset(self, ctx: Context) -> None:
         run_command(["git", "reset", "--hard", "HEAD"], cwd=ctx.chromium_src)
 
         log_info("🧹 Running git clean with exclusions...")
@@ -60,20 +60,20 @@ class CleanModule(BuildModule):
 
 
 # Legacy function interface - maintained for backward compatibility
-def clean(ctx: BuildContext) -> bool:
+def clean(ctx: Context) -> bool:
     module = CleanModule()
     module.validate(ctx)
     module.execute(ctx)
     return True
 
 
-def clean_sparkle(ctx: BuildContext) -> bool:
+def clean_sparkle(ctx: Context) -> bool:
     module = CleanModule()
     module._clean_sparkle(ctx)
     return True
 
 
-def git_reset(ctx: BuildContext) -> bool:
+def git_reset(ctx: Context) -> bool:
     module = CleanModule()
     module._git_reset(ctx)
     return True

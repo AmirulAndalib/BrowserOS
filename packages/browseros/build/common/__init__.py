@@ -1,6 +1,6 @@
 """Common modules for the BrowserOS build system"""
 
-from .context import BuildContext, ArtifactRegistry, PathConfig, BuildConfig
+from .context import Context, ArtifactRegistry, PathConfig, BuildConfig
 from .config import load_config, validate_required_envs
 from .notify import Notifier, get_notifier
 from .module import BuildModule, ValidationError
@@ -8,7 +8,7 @@ from .env import EnvConfig
 
 __all__ = [
     # Core context
-    'BuildContext',
+    'Context',
     # Sub-components
     'ArtifactRegistry',
     'PathConfig',

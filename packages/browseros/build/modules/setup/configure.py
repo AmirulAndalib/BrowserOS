@@ -4,7 +4,7 @@
 from pathlib import Path
 from typing import Optional
 from ...common.module import BuildModule, ValidationError
-from ...common.context import BuildContext
+from ...common.context import Context
 from ...common.utils import run_command, log_info, log_success, join_paths, IS_WINDOWS
 
 
@@ -13,7 +13,7 @@ class ConfigureModule(BuildModule):
     requires = []
     description = "Configure build with GN"
 
-    def validate(self, ctx: BuildContext) -> None:
+    def validate(self, ctx: Context) -> None:
         if not ctx.chromium_src.exists():
             raise ValidationError(f"Chromium source not found: {ctx.chromium_src}")
 
@@ -24,7 +24,7 @@ class ConfigureModule(BuildModule):
         if not flags_file.exists():
             raise ValidationError(f"GN flags file not found: {flags_file}")
 
-    def execute(self, ctx: BuildContext) -> None:
+    def execute(self, ctx: Context) -> None:
         log_info(f"\n⚙️  Configuring {ctx.build_type} build for {ctx.architecture}...")
 
         out_path = join_paths(ctx.chromium_src, ctx.out_dir)
@@ -44,7 +44,7 @@ class ConfigureModule(BuildModule):
         log_success("Build configured")
 
 
-def configure(ctx: BuildContext, gn_flags_file: Optional[Path] = None) -> bool:
+def configure(ctx: Context, gn_flags_file: Optional[Path] = None) -> bool:
     if gn_flags_file:
         ctx.paths.gn_flags_file = gn_flags_file
 
