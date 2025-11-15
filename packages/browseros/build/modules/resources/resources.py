@@ -8,7 +8,7 @@ import yaml
 import subprocess
 from pathlib import Path
 from ...common.module import BuildModule, ValidationError
-from ...common.context import BuildContext
+from ...common.context import Context
 from ...common.utils import log_info, log_success, log_error, log_warning, get_platform
 
 
@@ -17,18 +17,18 @@ class ResourcesModule(BuildModule):
     requires = []
     description = "Copy resources (icons, extensions) to Chromium"
 
-    def validate(self, ctx: BuildContext) -> None:
+    def validate(self, ctx: Context) -> None:
         copy_config_path = ctx.get_copy_resources_config()
         if not copy_config_path.exists():
             raise ValidationError(f"Copy configuration file not found: {copy_config_path}")
 
-    def execute(self, ctx: BuildContext) -> None:
+    def execute(self, ctx: Context) -> None:
         log_info("\n📦 Copying resources...")
         if not copy_resources_impl(ctx, commit_each=False):
             raise RuntimeError("Failed to copy resources")
 
 
-def copy_resources_impl(ctx: BuildContext, commit_each: bool = False) -> bool:
+def copy_resources_impl(ctx: Context, commit_each: bool = False) -> bool:
     """Copy AI extensions and icons based on YAML configuration"""
     log_info("\n📦 Copying resources...")
 
@@ -186,7 +186,7 @@ def commit_resource_copy(
 
 
 
-def copy_resources(ctx: BuildContext, commit_each: bool = False) -> bool:
+def copy_resources(ctx: Context, commit_each: bool = False) -> bool:
     """Legacy function interface"""
     module = ResourcesModule()
     module.validate(ctx)

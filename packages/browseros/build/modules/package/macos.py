@@ -6,7 +6,7 @@ import shutil
 from pathlib import Path
 from typing import Optional, List
 from ...common.module import BuildModule, ValidationError
-from ...common.context import BuildContext
+from ...common.context import Context
 from ...common.utils import run_command, log_info, log_error, log_success, IS_MACOS
 
 
@@ -15,7 +15,7 @@ class MacOSPackageModule(BuildModule):
     requires = []
     description = "Create DMG package for macOS"
 
-    def validate(self, ctx: BuildContext) -> None:
+    def validate(self, ctx: Context) -> None:
         if not IS_MACOS():
             raise ValidationError("DMG creation requires macOS")
 
@@ -23,7 +23,7 @@ class MacOSPackageModule(BuildModule):
         if not app_path.exists():
             raise ValidationError(f"App not found: {app_path}")
 
-    def execute(self, ctx: BuildContext) -> None:
+    def execute(self, ctx: Context) -> None:
         log_info("\n📀 Creating DMG package...")
 
         app_path = ctx.get_app_path()
@@ -45,7 +45,7 @@ class MacOSPackageModule(BuildModule):
             raise RuntimeError("Failed to create DMG")
 
     def _create_signed_notarized_dmg(
-        self, app_path: Path, dmg_path: Path, pkg_dmg_path: Path, ctx: BuildContext
+        self, app_path: Path, dmg_path: Path, pkg_dmg_path: Path, ctx: Context
     ) -> None:
         from ..sign.macos import check_environment
 
@@ -62,7 +62,7 @@ class MacOSPackageModule(BuildModule):
             raise RuntimeError("Failed to create signed and notarized DMG")
 
 
-def package(ctx: BuildContext) -> bool:
+def package(ctx: Context) -> bool:
     """Legacy function interface"""
     module = MacOSPackageModule()
     module.validate(ctx)
@@ -295,7 +295,7 @@ def create_signed_notarized_dmg(
     return True
 
 
-def package_universal(contexts: List[BuildContext]) -> bool:
+def package_universal(contexts: List[Context]) -> bool:
     """Create DMG package for universal binary"""
     log_info("=" * 70)
     log_info("📦 Creating universal DMG package...")
@@ -314,7 +314,7 @@ def package_universal(contexts: List[BuildContext]) -> bool:
         return False
 
     # Create a temporary universal context for DMG naming
-    universal_ctx = BuildContext(
+    universal_ctx = Context(
         root_dir=contexts[0].root_dir,
         chromium_src=contexts[0].chromium_src,
         architecture="universal",

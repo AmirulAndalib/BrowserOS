@@ -3,7 +3,7 @@
 
 from typing import List
 from ...common.module import BuildModule
-from ...common.context import BuildContext
+from ...common.context import Context
 from ...common.utils import log_info, log_warning
 
 
@@ -12,14 +12,14 @@ class LinuxSignModule(BuildModule):
     requires = []
     description = "Linux code signing (no-op)"
 
-    def validate(self, ctx: BuildContext) -> None:
+    def validate(self, ctx: Context) -> None:
         pass
 
-    def execute(self, ctx: BuildContext) -> None:
+    def execute(self, ctx: Context) -> None:
         log_info("Code signing is not required for Linux packages")
 
 
-def sign(ctx: BuildContext) -> bool:
+def sign(ctx: Context) -> bool:
     """Legacy function interface"""
     module = LinuxSignModule()
     module.validate(ctx)
@@ -27,12 +27,12 @@ def sign(ctx: BuildContext) -> bool:
     return True
 
 
-def sign_binaries(ctx: BuildContext) -> bool:
+def sign_binaries(ctx: Context) -> bool:
     """Legacy function interface"""
     return sign(ctx)
 
 
-def sign_universal(contexts: List[BuildContext]) -> bool:
+def sign_universal(contexts: List[Context]) -> bool:
     """Linux doesn't support universal binaries"""
     log_warning("Universal signing is not supported on Linux")
     return True

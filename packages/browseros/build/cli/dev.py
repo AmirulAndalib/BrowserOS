@@ -15,11 +15,11 @@ import typer
 from typer import Typer, Option, Argument
 
 # Import from common and utils
-from ..common.context import BuildContext
+from ..common.context import Context
 from ..common.utils import log_info, log_error, log_success, log_warning, join_paths
 
 
-def create_build_context(chromium_src: Optional[Path] = None) -> Optional[BuildContext]:
+def create_build_context(chromium_src: Optional[Path] = None) -> Optional[Context]:
     """Create BuildContext for dev CLI operations"""
     try:
         if not chromium_src:
@@ -31,7 +31,7 @@ def create_build_context(chromium_src: Optional[Path] = None) -> Optional[BuildC
             log_error(f"Chromium source directory does not exist: {chromium_src}")
             return None
 
-        ctx = BuildContext(
+        ctx = Context(
             root_dir=Path.cwd(),
             chromium_src=chromium_src,
             architecture="",  # Not needed for patch operations

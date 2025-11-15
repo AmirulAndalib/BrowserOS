@@ -8,7 +8,7 @@ import click
 import yaml
 from pathlib import Path
 from typing import List, Tuple, Optional
-from ...common.context import BuildContext
+from ...common.context import Context
 from .utils import run_git_command, GitError
 from ...common.utils import log_info, log_error, log_success, log_warning
 
@@ -246,7 +246,7 @@ def process_patch_list(
 
 
 def apply_all_patches(
-    build_ctx: BuildContext,
+    build_ctx: Context,
     commit_each: bool = False,
     dry_run: bool = False,
     interactive: bool = False,
@@ -305,7 +305,7 @@ def apply_all_patches(
 
 
 def apply_feature_patches(
-    build_ctx: BuildContext,
+    build_ctx: Context,
     feature_name: str,
     commit_each: bool = False,
     dry_run: bool = False,

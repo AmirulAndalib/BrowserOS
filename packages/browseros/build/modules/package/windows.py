@@ -8,7 +8,7 @@ import zipfile
 from pathlib import Path
 from typing import Optional, List
 from ...common.module import BuildModule, ValidationError
-from ...common.context import BuildContext
+from ...common.context import Context
 from ...common.utils import (
     run_command,
     log_info,
@@ -25,7 +25,7 @@ class WindowsPackageModule(BuildModule):
     requires = []
     description = "Create Windows installer and portable ZIP"
 
-    def validate(self, ctx: BuildContext) -> None:
+    def validate(self, ctx: Context) -> None:
         if not IS_WINDOWS():
             raise ValidationError("Windows packaging requires Windows")
 
@@ -35,7 +35,7 @@ class WindowsPackageModule(BuildModule):
         if not mini_installer_path.exists():
             raise ValidationError(f"mini_installer.exe not found: {mini_installer_path}")
 
-    def execute(self, ctx: BuildContext) -> None:
+    def execute(self, ctx: Context) -> None:
         log_info("\n📦 Creating Windows packages...")
 
         installer_path = self._create_installer(ctx)
@@ -46,7 +46,7 @@ class WindowsPackageModule(BuildModule):
 
         log_success("Windows packages created successfully")
 
-    def _create_installer(self, ctx: BuildContext) -> Path:
+    def _create_installer(self, ctx: Context) -> Path:
         build_output_dir = join_paths(ctx.chromium_src, ctx.out_dir)
         mini_installer_path = build_output_dir / "mini_installer.exe"
 
@@ -63,7 +63,7 @@ class WindowsPackageModule(BuildModule):
         except Exception as e:
             raise RuntimeError(f"Failed to create installer: {e}")
 
-    def _create_portable_zip(self, ctx: BuildContext) -> Path:
+    def _create_portable_zip(self, ctx: Context) -> Path:
         build_output_dir = join_paths(ctx.chromium_src, ctx.out_dir)
         mini_installer_path = build_output_dir / "mini_installer.exe"
 
@@ -87,7 +87,7 @@ class WindowsPackageModule(BuildModule):
             raise RuntimeError(f"Failed to create installer ZIP: {e}")
 
 
-def package(ctx: BuildContext) -> bool:
+def package(ctx: Context) -> bool:
     """Legacy function interface"""
     module = WindowsPackageModule()
     module.validate(ctx)
@@ -95,7 +95,7 @@ def package(ctx: BuildContext) -> bool:
     return True
 
 
-def build_mini_installer(ctx: BuildContext) -> bool:
+def build_mini_installer(ctx: Context) -> bool:
     """Build the mini_installer target if it doesn't exist"""
     log_info("\n🔨 Checking mini_installer build...")
 
@@ -162,7 +162,7 @@ def build_mini_installer(ctx: BuildContext) -> bool:
         return False
 
 
-def create_installer(ctx: BuildContext) -> bool:
+def create_installer(ctx: Context) -> bool:
     """Create Windows installer (mini_installer.exe)"""
     log_info("\n🔧 Creating Windows installer...")
 
@@ -195,7 +195,7 @@ def create_installer(ctx: BuildContext) -> bool:
         return False
 
 
-def create_portable_zip(ctx: BuildContext) -> bool:
+def create_portable_zip(ctx: Context) -> bool:
     """Create ZIP of just the installer for easier distribution"""
     log_info("\n📦 Creating installer ZIP package...")
 
@@ -243,7 +243,7 @@ def create_portable_zip(ctx: BuildContext) -> bool:
 # These are now in modules/sign/windows.py
 
 
-def package_universal(contexts: List[BuildContext]) -> bool:
+def package_universal(contexts: List[Context]) -> bool:
     """Windows doesn't support universal binaries like macOS"""
     log_warning("Universal binaries are not supported on Windows")
     log_info("Consider creating separate packages for each architecture")
@@ -268,7 +268,7 @@ def get_target_cpu(build_output_dir: Path) -> str:
     return "x64"  # Default
 
 
-def create_files_cfg_package(ctx: BuildContext) -> bool:
+def create_files_cfg_package(ctx: Context) -> bool:
     """Create package using Chromium's FILES.cfg approach (alternative method)"""
     log_info("\n📦 Creating FILES.cfg-based package...")
 

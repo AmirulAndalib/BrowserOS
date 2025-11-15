@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import List, Tuple, Optional
 
 from ...common.module import BuildModule, ValidationError
-from ...common.context import BuildContext
+from ...common.context import Context
 from ...common.utils import (
     log_info,
     log_error,
@@ -26,7 +26,7 @@ class LinuxPackageModule(BuildModule):
     requires = []
     description = "Create AppImage and .deb packages for Linux"
 
-    def validate(self, ctx: BuildContext) -> None:
+    def validate(self, ctx: Context) -> None:
         if not IS_LINUX():
             raise ValidationError("Linux packaging requires Linux")
 
@@ -36,7 +36,7 @@ class LinuxPackageModule(BuildModule):
         if not chrome_binary.exists():
             raise ValidationError(f"Chrome binary not found: {chrome_binary}")
 
-    def execute(self, ctx: BuildContext) -> None:
+    def execute(self, ctx: Context) -> None:
         log_info(
             f"\n📦 Packaging {ctx.BROWSEROS_APP_BASE_NAME} {ctx.get_browseros_chromium_version()} for Linux ({ctx.architecture})"
         )
@@ -63,10 +63,10 @@ class LinuxPackageModule(BuildModule):
         elif deb_path:
             log_warning("   Only .deb created (AppImage failed)")
 
-    def _package_appimage(self, ctx: BuildContext, package_dir: Path) -> Optional[Path]:
+    def _package_appimage(self, ctx: Context, package_dir: Path) -> Optional[Path]:
         return package_appimage(ctx, package_dir)
 
-    def _package_deb(self, ctx: BuildContext, package_dir: Path) -> Optional[Path]:
+    def _package_deb(self, ctx: Context, package_dir: Path) -> Optional[Path]:
         return package_deb(ctx, package_dir)
 
 
@@ -76,7 +76,7 @@ class LinuxPackageModule(BuildModule):
 
 
 def copy_browser_files(
-    ctx: BuildContext, target_dir: Path, set_sandbox_suid: bool = True
+    ctx: Context, target_dir: Path, set_sandbox_suid: bool = True
 ) -> bool:
     """Copy browser binaries, libraries, and resources to target directory.
 
@@ -173,7 +173,7 @@ Icon=browseros
     return desktop_file
 
 
-def copy_icon(ctx: BuildContext, icons_dir: Path) -> bool:
+def copy_icon(ctx: Context, icons_dir: Path) -> bool:
     """Copy product icon to hicolor icon directory.
 
     Args:
@@ -200,7 +200,7 @@ def copy_icon(ctx: BuildContext, icons_dir: Path) -> bool:
 # =============================================================================
 
 
-def prepare_appdir(ctx: BuildContext, appdir: Path) -> bool:
+def prepare_appdir(ctx: Context, appdir: Path) -> bool:
     """Prepare the AppDir structure for AppImage"""
     log_info("📁 Preparing AppDir structure...")
 
@@ -253,7 +253,7 @@ export CHROME_WRAPPER="${{THIS}}"
     return True
 
 
-def download_appimagetool(ctx: BuildContext) -> Optional[Path]:
+def download_appimagetool(ctx: Context) -> Optional[Path]:
     """Download appimagetool if not available"""
     tool_dir = Path(join_paths(ctx.root_dir, "build", "tools"))
     tool_dir.mkdir(exist_ok=True)
@@ -279,7 +279,7 @@ def download_appimagetool(ctx: BuildContext) -> Optional[Path]:
         return None
 
 
-def create_appimage(ctx: BuildContext, appdir: Path, output_path: Path) -> bool:
+def create_appimage(ctx: Context, appdir: Path, output_path: Path) -> bool:
     """Create AppImage from AppDir"""
     log_info("📦 Creating AppImage...")
 
@@ -318,7 +318,7 @@ def create_appimage(ctx: BuildContext, appdir: Path, output_path: Path) -> bool:
 # =============================================================================
 
 
-def create_launcher_script(ctx: BuildContext, bin_dir: Path) -> None:
+def create_launcher_script(ctx: Context, bin_dir: Path) -> None:
     """Create launcher script in /usr/bin/browseros."""
     bin_dir.mkdir(parents=True, exist_ok=True)
 
@@ -334,7 +334,7 @@ exec /usr/lib/browseros/{ctx.BROWSEROS_APP_NAME} "$@"
     log_info("  ✓ Created launcher script")
 
 
-def create_control_file(ctx: BuildContext, debian_dir: Path) -> None:
+def create_control_file(ctx: Context, debian_dir: Path) -> None:
     """Create DEBIAN/control file with package metadata."""
     debian_dir.mkdir(parents=True, exist_ok=True)
 
@@ -387,7 +387,7 @@ exit 0
     log_info("  ✓ Created DEBIAN/postinst")
 
 
-def prepare_debdir(ctx: BuildContext, debdir: Path) -> bool:
+def prepare_debdir(ctx: Context, debdir: Path) -> bool:
     """Prepare directory structure for .deb package.
 
     Structure:
@@ -434,7 +434,7 @@ def prepare_debdir(ctx: BuildContext, debdir: Path) -> bool:
     return True
 
 
-def create_deb(ctx: BuildContext, debdir: Path, output_path: Path) -> bool:
+def create_deb(ctx: Context, debdir: Path, output_path: Path) -> bool:
     """Build .deb package using dpkg-deb."""
     log_info("📦 Creating .deb package...")
 
@@ -467,7 +467,7 @@ def create_deb(ctx: BuildContext, debdir: Path, output_path: Path) -> bool:
 # =============================================================================
 
 
-def package_appimage(ctx: BuildContext, package_dir: Path) -> Optional[Path]:
+def package_appimage(ctx: Context, package_dir: Path) -> Optional[Path]:
     """Create AppImage package.
 
     Returns:
@@ -499,7 +499,7 @@ def package_appimage(ctx: BuildContext, package_dir: Path) -> Optional[Path]:
     return None
 
 
-def package_deb(ctx: BuildContext, package_dir: Path) -> Optional[Path]:
+def package_deb(ctx: Context, package_dir: Path) -> Optional[Path]:
     """Create .deb package.
 
     Returns:
@@ -536,7 +536,7 @@ def package_deb(ctx: BuildContext, package_dir: Path) -> Optional[Path]:
     return None
 
 
-def package(ctx: BuildContext) -> bool:
+def package(ctx: Context) -> bool:
     """Legacy function interface"""
     module = LinuxPackageModule()
     module.validate(ctx)
@@ -544,7 +544,7 @@ def package(ctx: BuildContext) -> bool:
     return True
 
 
-def package_universal(contexts: List[BuildContext]) -> bool:
+def package_universal(contexts: List[Context]) -> bool:
     """Linux doesn't support universal binaries"""
     log_warning("Universal binaries are not supported on Linux")
     return False

@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 from typing import Iterator, List, Tuple, Optional
 from ...common.module import BuildModule, ValidationError
-from ...common.context import BuildContext
+from ...common.context import Context
 from ...common.utils import (
     log_info,
     log_error,
@@ -27,7 +27,7 @@ class PatchesModule(BuildModule):
     requires = []
     description = "Apply BrowserOS patches to Chromium"
 
-    def validate(self, ctx: BuildContext) -> None:
+    def validate(self, ctx: Context) -> None:
         if not shutil.which("git"):
             raise ValidationError("Git is not available in PATH - required for applying patches")
 
@@ -35,14 +35,14 @@ class PatchesModule(BuildModule):
         if not patches_dir.exists():
             raise ValidationError(f"Patches directory not found: {patches_dir}")
 
-    def execute(self, ctx: BuildContext) -> None:
+    def execute(self, ctx: Context) -> None:
         log_info("\n🩹 Applying patches...")
         if not apply_patches_impl(ctx, interactive=False, commit_each=False):
             raise RuntimeError("Failed to apply patches")
 
 
 def apply_patches_with_dev_cli(
-    ctx: BuildContext, interactive: bool = False, commit_each: bool = False
+    ctx: Context, interactive: bool = False, commit_each: bool = False
 ) -> bool:
     """Apply patches using the new dev CLI system"""
     if not ctx.apply_patches:
@@ -78,7 +78,7 @@ def apply_patches_with_dev_cli(
 
 
 def apply_patches_impl(
-    ctx: BuildContext, interactive: bool = False, commit_each: bool = False
+    ctx: Context, interactive: bool = False, commit_each: bool = False
 ) -> bool:
     """Internal implementation for applying patches"""
     # Use new patching system if enabled
@@ -368,7 +368,7 @@ def commit_patch(patch_path: Path, tree_path: Path) -> bool:
 
 
 def apply_patches(
-    ctx: BuildContext, interactive: bool = False, commit_each: bool = False
+    ctx: Context, interactive: bool = False, commit_each: bool = False
 ) -> bool:
     """Legacy function interface"""
     module = PatchesModule()

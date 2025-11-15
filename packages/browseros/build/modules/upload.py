@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from typing import List, Optional, Tuple
 from ..common.module import BuildModule, ValidationError
-from ..common.context import BuildContext
+from ..common.context import Context
 from ..common.utils import (
     log_info,
     log_error,
@@ -24,7 +24,7 @@ class GCSUploadModule(BuildModule):
     requires = []
     description = "Upload build artifacts to Google Cloud Storage"
 
-    def validate(self, ctx: BuildContext) -> None:
+    def validate(self, ctx: Context) -> None:
         if not GCS_AVAILABLE:
             raise ValidationError("google-cloud-storage library not installed - run: pip install google-cloud-storage")
 
@@ -32,7 +32,7 @@ class GCSUploadModule(BuildModule):
         if not service_account_path.exists():
             raise ValidationError(f"Service account file not found: {SERVICE_ACCOUNT_FILE}")
 
-    def execute(self, ctx: BuildContext) -> None:
+    def execute(self, ctx: Context) -> None:
         log_info("\n☁️  Uploading package artifacts to GCS...")
         success, uris = upload_package_artifacts_impl(ctx)
         if not success:
@@ -68,7 +68,7 @@ def _get_platform_dir(platform_override: Optional[str] = None) -> str:
 
 
 def upload_to_gcs(
-    ctx: BuildContext,
+    ctx: Context,
     file_paths: List[Path],
     platform_override: Optional[str] = None
 ) -> Tuple[bool, List[str]]:
@@ -161,7 +161,7 @@ def upload_to_gcs(
         return False, []
 
 
-def upload_package_artifacts_impl(ctx: BuildContext) -> tuple[bool, List[str]]:
+def upload_package_artifacts_impl(ctx: Context) -> tuple[bool, List[str]]:
     """Internal implementation for uploading package artifacts to GCS
     Returns: (success, list of GCS URIs)"""
 
@@ -193,14 +193,14 @@ def upload_package_artifacts_impl(ctx: BuildContext) -> tuple[bool, List[str]]:
     return upload_to_gcs(ctx, artifacts)
 
 
-def upload_signed_artifacts(ctx: BuildContext) -> bool:
+def upload_signed_artifacts(ctx: Context) -> bool:
     """Upload signed artifacts to GCS"""
     # For now, this is the same as package artifacts
     # Can be extended in the future for specific signed artifacts
     return upload_package_artifacts_impl(ctx)[0]
 
 
-def upload_package_artifacts(ctx: BuildContext) -> tuple[bool, List[str]]:
+def upload_package_artifacts(ctx: Context) -> tuple[bool, List[str]]:
     """Legacy function interface"""
     module = GCSUploadModule()
     module.validate(ctx)
@@ -212,7 +212,7 @@ def download_from_gcs(
     bucket_name: str,
     source_path: str,
     dest_path: Path,
-    ctx: Optional[BuildContext] = None,
+    ctx: Optional[Context] = None,
 ) -> bool:
     """Download a file from GCS (utility function)"""
     if not GCS_AVAILABLE:
@@ -357,7 +357,7 @@ def handle_upload_dist(
     # BuildContext will try to load chromium_src, but we'll provide a dummy one
     # since we don't need it for uploads
     try:
-        ctx = BuildContext(
+        ctx = Context(
             root_dir=root_dir,
             chromium_src=Path("/dev/null"),  # Dummy path, won't be used
             architecture="",  # Not needed for upload

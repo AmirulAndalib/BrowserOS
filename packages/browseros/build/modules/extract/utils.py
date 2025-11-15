@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Optional, List, Dict, Tuple, NamedTuple
 from enum import Enum
 from dataclasses import dataclass
-from ...common.context import BuildContext
+from ...common.context import Context
 from ...common.utils import log_info, log_error, log_success, log_warning
 
 
@@ -308,7 +308,7 @@ def parse_diff_output(diff_output: str) -> Dict[str, FilePatch]:
     return patches
 
 
-def write_patch_file(ctx: BuildContext, file_path: str, patch_content: str) -> bool:
+def write_patch_file(ctx: Context, file_path: str, patch_content: str) -> bool:
     """
     Write a patch file to chromium_src directory structure.
 
@@ -339,7 +339,7 @@ def write_patch_file(ctx: BuildContext, file_path: str, patch_content: str) -> b
         return False
 
 
-def create_deletion_marker(ctx: BuildContext, file_path: str) -> bool:
+def create_deletion_marker(ctx: Context, file_path: str) -> bool:
     """
     Create a marker file for deleted files.
 
@@ -366,7 +366,7 @@ def create_deletion_marker(ctx: BuildContext, file_path: str) -> bool:
 
 
 def create_binary_marker(
-    ctx: BuildContext, file_path: str, operation: FileOperation
+    ctx: Context, file_path: str, operation: FileOperation
 ) -> bool:
     """
     Create a marker file for binary files.

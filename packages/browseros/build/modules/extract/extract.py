@@ -9,7 +9,7 @@ import click
 import sys
 from pathlib import Path
 from typing import Optional, List, Dict
-from ...common.context import BuildContext
+from ...common.context import Context
 from .utils import (
     FilePatch,
     FileOperation,
@@ -190,7 +190,7 @@ def extract_range(
 
 
 def extract_single_commit(
-    ctx: BuildContext,
+    ctx: Context,
     commit_hash: str,
     verbose: bool = False,
     force: bool = False,
@@ -231,7 +231,7 @@ def extract_single_commit(
 
 
 def extract_normal(
-    ctx: BuildContext,
+    ctx: Context,
     commit_hash: str,
     verbose: bool,
     force: bool,
@@ -265,7 +265,7 @@ def extract_normal(
 
 
 def extract_with_base(
-    ctx: BuildContext,
+    ctx: Context,
     commit_hash: str,
     base: str,
     verbose: bool,
@@ -360,7 +360,7 @@ def extract_with_base(
     return write_patches(ctx, file_patches, verbose, include_binary)
 
 
-def check_overwrite(ctx: BuildContext, file_patches: Dict, verbose: bool) -> bool:
+def check_overwrite(ctx: Context, file_patches: Dict, verbose: bool) -> bool:
     """Check for existing patches and prompt for overwrite"""
     existing_patches = []
     for file_path in file_patches.keys():
@@ -383,7 +383,7 @@ def check_overwrite(ctx: BuildContext, file_patches: Dict, verbose: bool) -> boo
 
 
 def write_patches(
-    ctx: BuildContext,
+    ctx: Context,
     file_patches: Dict[str, FilePatch],
     verbose: bool,
     include_binary: bool,
@@ -462,7 +462,7 @@ def write_patches(
 
 
 def extract_commit_range(
-    ctx: BuildContext,
+    ctx: Context,
     base_commit: str,
     head_commit: str,
     verbose: bool = False,
@@ -597,7 +597,7 @@ def extract_commit_range(
 
 
 def extract_commits_individually(
-    ctx: BuildContext,
+    ctx: Context,
     base_commit: str,
     head_commit: str,
     verbose: bool = False,

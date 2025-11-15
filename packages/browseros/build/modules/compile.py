@@ -5,7 +5,7 @@ import tempfile
 import shutil
 from pathlib import Path
 from ..common.module import BuildModule, ValidationError
-from ..common.context import BuildContext
+from ..common.context import Context
 from ..common.utils import (
     run_command,
     log_info,
@@ -21,7 +21,7 @@ class CompileModule(BuildModule):
     requires = []
     description = "Build BrowserOS using autoninja"
 
-    def validate(self, ctx: BuildContext) -> None:
+    def validate(self, ctx: Context) -> None:
         if not ctx.chromium_src.exists():
             raise ValidationError(f"Chromium source not found: {ctx.chromium_src}")
 
@@ -32,7 +32,7 @@ class CompileModule(BuildModule):
         if not args_file.exists():
             raise ValidationError(f"Build not configured - args.gn not found: {args_file}")
 
-    def execute(self, ctx: BuildContext) -> None:
+    def execute(self, ctx: Context) -> None:
         log_info("\n🔨 Building BrowserOS (this will take a while)...")
 
         self._create_version_file(ctx)
@@ -52,7 +52,7 @@ class CompileModule(BuildModule):
 
         log_success("Build complete!")
 
-    def _create_version_file(self, ctx: BuildContext) -> None:
+    def _create_version_file(self, ctx: Context) -> None:
         parts = ctx.browseros_chromium_version.split(".")
         if len(parts) != 4:
             log_warning(f"Invalid version format: {ctx.browseros_chromium_version}")
@@ -71,14 +71,14 @@ class CompileModule(BuildModule):
         log_info(f"Created VERSION file: {ctx.browseros_chromium_version}")
 
 
-def build(ctx: BuildContext) -> bool:
+def build(ctx: Context) -> bool:
     module = CompileModule()
     module.validate(ctx)
     module.execute(ctx)
     return True
 
 
-def build_target(ctx: BuildContext, target: str) -> bool:
+def build_target(ctx: Context, target: str) -> bool:
     """Build a specific target (e.g., mini_installer)"""
     log_info(f"\n🔨 Building target: {target}")
 

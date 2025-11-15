@@ -179,7 +179,7 @@ class BuildConfig:
 
 
 @dataclass
-class BuildContext:
+class Context:
     """
     Context Object pattern - ONE place for all build state
 
@@ -329,7 +329,7 @@ class BuildContext:
     # === Initialization ===
 
     @classmethod
-    def init_context(cls, config: Dict) -> "BuildContext":
+    def init_context(cls, config: Dict) -> "Context":
         """
         Initialize context from config
         Replaces __post_init__ logic for better testability

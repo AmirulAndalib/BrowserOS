@@ -9,7 +9,7 @@ import sys
 import shutil
 from pathlib import Path
 from typing import List
-from ...common.context import BuildContext
+from ...common.context import Context
 from ...common.utils import run_command, log_info, log_error, log_success, log_warning
 
 
@@ -92,7 +92,7 @@ def merge_architectures(
 
 def create_minimal_context(
     app_path: Path, chromium_src: Path, root_dir: Path, architecture: str = "universal"
-) -> BuildContext:
+) -> Context:
     """Create a minimal BuildContext for signing/packaging operations"""
 
     out_dir_path = app_path.parent  # out/Default_universal
@@ -102,7 +102,7 @@ def create_minimal_context(
     log_info(f"  Chromium src: {chromium_src}")
     log_info(f"  Root dir: {root_dir}")
 
-    ctx = BuildContext(
+    ctx = Context(
         root_dir=root_dir,
         chromium_src=chromium_src,
         architecture=architecture,
@@ -276,9 +276,9 @@ def handle_merge_command(
 
     # Auto-generate output path in chromium source
     # Get the app name from BuildContext
-    from ...common.context import BuildContext
+    from ...common.context import Context
 
-    temp_ctx = BuildContext(
+    temp_ctx = Context(
         root_dir=root_dir,
         chromium_src=chromium_src,
         architecture="universal",

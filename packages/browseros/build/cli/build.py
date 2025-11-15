@@ -10,7 +10,7 @@ from typing import Optional
 import typer
 
 # Import common modules
-from ..common.context import BuildContext
+from ..common.context import Context
 from ..common.config import load_config, validate_required_envs
 from ..common.pipeline import validate_pipeline, show_available_modules
 from ..common.notify import (
@@ -237,7 +237,7 @@ def main(
     # Build Context
     # =============================================================================
     
-    ctx = BuildContext(
+    ctx = Context(
         root_dir=root_dir,
         chromium_src=chromium_src_path,
         architecture=architecture,
