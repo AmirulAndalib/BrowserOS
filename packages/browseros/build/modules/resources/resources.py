@@ -7,12 +7,12 @@ import shutil
 import yaml
 import subprocess
 from pathlib import Path
-from ...common.module import BuildModule, ValidationError
+from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
 from ...common.utils import log_info, log_success, log_error, log_warning, get_platform
 
 
-class ResourcesModule(BuildModule):
+class ResourcesModule(CommandModule):
     produces = []
     requires = []
     description = "Copy resources (icons, extensions) to Chromium"

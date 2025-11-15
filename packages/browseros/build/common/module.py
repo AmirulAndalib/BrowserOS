@@ -21,7 +21,7 @@ class ValidationError(Exception):
     pass
 
 
-class BuildModule:
+class CommandModule:
     """
     Base class for all build modules
 

@@ -3,12 +3,12 @@
 
 import re
 from pathlib import Path
-from ...common.module import BuildModule, ValidationError
+from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
 from ...common.utils import log_info, log_success, log_error, log_warning
 
 
-class StringReplacesModule(BuildModule):
+class StringReplacesModule(CommandModule):
     produces = []
     requires = []
     description = "Apply branding string replacements in Chromium"

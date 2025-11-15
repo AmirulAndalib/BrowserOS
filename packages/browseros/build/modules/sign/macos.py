@@ -8,7 +8,7 @@ import glob
 import shutil
 from pathlib import Path
 from typing import Optional, List, Dict, Tuple
-from ...common.module import BuildModule, ValidationError
+from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
 from ...common.utils import (
     run_command as utils_run_command,
@@ -52,7 +52,7 @@ def run_command(
     return utils_run_command(cmd, cwd=cwd, check=check)
 
 
-class MacOSSignModule(BuildModule):
+class MacOSSignModule(CommandModule):
     produces = ["signed_app"]
     requires = ["built_app"]
     description = "Sign and notarize macOS application"

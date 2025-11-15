@@ -5,12 +5,12 @@ import sys
 import shutil
 from pathlib import Path
 from typing import Optional, List
-from ...common.module import BuildModule, ValidationError
+from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
 from ...common.utils import run_command, log_info, log_error, log_success, IS_MACOS
 
 
-class MacOSPackageModule(BuildModule):
+class MacOSPackageModule(CommandModule):
     produces = ["dmg"]
     requires = []
     description = "Create DMG package for macOS"

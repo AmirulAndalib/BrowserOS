@@ -7,7 +7,7 @@ import shutil
 import zipfile
 from pathlib import Path
 from typing import Optional, List
-from ...common.module import BuildModule, ValidationError
+from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
 from ...common.utils import (
     run_command,
@@ -20,7 +20,7 @@ from ...common.utils import (
 )
 
 
-class WindowsPackageModule(BuildModule):
+class WindowsPackageModule(CommandModule):
     produces = ["installer", "installer_zip"]
     requires = []
     description = "Create Windows installer and portable ZIP"

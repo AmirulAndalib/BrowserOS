@@ -5,7 +5,7 @@ import os
 import subprocess
 from pathlib import Path
 from typing import Optional, List
-from ...common.module import BuildModule, ValidationError
+from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
 from ...common.utils import (
     run_command,
@@ -23,7 +23,7 @@ BROWSEROS_SERVER_BINARIES: List[str] = [
 ]
 
 
-class WindowsSignModule(BuildModule):
+class WindowsSignModule(CommandModule):
     produces = ["signed_installer"]
     requires = ["built_app"]
     description = "Sign Windows binaries and create signed installer"

@@ -5,12 +5,12 @@ import subprocess
 import tarfile
 import urllib.request
 from pathlib import Path
-from ...common.module import BuildModule, ValidationError
+from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
 from ...common.utils import run_command, log_info, log_error, log_success, IS_WINDOWS, safe_rmtree
 
 
-class GitSetupModule(BuildModule):
+class GitSetupModule(CommandModule):
     produces = []
     requires = []
     description = "Checkout Chromium version and sync dependencies"
@@ -63,7 +63,7 @@ class GitSetupModule(BuildModule):
             raise ValidationError(f"Git tag {ctx.chromium_version} not found")
 
 
-class SparkleSetupModule(BuildModule):
+class SparkleSetupModule(CommandModule):
     produces = []
     requires = []
     description = "Download and setup Sparkle framework (macOS only)"
