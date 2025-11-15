@@ -1,9 +1,14 @@
-"""
-Platform-specific packaging module for BrowserOS
-Automatically imports the correct packaging functions based on the platform
-"""
+"""Platform-specific packaging module for BrowserOS"""
 
 from ...common.utils import IS_MACOS, IS_WINDOWS, IS_LINUX
+
+# Import module classes
+if IS_MACOS():
+    from .macos import MacOSPackageModule
+elif IS_WINDOWS():
+    from .windows import WindowsPackageModule
+elif IS_LINUX():
+    from .linux import LinuxPackageModule
 
 # Import platform-specific functions
 if IS_MACOS():
@@ -24,9 +29,8 @@ elif IS_LINUX():
     from .linux import (
         package,
         package_universal,
-        create_appimage,
-        create_deb,
-        create_tar,
+        package_appimage,
+        package_deb,
     )
 else:
     # Fallback for unknown platforms
@@ -40,16 +44,16 @@ else:
         log_warning(f"Universal packaging not implemented for this platform")
         return True
 
-# Export the common functions
+# Export module classes and functions
 __all__ = [
     'package',
     'package_universal',
 ]
 
-# Platform-specific exports
+# Platform-specific module class and function exports
 if IS_MACOS():
-    __all__.append('create_dmg')
-if IS_WINDOWS():
-    __all__.extend(['create_installer', 'create_portable_zip', 'build_mini_installer'])
-if IS_LINUX():
-    __all__.extend(['create_appimage', 'create_deb', 'create_tar'])
+    __all__.extend(['MacOSPackageModule', 'create_dmg'])
+elif IS_WINDOWS():
+    __all__.extend(['WindowsPackageModule', 'create_installer', 'create_portable_zip', 'build_mini_installer'])
+elif IS_LINUX():
+    __all__.extend(['LinuxPackageModule', 'package_appimage', 'package_deb'])
