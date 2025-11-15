@@ -60,34 +60,102 @@ AVAILABLE_MODULES = {
     "git_setup": GitSetupModule,
     "sparkle_setup": SparkleSetupModule,
     "configure": ConfigureModule,
-
     # Patches & Resources
     "patches": PatchesModule,
     "chromium_replace": ChromiumReplaceModule,
     "string_replaces": StringReplacesModule,
     "resources": ResourcesModule,
-
     # Build
     "compile": CompileModule,
-
     # Sign (platform-specific, validated at runtime)
     "sign_macos": MacOSSignModule,
     "sign_windows": WindowsSignModule,
     "sign_linux": LinuxSignModule,
-
     # Package (platform-specific, validated at runtime)
     "package_macos": MacOSPackageModule,
     "package_windows": WindowsPackageModule,
     "package_linux": LinuxPackageModule,
-
     # Upload
     "upload_gcs": GCSUploadModule,
 }
+
+# =============================================================================
+# EXECUTION ORDER - Fixed pipeline phases (flags control which phases run)
+# =============================================================================
+
+
+def _get_sign_module():
+    """Get platform-specific sign module name"""
+    if IS_MACOS():
+        return "sign_macos"
+    elif IS_WINDOWS():
+        return "sign_windows"
+    else:
+        return "sign_linux"
+
+
+def _get_package_module():
+    """Get platform-specific package module name"""
+    if IS_MACOS():
+        return "package_macos"
+    elif IS_WINDOWS():
+        return "package_windows"
+    else:
+        return "package_linux"
+
+
+# Fixed execution order - flags enable/disable phases, order is always the same
+EXECUTION_ORDER = [
+    # Phase 1: Setup & Clean
+    ("setup", ["clean", "git_setup", "sparkle_setup"]),
+    # Phase 2: Patches & Resources
+    ("prep", ["patches", "chromium_replace", "string_replaces", "resources"]),
+    # Phase 3: Configure & Build
+    ("build", ["configure", "compile"]),
+    # Phase 4: Code Signing (platform-aware)
+    ("sign", [_get_sign_module()]),
+    # Phase 5: Packaging (platform-aware)
+    ("package", [_get_package_module()]),
+    # Phase 6: Upload
+    ("upload", ["upload_gcs"]),
+]
+
+
+def build_pipeline_from_flags(
+    setup: bool = False,
+    prep: bool = False,
+    build: bool = False,
+    sign: bool = False,
+    package: bool = False,
+    upload: bool = False,
+) -> list[str]:
+    """Build module pipeline from boolean flags
+
+    Flags enable/disable phases, execution order is fixed.
+    User can specify flags in any order - system enforces correct sequence.
+    """
+    pipeline = []
+    enabled_phases = {
+        "setup": setup,
+        "prep": prep,
+        "build": build,
+        "sign": sign,
+        "package": package,
+        "upload": upload,
+    }
+
+    # Execute in predetermined order
+    for phase_name, modules in EXECUTION_ORDER:
+        if enabled_phases.get(phase_name, False):
+            pipeline.extend(modules)
+
+    return pipeline
 
 
 # =============================================================================
 # CLI Interface
 # =============================================================================
+
 
 def main(
     config: Optional[Path] = typer.Option(
@@ -108,6 +176,37 @@ def main(
         "--list",
         "-l",
         help="List all available modules and exit",
+    ),
+    # Pipeline phase flags (auto-ordered execution)
+    setup: bool = typer.Option(
+        False,
+        "--setup",
+        help="Run setup phase (clean, git_setup, sparkle_setup)",
+    ),
+    prep: bool = typer.Option(
+        False,
+        "--prep",
+        help="Run prep phase (patches, chromium_replace, string_replaces, resources)",
+    ),
+    build: bool = typer.Option(
+        False,
+        "--build",
+        help="Run build phase (configure, compile)",
+    ),
+    sign: bool = typer.Option(
+        False,
+        "--sign",
+        help="Run sign phase (platform-specific: sign_macos/windows/linux)",
+    ),
+    package: bool = typer.Option(
+        False,
+        "--package",
+        help="Run package phase (platform-specific: package_macos/windows/linux)",
+    ),
+    upload: bool = typer.Option(
+        False,
+        "--upload",
+        help="Run upload phase (upload_gcs)",
     ),
     # Global options that override config
     arch: Optional[str] = typer.Option(
@@ -131,103 +230,150 @@ def main(
 ):
     """BrowserOS Build System - Modular pipeline executor
 
-    Build BrowserOS by running modules in sequence. Use explicit module lists
-    for development or YAML configs for CI/CD and releases.
+    Build BrowserOS using phase flags (auto-ordered), explicit modules, or configs.
 
     \b
-    Quick Start:
-      browseros build --list                    # List all available modules
-      browseros build --modules clean,compile   # Run specific modules
-      browseros build --config release.yaml     # Use YAML config
+    Phase Flags (Recommended - Auto-Ordered):
+      browseros build --setup --build --sign --package
+      browseros build --build --sign           # Skip setup
+      browseros build --package --sign         # Flags work in any order!
 
     \b
-    Common Workflows:
-      # Development build
-      browseros build --modules compile,sign_macos,package_macos
+    Explicit Modules (Power Users):
+      browseros build --modules clean,compile,sign_macos
 
-      # Clean build
-      browseros build --modules clean,git_setup,configure,compile
+    \b
+    Config Files (CI/CD):
+      browseros build --config release.yaml --arch arm64
 
-      # Release build (with config)
-      browseros build --config configs/release.yaml --arch x64
+    \b
+    List Available:
+      browseros build --list                   # Show all modules and phases
 
-      # CI build (override arch)
-      browseros build --config ci.yaml --arch universal
+    Note: Phase flags always execute in correct order regardless of how you write them.
+          --sign and --package auto-select platform (macos/windows/linux)
     """
-    
+
     # Handle --list flag
     if list_modules:
         show_available_modules(AVAILABLE_MODULES)
         return
-    
-    # Require either --config or --modules
-    if not config and not modules:
-        typer.echo("Error: Specify either --config or --modules\n")
+
+    # Check for mutually exclusive options
+    has_config = config is not None
+    has_modules = modules is not None
+    has_flags = any([setup, prep, build, sign, package, upload])
+
+    options_provided = sum([has_config, has_modules, has_flags])
+
+    if options_provided == 0:
+        typer.echo(
+            "Error: Specify --config, --modules, or phase flags (--setup, --build, etc.)\n"
+        )
         typer.echo("Use --help for usage information")
         typer.echo("Use --list to see available modules")
         raise typer.Exit(1)
-    
-    # Don't allow both
-    if config and modules:
-        log_error("Specify either --config or --modules, not both")
+
+    if options_provided > 1:
+        log_error("Specify only ONE of: --config, --modules, or phase flags")
+        log_error("Examples:")
+        log_error("  browseros build --setup --build --sign")
+        log_error("  browseros build --modules clean,compile")
+        log_error("  browseros build --config release.yaml")
         raise typer.Exit(1)
-    
+
     log_info("🚀 BrowserOS Build System")
     log_info("=" * 70)
-    
+
     # =============================================================================
     # Load Configuration
     # =============================================================================
-    
+
     root_dir = Path(__file__).parent.parent.parent
     pipeline = []
     required_envs = []
     chromium_src_path = chromium_src
     architecture = arch
-    
+
     if config:
         # Load from YAML config
         config_data = load_config(config)
-        
+
         # Extract pipeline
         if "modules" not in config_data:
             log_error("Config file must contain 'modules' key")
             raise typer.Exit(1)
-        
+
         pipeline = config_data["modules"]
-        
+
         # Extract required environment variables
         required_envs = config_data.get("required_envs", [])
-        
+
         # Extract build settings (CLI args override)
         if "build" in config_data:
             if not architecture:
-                architecture = config_data["build"].get("arch") or config_data["build"].get("architecture")
+                architecture = config_data["build"].get("arch") or config_data[
+                    "build"
+                ].get("architecture")
             if not chromium_src_path and "chromium_src" in config_data["build"]:
                 chromium_src_path = Path(config_data["build"]["chromium_src"])
             if "type" in config_data["build"]:
                 build_type = config_data["build"]["type"]
-    
+
     elif modules:
         # Parse module list from CLI
         pipeline = [m.strip() for m in modules.split(",")]
-    
+
+    elif has_flags:
+        # Build pipeline from phase flags (auto-ordered)
+        pipeline = build_pipeline_from_flags(
+            setup=setup,
+            prep=prep,
+            build=build,
+            sign=sign,
+            package=package,
+            upload=upload,
+        )
+
+        # Show what will execute
+        log_info("\n📋 Execution Plan (auto-ordered):")
+        log_info("-" * 70)
+        phase_names = []
+        if setup:
+            phase_names.append("setup")
+        if prep:
+            phase_names.append("prep")
+        if build:
+            phase_names.append("build")
+        if sign:
+            phase_names.append(f"sign (→ {_get_sign_module()})")
+        if package:
+            phase_names.append(f"package (→ {_get_package_module()})")
+        if upload:
+            phase_names.append("upload")
+
+        for phase_name in phase_names:
+            log_info(f"  ✓ {phase_name}")
+
+        log_info(f"\n  Pipeline: {' → '.join(pipeline)}")
+        log_info("-" * 70)
+
     # =============================================================================
     # Validate Configuration
     # =============================================================================
-    
+
     # Validate required environment variables
     if required_envs:
         validate_required_envs(required_envs)
-    
+
     # Validate pipeline
     validate_pipeline(pipeline, AVAILABLE_MODULES)
-    
+
     # Set defaults
     if not architecture:
         architecture = get_platform_arch()
         log_info(f"Using platform default architecture: {architecture}")
-    
+
     # Validate chromium_src
     if not chromium_src_path:
         # Try environment variable
@@ -236,29 +382,31 @@ def main(
             chromium_src_path = Path(chromium_src_env)
         else:
             log_error("Chromium source directory required!")
-            log_error("Provide via --chromium-src, config file, or CHROMIUM_SRC environment variable")
+            log_error(
+                "Provide via --chromium-src, config file, or CHROMIUM_SRC environment variable"
+            )
             raise typer.Exit(1)
-    
+
     if not chromium_src_path.exists():
         log_error(f"Chromium source directory does not exist: {chromium_src_path}")
         raise typer.Exit(1)
-    
+
     # Set Windows-specific environment
-    if IS_WINDOWS:
+    if IS_WINDOWS():
         os.environ["DEPOT_TOOLS_WIN_TOOLCHAIN"] = "0"
         log_info("Set DEPOT_TOOLS_WIN_TOOLCHAIN=0 for Windows build")
-    
+
     # =============================================================================
     # Build Context
     # =============================================================================
-    
+
     ctx = Context(
         root_dir=root_dir,
         chromium_src=chromium_src_path,
         architecture=architecture,
         build_type=build_type,
     )
-    
+
     log_info(f"📍 Root: {root_dir}")
     log_info(f"📍 Chromium: {ctx.chromium_src}")
     log_info(f"📍 Architecture: {ctx.architecture}")
@@ -266,27 +414,27 @@ def main(
     log_info(f"📍 Output: {ctx.out_dir}")
     log_info(f"📍 Pipeline: {' → '.join(pipeline)}")
     log_info("=" * 70)
-    
+
     # =============================================================================
     # Execute Pipeline
     # =============================================================================
-    
+
     start_time = time.time()
     notify_pipeline_start("build", pipeline)
-    
+
     try:
         for module_name in pipeline:
             log_info(f"\n{'='*70}")
             log_info(f"🔧 Running module: {module_name}")
             log_info(f"{'='*70}")
-            
+
             module_class = AVAILABLE_MODULES[module_name]
             module = module_class()
-            
+
             # Notify module start
             notify_module_start(module_name)
             module_start = time.time()
-            
+
             # Validate right before executing
             try:
                 module.validate(ctx)
@@ -294,7 +442,7 @@ def main(
                 log_error(f"Validation failed for {module_name}: {e}")
                 notify_pipeline_error("build", f"{module_name} validation failed: {e}")
                 raise typer.Exit(1)
-            
+
             # Execute
             try:
                 module.execute(ctx)
@@ -305,18 +453,18 @@ def main(
                 log_error(f"Module {module_name} failed: {e}")
                 notify_pipeline_error("build", f"{module_name} failed: {e}")
                 raise typer.Exit(1)
-        
+
         # Pipeline complete
         duration = time.time() - start_time
         mins = int(duration / 60)
         secs = int(duration % 60)
-        
+
         log_info("\n" + "=" * 70)
         log_success(f"✅ Pipeline completed successfully in {mins}m {secs}s")
         log_info("=" * 70)
-        
+
         notify_pipeline_end("build", duration)
-        
+
     except KeyboardInterrupt:
         log_error("\n❌ Pipeline interrupted")
         notify_pipeline_error("build", "Interrupted by user")
