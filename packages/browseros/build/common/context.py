@@ -102,10 +102,11 @@ class PathConfig:
     BuildContext from becoming a god object with dozens of path-related methods.
     """
 
-    def __init__(self, root_dir: Path, chromium_src: Optional[Path] = None):
+    def __init__(self, root_dir: Path, chromium_src: Optional[Path] = None, gn_flags_file: Optional[Path] = None):
         self.root_dir = root_dir
         self._chromium_src = chromium_src or Path()
         self._out_dir = "out/Default"
+        self.gn_flags_file = gn_flags_file
 
     @property
     def chromium_src(self) -> Path:
@@ -247,6 +248,10 @@ class BuildContext:
         self.build = BuildConfig(self.architecture, self.build_type)
         self.artifact_registry = ArtifactRegistry()  # New artifact system
         self.env = EnvConfig()
+
+        # Set default gn_flags_file if not provided
+        if not self.paths.gn_flags_file:
+            self.paths.gn_flags_file = self.get_gn_flags_file()
 
         # Set platform-specific defaults
         if not self.architecture:
