@@ -42,16 +42,13 @@ from ..modules.resources.string_replaces import StringReplacesModule
 from ..modules.resources.resources import ResourcesModule
 from ..modules.upload import GCSUploadModule
 
-# Platform-specific imports
-if IS_MACOS:
-    from ..modules.sign import MacOSSignModule
-    from ..modules.package import MacOSPackageModule
-elif IS_WINDOWS:
-    from ..modules.sign import WindowsSignModule
-    from ..modules.package import WindowsPackageModule
-elif IS_LINUX:
-    from ..modules.sign import LinuxSignModule
-    from ..modules.package import LinuxPackageModule
+# Platform-specific modules (imported unconditionally - validation handles platform checks)
+from ..modules.sign.macos import MacOSSignModule
+from ..modules.sign.windows import WindowsSignModule
+from ..modules.sign.linux import LinuxSignModule
+from ..modules.package.macos import MacOSPackageModule
+from ..modules.package.windows import WindowsPackageModule
+from ..modules.package.linux import LinuxPackageModule
 
 # =============================================================================
 # MODULE REGISTRATION - All available modules in one place
@@ -63,36 +60,29 @@ AVAILABLE_MODULES = {
     "git_setup": GitSetupModule,
     "sparkle_setup": SparkleSetupModule,
     "configure": ConfigureModule,
-    
+
     # Patches & Resources
     "patches": PatchesModule,
     "chromium_replace": ChromiumReplaceModule,
     "string_replaces": StringReplacesModule,
     "resources": ResourcesModule,
-    
+
     # Build
     "compile": CompileModule,
-    
+
+    # Sign (platform-specific, validated at runtime)
+    "sign_macos": MacOSSignModule,
+    "sign_windows": WindowsSignModule,
+    "sign_linux": LinuxSignModule,
+
+    # Package (platform-specific, validated at runtime)
+    "package_macos": MacOSPackageModule,
+    "package_windows": WindowsPackageModule,
+    "package_linux": LinuxPackageModule,
+
     # Upload
     "upload_gcs": GCSUploadModule,
 }
-
-# Add platform-specific modules
-if IS_MACOS:
-    AVAILABLE_MODULES.update({
-        "sign": MacOSSignModule,
-        "package": MacOSPackageModule,
-    })
-elif IS_WINDOWS:
-    AVAILABLE_MODULES.update({
-        "sign": WindowsSignModule,
-        "package": WindowsPackageModule,
-    })
-elif IS_LINUX:
-    AVAILABLE_MODULES.update({
-        "sign": LinuxSignModule,
-        "package": LinuxPackageModule,
-    })
 
 
 # =============================================================================
