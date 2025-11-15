@@ -1,66 +1,79 @@
 #!/usr/bin/env python3
-"""
-Clean module for Nxtscape build system
-"""
+"""Clean module for BrowserOS build system"""
 
-import os
-import shutil
 from pathlib import Path
+from ...common.module import BuildModule, ValidationError
 from ...common.context import BuildContext
 from ...common.utils import run_command, log_info, log_success, safe_rmtree
 
 
+class CleanModule(BuildModule):
+    produces = []
+    requires = []
+    description = "Clean build artifacts and reset git state"
+
+    def validate(self, ctx: BuildContext) -> None:
+        if not ctx.chromium_src.exists():
+            raise ValidationError(f"Chromium source not found: {ctx.chromium_src}")
+
+    def execute(self, ctx: BuildContext) -> None:
+        log_info("🧹 Cleaning build artifacts...")
+
+        out_path = ctx.chromium_src / ctx.out_dir
+        if out_path.exists():
+            safe_rmtree(out_path)
+            log_success("Cleaned build directory")
+
+        log_info("\n🔀 Resetting git branch and removing tracked files...")
+        self._git_reset(ctx)
+
+        log_info("\n🧹 Cleaning Sparkle build artifacts...")
+        self._clean_sparkle(ctx)
+
+    def _clean_sparkle(self, ctx: BuildContext) -> None:
+        sparkle_dir = ctx.get_sparkle_dir()
+        if sparkle_dir.exists():
+            safe_rmtree(sparkle_dir)
+        log_success("Cleaned Sparkle build directory")
+
+    def _git_reset(self, ctx: BuildContext) -> None:
+        run_command(["git", "reset", "--hard", "HEAD"], cwd=ctx.chromium_src)
+
+        log_info("🧹 Running git clean with exclusions...")
+        run_command(
+            [
+                "git",
+                "clean",
+                "-fdx",
+                "chrome/",
+                "components/",
+                "--exclude=third_party/",
+                "--exclude=build_tools/",
+                "--exclude=uc_staging/",
+                "--exclude=buildtools/",
+                "--exclude=tools/",
+                "--exclude=build/",
+            ],
+            cwd=ctx.chromium_src,
+        )
+        log_success("Git reset and clean complete")
+
+
+# Legacy function interface - maintained for backward compatibility
 def clean(ctx: BuildContext) -> bool:
-    """Clean build artifacts"""
-    log_info("🧹 Cleaning build artifacts...")
-
-    out_path = ctx.chromium_src / ctx.out_dir
-    if out_path.exists():
-        safe_rmtree(out_path)
-        log_success("Cleaned build directory")
-
-    log_info("\n🔀 Resetting git branch and removing all tracked files...")
-    git_reset(ctx)
-
-    log_info("\n🧹 Cleaning Sparkle build artifacts...")
-    clean_sparkle(ctx)
-
+    module = CleanModule()
+    module.validate(ctx)
+    module.execute(ctx)
     return True
 
 
 def clean_sparkle(ctx: BuildContext) -> bool:
-    """Clean Sparkle build artifacts"""
-    log_info("\n🧹 Cleaning Sparkle build artifacts...")
-    sparkle_dir = ctx.get_sparkle_dir()
-    if sparkle_dir.exists():
-        safe_rmtree(sparkle_dir)
-    log_success("Cleaned Sparkle build directory")
+    module = CleanModule()
+    module._clean_sparkle(ctx)
     return True
 
 
 def git_reset(ctx: BuildContext) -> bool:
-    """Reset git branch and clean with exclusions"""
-    os.chdir(ctx.chromium_src)
-    run_command(["git", "reset", "--hard", "HEAD"])
-    os.chdir(ctx.root_dir)
-
-    log_info("\n🧹 Running git clean with exclusions for important directories...")
-    os.chdir(ctx.chromium_src)
-    run_command(
-        [
-            "git",
-            "clean",
-            "-fdx",
-            "chrome/",
-            "components/",
-            "--exclude=third_party/",
-            "--exclude=build_tools/",
-            "--exclude=uc_staging/",
-            "--exclude=buildtools/",
-            "--exclude=tools/",
-            "--exclude=build/",
-        ]
-    )
-    os.chdir(ctx.root_dir)
-    log_success("Git reset and clean complete")
+    module = CleanModule()
+    module._git_reset(ctx)
     return True
