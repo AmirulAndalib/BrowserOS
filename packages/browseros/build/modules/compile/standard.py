@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Build execution module for BrowserOS build system"""
+"""Standard single-architecture build module for BrowserOS"""
 
 import tempfile
 import shutil
 from pathlib import Path
-from ..common.module import CommandModule, ValidationError
-from ..common.context import Context
-from ..common.utils import (
+from ...common.module import CommandModule, ValidationError
+from ...common.context import Context
+from ...common.utils import (
     run_command,
     log_info,
     log_success,
@@ -69,11 +69,13 @@ class CompileModule(CommandModule):
         Path(temp_path).unlink()
 
         log_info(f"Created VERSION file: {ctx.browseros_chromium_version}")
+
+
 def build_target(ctx: Context, target: str) -> bool:
     """Build a specific target (e.g., mini_installer)"""
     log_info(f"\n🔨 Building target: {target}")
 
-    autoninja_cmd = "autoninja.bat" if IS_WINDOWS else "autoninja"
+    autoninja_cmd = "autoninja.bat" if IS_WINDOWS() else "autoninja"
     run_command([autoninja_cmd, "-C", ctx.out_dir, target], cwd=ctx.chromium_src)
 
     log_success(f"Target {target} built successfully")
