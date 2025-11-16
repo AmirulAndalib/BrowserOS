@@ -102,7 +102,12 @@ class PathConfig:
     BuildContext from becoming a god object with dozens of path-related methods.
     """
 
-    def __init__(self, root_dir: Path, chromium_src: Optional[Path] = None, gn_flags_file: Optional[Path] = None):
+    def __init__(
+        self,
+        root_dir: Path,
+        chromium_src: Optional[Path] = None,
+        gn_flags_file: Optional[Path] = None,
+    ):
         self.root_dir = root_dir
         self._chromium_src = chromium_src or Path()
         self._out_dir = "out/Default"
@@ -182,31 +187,6 @@ class BuildConfig:
 class Context:
     """
     Context Object pattern - ONE place for all build state
-
-    REFACTOR NOTE: This class now uses sub-components (paths, build, artifact_registry, env)
-    to organize related functionality. The old interface is maintained for backward compatibility.
-
-    New interface (use this in new modules):
-        ctx.paths.root_dir - Path configuration
-        ctx.paths.chromium_src - Chromium source directory
-        ctx.paths.out_dir - Output directory
-
-        ctx.build.architecture - Build configuration
-        ctx.build.build_type - Build type (debug/release)
-        ctx.build.chromium_version - Chromium version
-
-        ctx.artifact_registry.add("built_app", path) - Register artifact
-        ctx.artifact_registry.get("built_app") - Get artifact path
-        ctx.artifact_registry.has("built_app") - Check if artifact exists
-
-        ctx.env.chromium_src - Environment variables
-        ctx.env.macos_certificate_name - macOS signing cert
-        ctx.env.gcs_bucket - GCS bucket for uploads
-
-    Old interface (still works, but deprecated):
-        ctx.root_dir - Direct access to root directory
-        ctx.architecture - Direct access to architecture
-        ctx.add_artifact(ArtifactType.BUILD_APP, path) - Legacy artifact method
     """
 
     root_dir: Path
@@ -426,7 +406,22 @@ class Context:
         return join_paths(self.chromium_src, "chrome", "installer", "mac", "pkg-dmg")
 
     def get_app_path(self) -> Path:
-        """Get built app path"""
+        """Get built app path
+
+        For universal builds, checks if out/Default_universal/BrowserOS.app exists
+        and returns that instead of the architecture-specific path.
+
+        This allows downstream modules (sign, package) to work on the universal
+        binary after UniversalBuildModule has run.
+        """
+        # Check for universal binary first (macOS only)
+        if IS_MACOS():
+            universal_app = join_paths(
+                self.chromium_src, "out/Default_universal", self.BROWSEROS_APP_NAME
+            )
+            if universal_app.exists():
+                return universal_app
+
         # For debug builds, check if the app has a different name
         if self.build_type == "debug" and IS_MACOS():
             # Check for debug-branded app name
@@ -434,6 +429,8 @@ class Context:
             debug_app_path = join_paths(self.chromium_src, self.out_dir, debug_app_name)
             if debug_app_path.exists():
                 return debug_app_path
+
+        # Return architecture-specific path
         return join_paths(self.chromium_src, self.out_dir, self.BROWSEROS_APP_NAME)
 
     def get_chromium_app_path(self) -> Path:

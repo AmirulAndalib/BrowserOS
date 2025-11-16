@@ -1,0 +1,55 @@
+# BrowserOS macOS Universal Build Configuration
+#
+# This config builds a universal binary (arm64 + x64) for macOS.
+# The universal_build module internally builds both architectures and merges them.
+
+build:
+  type: release
+  # Note: architecture not specified - universal_build handles this internally
+
+gn_flags:
+  file: build/config/gn/flags.macos.release.gn
+
+# Explicit module execution order for universal build
+modules:
+  # Phase 1: Setup (run once)
+  - clean
+  - git_setup
+  - sparkle_setup
+
+  # Phase 2: Patches & Resources (run once for source modifications)
+  - chromium_replace
+  - string_replaces
+  - patches
+
+  # Phase 3: Universal Build
+  # This module internally:
+  #   - Copies resources for arm64 (arch-specific binaries)
+  #   - Configures arm64 (gn gen)
+  #   - Compiles arm64 (ninja)
+  #   - Copies resources for x64
+  #   - Configures x64
+  #   - Compiles x64
+  #   - Merges into universal binary (out/Default_universal/BrowserOS.app)
+  - universal_build
+
+  # Phase 4: Sign & Package (works on universal binary)
+  # Context.get_app_path() automatically returns the universal binary
+  - sign_macos
+  - package_macos
+
+  # Phase 5: Upload (optional)
+  - upload_gcs
+
+# Required environment variables for this config
+required_envs:
+  - CHROMIUM_SRC
+  - MACOS_CERTIFICATE_NAME
+  - PROD_MACOS_NOTARIZATION_APPLE_ID
+  - PROD_MACOS_NOTARIZATION_TEAM_ID
+  - PROD_MACOS_NOTARIZATION_PWD
+  - GCS_BUCKET
+
+# Notification settings
+notifications:
+  slack: true
