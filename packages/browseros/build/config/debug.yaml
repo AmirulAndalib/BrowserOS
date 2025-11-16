@@ -33,8 +33,8 @@ modules:
   - package_macos
 
 # Required environment variables
-required_envs:
-  - CHROMIUM_SRC
+# Note: CHROMIUM_SRC can be provided via --chromium-src CLI flag, YAML config, or env var
+# Debug builds typically don't require other env vars (no signing, no upload)
 
 # Notification settings
 notifications:

@@ -37,13 +37,12 @@ modules:
   - upload_gcs
 
 # Required environment variables
+# Note: CHROMIUM_SRC can be provided via --chromium-src CLI flag, YAML config, or env var
 required_envs:
-  - CHROMIUM_SRC
   - MACOS_CERTIFICATE_NAME
   - PROD_MACOS_NOTARIZATION_APPLE_ID
   - PROD_MACOS_NOTARIZATION_TEAM_ID
   - PROD_MACOS_NOTARIZATION_PWD
-  - GCS_BUCKET
 
 # Notification settings
 notifications:

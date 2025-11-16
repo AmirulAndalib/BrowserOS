@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 from ..common.module import CommandModule, ValidationError
 from ..common.context import Context
+from ..common.env import EnvConfig
 from ..common.utils import (
     log_info,
     log_error,
@@ -28,9 +29,10 @@ class GCSUploadModule(CommandModule):
         if not GCS_AVAILABLE:
             raise ValidationError("google-cloud-storage library not installed - run: pip install google-cloud-storage")
 
-        service_account_path = join_paths(ctx.root_dir, SERVICE_ACCOUNT_FILE)
+        env = EnvConfig()
+        service_account_path = join_paths(ctx.root_dir, env.gcs_service_account_file)
         if not service_account_path.exists():
-            raise ValidationError(f"Service account file not found: {SERVICE_ACCOUNT_FILE}")
+            raise ValidationError(f"Service account file not found: {env.gcs_service_account_file}")
 
     def execute(self, ctx: Context) -> None:
         log_info("\n☁️  Uploading package artifacts to GCS...")
@@ -46,12 +48,6 @@ try:
     GCS_AVAILABLE = True
 except ImportError:
     GCS_AVAILABLE = False
-
-# Service account file name
-SERVICE_ACCOUNT_FILE = "gclient.json"
-
-# GCS bucket configuration
-GCS_BUCKET_NAME = "nxtscape"
 
 
 def _get_platform_dir(platform_override: Optional[str] = None) -> str:
@@ -91,18 +87,20 @@ def upload_to_gcs(
         log_info("No files to upload to GCS")
         return True, []
 
+    env = EnvConfig()
+
     # Determine platform subdirectory
     platform_dir = _get_platform_dir(platform_override)
 
-    # Build GCS path: gs://nxtscape/resources/<version>/<platform>/
+    # Build GCS path: gs://<bucket>/resources/<version>/<platform>/
     gcs_prefix = f"resources/{ctx.browseros_version}/{platform_dir}"
 
-    log_info(f"\n☁️  Uploading artifacts to gs://{GCS_BUCKET_NAME}/{gcs_prefix}/")
+    log_info(f"\n☁️  Uploading artifacts to gs://{env.gcs_bucket}/{gcs_prefix}/")
 
     # Check for service account file
-    service_account_path = join_paths(ctx.root_dir, SERVICE_ACCOUNT_FILE)
+    service_account_path = join_paths(ctx.root_dir, env.gcs_service_account_file)
     if not service_account_path.exists():
-        log_error(f"Service account file not found: {SERVICE_ACCOUNT_FILE}")
+        log_error(f"Service account file not found: {env.gcs_service_account_file}")
         log_info(
             f"Please place the service account JSON file at: {service_account_path}"
         )
@@ -114,7 +112,7 @@ def upload_to_gcs(
             str(service_account_path)
         )
         client = storage.Client(credentials=credentials)
-        bucket = client.bucket(GCS_BUCKET_NAME)
+        bucket = client.bucket(env.gcs_bucket)
 
         uploaded_files = []
         gcs_uris = []
@@ -136,8 +134,8 @@ def upload_to_gcs(
                 # Note: With uniform bucket-level access, objects inherit bucket's IAM policies
                 # No need to set individual object ACLs
 
-                public_url = f"https://storage.googleapis.com/{GCS_BUCKET_NAME}/{blob_name}"
-                gcs_uri = f"gs://{GCS_BUCKET_NAME}/{blob_name}"
+                public_url = f"https://storage.googleapis.com/{env.gcs_bucket}/{blob_name}"
+                gcs_uri = f"gs://{env.gcs_bucket}/{blob_name}"
                 uploaded_files.append(public_url)
                 gcs_uris.append(gcs_uri)
                 log_success(f"✓ Uploaded: {public_url}")
@@ -209,11 +207,13 @@ def download_from_gcs(
         log_error("google-cloud-storage not installed")
         return False
 
+    env = EnvConfig()
+
     try:
         # Try to use service account if available
         client = None
         if ctx:
-            service_account_path = join_paths(ctx.root_dir, SERVICE_ACCOUNT_FILE)
+            service_account_path = join_paths(ctx.root_dir, env.gcs_service_account_file)
             if service_account_path.exists():
                 credentials = service_account.Credentials.from_service_account_file(
                     str(service_account_path)
@@ -340,8 +340,10 @@ def handle_upload_dist(
         total_size += size_mb
         log_info(f"  - {artifact.name} ({size_mb:.2f} MB)")
 
+    env = EnvConfig()
+
     log_info(f"\nTotal size: {total_size:.2f} MB")
-    log_info(f"Upload destination: gs://{GCS_BUCKET_NAME}/resources/{version}/{platform_dir}/")
+    log_info(f"Upload destination: gs://{env.gcs_bucket}/resources/{version}/{platform_dir}/")
 
     # 6. Create minimal BuildContext for upload
     # BuildContext will try to load chromium_src, but we'll provide a dummy one
