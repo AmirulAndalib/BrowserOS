@@ -36,8 +36,7 @@ from ..common.utils import (
 from ..modules.setup.clean import CleanModule
 from ..modules.setup.git import GitSetupModule, SparkleSetupModule
 from ..modules.setup.configure import ConfigureModule
-from ..modules.compile import CompileModule
-from ..modules.compile.universal import UniversalBuildModule
+from ..modules.compile import CompileModule, UniversalBuildModule
 from ..modules.patches.patches import PatchesModule
 from ..modules.resources.chromium_replace import ChromiumReplaceModule
 from ..modules.resources.string_replaces import StringReplacesModule

@@ -73,7 +73,7 @@ class UniversalBuildModule(CommandModule):
         # Import modules we'll use
         from ..resources.resources import ResourcesModule
         from ..setup.configure import ConfigureModule
-        from ..compile import CompileModule
+        from .standard import CompileModule
 
         built_apps = []
         architectures = ["arm64", "x64"]
