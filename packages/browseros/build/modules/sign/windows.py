@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Optional, List
 from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
+from ...common.env import EnvConfig
 from ...common.utils import (
     run_command,
     log_info,
@@ -36,12 +37,18 @@ class WindowsSignModule(CommandModule):
         if not build_output_dir.exists():
             raise ValidationError(f"Build output directory not found: {build_output_dir}")
 
-        codesigntool_dir = os.environ.get("CODE_SIGN_TOOL_PATH")
-        if not codesigntool_dir:
+        env = EnvConfig()
+        if not env.code_sign_tool_path:
             raise ValidationError("CODE_SIGN_TOOL_PATH environment variable not set")
 
-        required_vars = ["ESIGNER_USERNAME", "ESIGNER_PASSWORD", "ESIGNER_TOTP_SECRET"]
-        missing = [var for var in required_vars if not os.environ.get(var)]
+        missing = []
+        if not env.esigner_username:
+            missing.append("ESIGNER_USERNAME")
+        if not env.esigner_password:
+            missing.append("ESIGNER_PASSWORD")
+        if not env.esigner_totp_secret:
+            missing.append("ESIGNER_TOTP_SECRET")
+
         if missing:
             raise ValidationError(f"Missing environment variables: {', '.join(missing)}")
 
@@ -110,29 +117,25 @@ def sign_with_codesigntool(binaries: List[Path]) -> bool:
     """Sign binaries using SSL.com CodeSignTool"""
     log_info("Using SSL.com CodeSignTool for signing...")
 
-    codesigntool_dir = os.environ.get("CODE_SIGN_TOOL_PATH")
-    if not codesigntool_dir:
+    env = EnvConfig()
+
+    if not env.code_sign_tool_path:
         log_error("CODE_SIGN_TOOL_PATH not set in .env file")
         log_error("Set CODE_SIGN_TOOL_PATH=C:/src/CodeSignTool-v1.3.2-windows")
         return False
 
-    codesigntool_path = Path(codesigntool_dir) / "CodeSignTool.bat"
+    codesigntool_path = Path(env.code_sign_tool_path) / "CodeSignTool.bat"
     if not codesigntool_path.exists():
         log_error(f"CodeSignTool.bat not found at: {codesigntool_path}")
         log_error(f"Make sure CODE_SIGN_TOOL_PATH points to the CodeSignTool directory")
         return False
 
-    username = os.environ.get("ESIGNER_USERNAME")
-    password = os.environ.get("ESIGNER_PASSWORD")
-    totp_secret = os.environ.get("ESIGNER_TOTP_SECRET")
-    credential_id = os.environ.get("ESIGNER_CREDENTIAL_ID")
-
-    if not all([username, password, totp_secret]):
+    if not all([env.esigner_username, env.esigner_password, env.esigner_totp_secret]):
         log_error("Missing required eSigner environment variables in .env:")
         log_error("  ESIGNER_USERNAME=your-email")
         log_error("  ESIGNER_PASSWORD=your-password")
         log_error("  ESIGNER_TOTP_SECRET=your-totp-secret")
-        if not credential_id:
+        if not env.esigner_credential_id:
             log_warning("  ESIGNER_CREDENTIAL_ID is recommended but optional")
         return False
 
@@ -148,18 +151,18 @@ def sign_with_codesigntool(binaries: List[Path]) -> bool:
                 str(codesigntool_path),
                 "sign",
                 "-username",
-                username,
+                env.esigner_username,
                 "-password",
-                f'"{password}"',
+                f'"{env.esigner_password}"',
             ]
 
-            if credential_id:
-                cmd.extend(["-credential_id", credential_id])
+            if env.esigner_credential_id:
+                cmd.extend(["-credential_id", env.esigner_credential_id])
 
             cmd.extend(
                 [
                     "-totp_secret",
-                    totp_secret,
+                    env.esigner_totp_secret,
                     "-input_file_path",
                     str(binary),
                     "-output_dir_path",
@@ -240,13 +243,19 @@ def sign_universal(contexts: List[Context]) -> bool:
 
 def check_signing_environment() -> bool:
     """Check if Windows signing environment is properly configured"""
-    codesigntool_dir = os.environ.get("CODE_SIGN_TOOL_PATH")
-    if not codesigntool_dir:
+    env = EnvConfig()
+
+    if not env.code_sign_tool_path:
         log_error("CODE_SIGN_TOOL_PATH not set")
         return False
 
-    required_vars = ["ESIGNER_USERNAME", "ESIGNER_PASSWORD", "ESIGNER_TOTP_SECRET"]
-    missing = [var for var in required_vars if not os.environ.get(var)]
+    missing = []
+    if not env.esigner_username:
+        missing.append("ESIGNER_USERNAME")
+    if not env.esigner_password:
+        missing.append("ESIGNER_PASSWORD")
+    if not env.esigner_totp_secret:
+        missing.append("ESIGNER_TOTP_SECRET")
 
     if missing:
         log_error(f"Missing environment variables: {', '.join(missing)}")

@@ -9,6 +9,7 @@ from typing import List, Tuple, Optional
 
 from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
+from ...common.env import EnvConfig
 from ...common.utils import (
     log_info,
     log_error,
@@ -288,11 +289,10 @@ def create_appimage(ctx: Context, appdir: Path, output_path: Path) -> bool:
     if not appimagetool:
         return False
 
-    # Set architecture
+    # Set architecture environment variable (required by appimagetool)
     arch = "x86_64" if ctx.architecture == "x64" else "aarch64"
-    os.environ["ARCH"] = arch
 
-    # Create AppImage
+    # Create AppImage with ARCH env var set for this command only
     cmd = [
         str(appimagetool),
         "--comp",
@@ -301,7 +301,17 @@ def create_appimage(ctx: Context, appdir: Path, output_path: Path) -> bool:
         str(output_path),
     ]
 
-    result = run_command(cmd, check=False)
+    # Pass ARCH as environment variable to the subprocess
+    env = os.environ.copy()
+    env["ARCH"] = arch
+
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False
+    )
 
     if result.returncode == 0:
         log_success(f"✓ Created AppImage: {output_path}")
@@ -310,6 +320,8 @@ def create_appimage(ctx: Context, appdir: Path, output_path: Path) -> bool:
         return True
     else:
         log_error("Failed to create AppImage")
+        if result.stderr:
+            log_error(result.stderr)
         return False
 
 
