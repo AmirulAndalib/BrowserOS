@@ -37,6 +37,7 @@ from ..modules.setup.clean import CleanModule
 from ..modules.setup.git import GitSetupModule, SparkleSetupModule
 from ..modules.setup.configure import ConfigureModule
 from ..modules.compile import CompileModule
+from ..modules.compile.universal import UniversalBuildModule
 from ..modules.patches.patches import PatchesModule
 from ..modules.resources.chromium_replace import ChromiumReplaceModule
 from ..modules.resources.string_replaces import StringReplacesModule
@@ -64,6 +65,7 @@ AVAILABLE_MODULES = {
     "resources": ResourcesModule,
     # Build
     "compile": CompileModule,
+    "universal_build": UniversalBuildModule,  # macOS universal binary (arm64 + x64)
     # Sign (platform-specific, validated at runtime)
     "sign_macos": MacOSSignModule,
     "sign_windows": WindowsSignModule,
