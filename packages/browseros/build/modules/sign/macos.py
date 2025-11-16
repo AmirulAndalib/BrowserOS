@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Optional, List, Dict, Tuple
 from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
+from ...common.env import EnvConfig
 from ...common.utils import (
     run_command as utils_run_command,
     log_info,
@@ -106,17 +107,17 @@ def check_signing_environment() -> bool:
     if not IS_MACOS:
         return True
 
-    required_vars = [
-        "MACOS_CERTIFICATE_NAME",
-        "PROD_MACOS_NOTARIZATION_APPLE_ID",
-        "PROD_MACOS_NOTARIZATION_TEAM_ID",
-        "PROD_MACOS_NOTARIZATION_PWD",
-    ]
-
+    env = EnvConfig()
     missing = []
-    for var in required_vars:
-        if not os.environ.get(var):
-            missing.append(var)
+
+    if not env.macos_certificate_name:
+        missing.append("MACOS_CERTIFICATE_NAME")
+    if not env.macos_notarization_apple_id:
+        missing.append("PROD_MACOS_NOTARIZATION_APPLE_ID")
+    if not env.macos_notarization_team_id:
+        missing.append("PROD_MACOS_NOTARIZATION_TEAM_ID")
+    if not env.macos_notarization_password:
+        missing.append("PROD_MACOS_NOTARIZATION_PWD")
 
     if missing:
         log_error("❌ Signing requires macOS environment variables!")
@@ -129,11 +130,12 @@ def check_signing_environment() -> bool:
 
 def check_environment() -> Tuple[bool, Dict[str, str]]:
     """Check if all required environment variables are set"""
+    env = EnvConfig()
     env_vars = {
-        "certificate_name": os.environ.get("MACOS_CERTIFICATE_NAME", ""),
-        "apple_id": os.environ.get("PROD_MACOS_NOTARIZATION_APPLE_ID", ""),
-        "team_id": os.environ.get("PROD_MACOS_NOTARIZATION_TEAM_ID", ""),
-        "notarization_pwd": os.environ.get("PROD_MACOS_NOTARIZATION_PWD", ""),
+        "certificate_name": env.macos_certificate_name or "",
+        "apple_id": env.macos_notarization_apple_id or "",
+        "team_id": env.macos_notarization_team_id or "",
+        "notarization_pwd": env.macos_notarization_password or "",
     }
 
     missing = []
