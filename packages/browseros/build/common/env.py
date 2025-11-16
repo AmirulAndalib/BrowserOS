@@ -99,9 +99,20 @@ class EnvConfig:
     # === Upload & Distribution ===
 
     @property
-    def gcs_bucket(self) -> Optional[str]:
-        """Google Cloud Storage bucket for artifact uploads"""
-        return os.environ.get("GCS_BUCKET")
+    def gcs_bucket(self) -> str:
+        """Google Cloud Storage bucket for artifact uploads
+
+        Defaults to 'nxtscape' if not set via GCS_BUCKET env var
+        """
+        return os.environ.get("GCS_BUCKET", "nxtscape")
+
+    @property
+    def gcs_service_account_file(self) -> str:
+        """Service account JSON file for GCS authentication
+
+        Defaults to 'gclient.json' if not set via GCS_SERVICE_ACCOUNT_FILE env var
+        """
+        return os.environ.get("GCS_SERVICE_ACCOUNT_FILE", "gclient.json")
 
     # === Notifications ===
 
