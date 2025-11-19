@@ -35,6 +35,9 @@ from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
 from ...common.utils import log_info, log_success, log_warning, log_error, IS_MACOS
 
+# Architectures to build for universal binary
+UNIVERSAL_ARCHITECTURES = ["arm64", "x64"]
+
 
 class UniversalBuildModule(CommandModule):
     """Build universal binary (arm64 + x64) for macOS
@@ -78,10 +81,9 @@ class UniversalBuildModule(CommandModule):
         self._clean_build_directories(ctx)
 
         built_apps = []
-        architectures = ["arm64", "x64"]
 
         # Build each architecture
-        for arch in architectures:
+        for arch in UNIVERSAL_ARCHITECTURES:
             log_info("\n" + "=" * 70)
             log_info(f"🏗️  Building for architecture: {arch}")
             log_info("=" * 70)
@@ -141,7 +143,7 @@ class UniversalBuildModule(CommandModule):
         log_info("\n🧹 Cleaning build directories...")
 
         # Clean architecture-specific directories
-        for arch in ["arm64", "x64"]:
+        for arch in UNIVERSAL_ARCHITECTURES:
             arch_dir = ctx.chromium_src / f"out/Default_{arch}"
             if arch_dir.exists():
                 log_info(f"  Removing {arch_dir}")
