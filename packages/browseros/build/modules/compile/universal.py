@@ -28,7 +28,6 @@ This module will run (for EACH architecture):
 Then merge the results.
 """
 
-import shutil
 from pathlib import Path
 from typing import Optional
 
@@ -74,6 +73,9 @@ class UniversalBuildModule(CommandModule):
         from ..resources.resources import ResourcesModule
         from ..setup.configure import ConfigureModule
         from .standard import CompileModule
+
+        # Clean all build directories before starting
+        self._clean_build_directories(ctx)
 
         built_apps = []
         architectures = ["arm64", "x64"]
@@ -128,6 +130,31 @@ class UniversalBuildModule(CommandModule):
         log_success(f"✅ Universal binary created: {universal_app}")
         log_info("=" * 70)
 
+    def _clean_build_directories(self, ctx: Context) -> None:
+        """Clean architecture-specific and universal build directories
+
+        Args:
+            ctx: Base context
+        """
+        from ...common.utils import safe_rmtree
+
+        log_info("\n🧹 Cleaning build directories...")
+
+        # Clean architecture-specific directories
+        for arch in ["arm64", "x64"]:
+            arch_dir = ctx.chromium_src / f"out/Default_{arch}"
+            if arch_dir.exists():
+                log_info(f"  Removing {arch_dir}")
+                safe_rmtree(arch_dir)
+
+        # Clean universal directory
+        universal_dir = ctx.chromium_src / "out/Default_universal"
+        if universal_dir.exists():
+            log_info(f"  Removing {universal_dir}")
+            safe_rmtree(universal_dir)
+
+        log_success("✅ Build directories cleaned")
+
     def _create_arch_context(self, base_ctx: Context, arch: str) -> Context:
         """Create a new context for a specific architecture
 
@@ -167,12 +194,7 @@ class UniversalBuildModule(CommandModule):
         # Prepare output path
         universal_dir = ctx.chromium_src / "out/Default_universal"
 
-        # Clean old universal dir if it exists
-        if universal_dir.exists():
-            log_info("🧹 Cleaning old universal output directory...")
-            shutil.rmtree(universal_dir)
-
-        # Create fresh universal directory
+        # Create universal directory (already cleaned in _clean_build_directories)
         universal_dir.mkdir(parents=True, exist_ok=True)
         universal_app = universal_dir / "BrowserOS.app"
 
