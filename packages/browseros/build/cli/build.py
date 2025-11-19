@@ -267,8 +267,8 @@ def main(
         "-a",
         help="Architecture (arm64, x64, universal)",
     ),
-    build_type: str = typer.Option(
-        "debug",
+    build_type: Optional[str] = typer.Option(
+        None,
         "--build-type",
         "-t",
         help="Build type (debug or release)",
