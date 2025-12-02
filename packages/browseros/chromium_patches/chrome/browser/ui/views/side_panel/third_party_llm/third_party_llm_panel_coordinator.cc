@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/ui/views/side_panel/third_party_llm/third_party_llm_panel_coordinator.cc b/chrome/browser/ui/views/side_panel/third_party_llm/third_party_llm_panel_coordinator.cc
 new file mode 100644
-index 0000000000000..f688820f42d13
+index 0000000000000..f8e61ae5325b9
 --- /dev/null
 +++ b/chrome/browser/ui/views/side_panel/third_party_llm/third_party_llm_panel_coordinator.cc
-@@ -0,0 +1,1170 @@
+@@ -0,0 +1,1157 @@
 +// Copyright 2024 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -14,6 +14,7 @@ index 0000000000000..f688820f42d13
 +#include <vector>
 +
 +#include "base/check.h"
++#include "base/check_deref.h"
 +#include "base/functional/callback.h"
 +#include "ui/views/controls/menu/menu_runner.h"
 +#include "ui/base/mojom/menu_source_type.mojom.h"
@@ -74,6 +75,7 @@ index 0000000000000..f688820f42d13
 +#include "third_party/blink/public/common/mediastream/media_stream_request.h"
 +#include "content/public/browser/render_frame_host.h"
 +#include "components/metrics/browseros_metrics/browseros_metrics.h"
++#include "chrome/browser/ui/views/side_panel/clash_of_gpts/clash_of_gpts_coordinator.h"
 +
 +namespace {
 +
@@ -106,12 +108,15 @@ index 0000000000000..f688820f42d13
 +
 +}  // namespace
 +
-+ThirdPartyLlmPanelCoordinator::ThirdPartyLlmPanelCoordinator(Browser* browser)
-+    : browser_(browser), feedback_timer_(std::make_unique<base::OneShotTimer>()) {
-+  CHECK(browser_);
++ThirdPartyLlmPanelCoordinator::ThirdPartyLlmPanelCoordinator(
++    Profile* profile,
++    TabStripModel* tab_strip_model)
++    : profile_(CHECK_DEREF(profile)),
++      tab_strip_model_(CHECK_DEREF(tab_strip_model)),
++      feedback_timer_(std::make_unique<base::OneShotTimer>()) {
 +  // Register for early cleanup notifications
 +  browser_list_observation_.Observe(BrowserList::GetInstance());
-+  profile_observation_.Observe(browser_->profile());
++  profile_observation_.Observe(&profile_.get());
 +
 +  // Load providers from preferences
 +  LoadProvidersFromPrefs();
@@ -155,7 +160,7 @@ index 0000000000000..f688820f42d13
 +    LOG(INFO) << "[browseros] Provider list size changed from " << previous_size
 +              << " to " << providers_.size() << ", resetting to first provider";
 +    current_provider_index_ = 0;
-+    if (PrefService* prefs = GetBrowser().profile()->GetPrefs()) {
++    if (PrefService* prefs = GetProfile()->GetPrefs()) {
 +      prefs->SetInteger(kThirdPartyLlmSelectedProviderPref, 0);
 +    }
 +  }
@@ -299,7 +304,7 @@ index 0000000000000..f688820f42d13
 +  
 +  // Create WebView
 +  web_view_ = container->AddChildView(
-+      std::make_unique<views::WebView>(GetBrowser().profile()));
++      std::make_unique<views::WebView>(GetProfile()));
 +  web_view_->SetProperty(
 +      views::kFlexBehaviorKey,
 +      views::FlexSpecification(views::MinimumFlexSizeRule::kScaleToZero,
@@ -310,7 +315,7 @@ index 0000000000000..f688820f42d13
 +  
 +  // Create WebContents if we don't have one yet
 +  if (!owned_web_contents_) {
-+    content::WebContents::CreateParams params(GetBrowser().profile());
++    content::WebContents::CreateParams params(GetProfile());
 +    owned_web_contents_ = content::WebContents::Create(params);
 +
 +    // Set this as the delegate to handle keyboard events
@@ -401,7 +406,7 @@ index 0000000000000..f688820f42d13
 +}
 +
 +void ThirdPartyLlmPanelCoordinator::LoadProvidersFromPrefs() {
-+  PrefService* prefs = GetBrowser().profile()->GetPrefs();
++  PrefService* prefs = GetProfile()->GetPrefs();
 +  if (!prefs) {
 +    LOG(ERROR) << "[browseros] Failed to get PrefService";
 +    providers_ = GetDefaultProviders();
@@ -462,7 +467,7 @@ index 0000000000000..f688820f42d13
 +}
 +
 +void ThirdPartyLlmPanelCoordinator::SaveProvidersToPrefs() {
-+  PrefService* prefs = GetBrowser().profile()->GetPrefs();
++  PrefService* prefs = GetProfile()->GetPrefs();
 +  if (!prefs) {
 +    LOG(ERROR) << "[browseros] Failed to get PrefService for saving";
 +    return;
@@ -504,7 +509,7 @@ index 0000000000000..f688820f42d13
 +  current_provider_index_ = new_provider_index;
 +
 +  // Persist preference.
-+  if (PrefService* prefs = GetBrowser().profile()->GetPrefs()) {
++  if (PrefService* prefs = GetProfile()->GetPrefs()) {
 +    prefs->SetInteger(kThirdPartyLlmSelectedProviderPref, static_cast<int>(current_provider_index_));
 +  }
 +
@@ -546,21 +551,28 @@ index 0000000000000..f688820f42d13
 +  if (!owned_web_contents_) {
 +    return;
 +  }
-+  
++
 +  GURL current_url = owned_web_contents_->GetURL();
 +  if (!current_url.is_valid()) {
 +    return;
 +  }
-+  
-+  // Open the current URL in a new tab
-+  NavigateParams params(&GetBrowser(), current_url, ui::PAGE_TRANSITION_LINK);
-+  params.disposition = WindowOpenDisposition::NEW_FOREGROUND_TAB;
-+  Navigate(&params);
++
++  // Create new WebContents and navigate to the URL
++  content::WebContents::CreateParams params(GetProfile());
++  std::unique_ptr<content::WebContents> new_contents =
++      content::WebContents::Create(params);
++  new_contents->GetController().LoadURL(
++      current_url, content::Referrer(), ui::PAGE_TRANSITION_LINK, std::string());
++
++  // Add to tab strip
++  GetTabStripModel()->AddWebContents(
++      std::move(new_contents), -1,
++      ui::PAGE_TRANSITION_LINK, AddTabTypes::ADD_ACTIVE);
 +}
 +
 +void ThirdPartyLlmPanelCoordinator::OnCopyContent() {
 +  // Get the active tab's web contents
-+  TabStripModel* tab_strip_model = GetBrowser().tab_strip_model();
++  TabStripModel* tab_strip_model = GetTabStripModel();
 +  if (!tab_strip_model) {
 +    return;
 +  }
@@ -586,7 +598,7 @@ index 0000000000000..f688820f42d13
 +
 +void ThirdPartyLlmPanelCoordinator::OnScreenshotContent() {
 +  // Get the active tab's web contents
-+  TabStripModel* tab_strip_model = GetBrowser().tab_strip_model();
++  TabStripModel* tab_strip_model = GetTabStripModel();
 +  if (!tab_strip_model) {
 +    return;
 +  }
@@ -863,9 +875,6 @@ index 0000000000000..f688820f42d13
 +    const blink::mojom::WindowFeatures& window_features,
 +    bool user_gesture,
 +    bool* was_blocked) {
-+  // Handle popup windows from the webview
-+  Browser* browser = &GetBrowser();
-+  
 +  // Only allow popups triggered by user gesture
 +  if (!user_gesture) {
 +    if (was_blocked) {
@@ -873,16 +882,19 @@ index 0000000000000..f688820f42d13
 +    }
 +    return nullptr;
 +  }
-+  
-+  // For popup windows and new tabs, open them in the main browser
++
++  // For popup windows and new tabs, add to the tab strip
 +  if (disposition == WindowOpenDisposition::NEW_POPUP ||
 +      disposition == WindowOpenDisposition::NEW_FOREGROUND_TAB ||
 +      disposition == WindowOpenDisposition::NEW_BACKGROUND_TAB ||
 +      disposition == WindowOpenDisposition::NEW_WINDOW) {
-+    chrome::AddWebContents(browser, source, std::move(new_contents), 
-+                          target_url, disposition, window_features);
++    int add_types = (disposition == WindowOpenDisposition::NEW_FOREGROUND_TAB)
++                        ? AddTabTypes::ADD_ACTIVE
++                        : AddTabTypes::ADD_NONE;
++    GetTabStripModel()->AddWebContents(
++        std::move(new_contents), -1, ui::PAGE_TRANSITION_LINK, add_types);
 +  }
-+  
++
 +  return nullptr;
 +}
 +
@@ -994,11 +1006,8 @@ index 0000000000000..f688820f42d13
 +  if (provider_change_in_progress_)
 +    return;
 +
-+  // Check if the third-party LLM panel is open
-+  auto* side_panel_ui = GetBrowser().GetFeatures().side_panel_ui();
-+  if (!side_panel_ui || 
-+      !side_panel_ui->IsSidePanelShowing() ||
-+      side_panel_ui->GetCurrentEntryId() != SidePanelEntry::Id::kThirdPartyLlm) {
++  // Only cycle if the panel is showing (provider_selector_ exists when panel is open)
++  if (!provider_selector_) {
 +    return;
 +  }
 +
@@ -1009,35 +1018,12 @@ index 0000000000000..f688820f42d13
 +  // Calculate next provider (cycle through all providers)
 +  size_t next_provider_index = (current_provider_index_ + 1) % providers_.size();
 +
-+  // Update the provider selector if it exists
-+  if (provider_selector_) {
-+    // Combobox selection changes made programmatically do NOT invoke the
-+    // `SetCallback` observer, so we must call `OnProviderChanged()` manually
-+    // to keep the page in sync with the visible provider label.
-+    provider_selector_->SetSelectedIndex(next_provider_index);
-+    OnProviderChanged();
-+    return;
-+  } else {
-+    // If the UI isn't created yet, update everything manually
-+    current_provider_index_ = next_provider_index;
-+
-+    // Save preference
-+    PrefService* prefs = GetBrowser().profile()->GetPrefs();
-+    if (prefs) {
-+      prefs->SetInteger(kThirdPartyLlmSelectedProviderPref,
-+                        static_cast<int>(next_provider_index));
-+    }
-+
-+    // Navigate to the new provider URL if we have WebContents
-+    if (owned_web_contents_ && next_provider_index < providers_.size()) {
-+      GURL provider_url = providers_[next_provider_index].url;
-+      owned_web_contents_->GetController().LoadURL(
-+          provider_url,
-+          content::Referrer(),
-+          ui::PAGE_TRANSITION_AUTO_TOPLEVEL,
-+          std::string());
-+    }
-+  }
++  // Update the provider selector
++  // Combobox selection changes made programmatically do NOT invoke the
++  // `SetCallback` observer, so we must call `OnProviderChanged()` manually
++  // to keep the page in sync with the visible provider label.
++  provider_selector_->SetSelectedIndex(next_provider_index);
++  OnProviderChanged();
 +  
 +  // Removed provider change notification to prevent crash
 +}
@@ -1067,22 +1053,18 @@ index 0000000000000..f688820f42d13
 +}
 +
 +void ThirdPartyLlmPanelCoordinator::OnBrowserRemoved(Browser* browser) {
-+  if (browser == browser_) {
-+    // Browser is being removed - clean up WebContents early
++  // Clean up WebContents when any browser is removed to be safe
++  // Since we no longer track the specific browser, clean up if profile matches
++  if (browser && browser->profile() == GetProfile()) {
 +    CleanupWebContents();
 +  }
 +}
 +
 +void ThirdPartyLlmPanelCoordinator::OnProfileWillBeDestroyed(Profile* profile) {
-+  if (profile == browser_->profile()) {
++  if (profile == GetProfile()) {
 +    // Profile is being destroyed - clean up WebContents if not already done
 +    CleanupWebContents();
 +  }
-+}
-+
-+Browser& ThirdPartyLlmPanelCoordinator::GetBrowser() const {
-+  CHECK(browser_);
-+  return *browser_;
 +}
 +
 +void ThirdPartyLlmPanelCoordinator::ShowOptionsMenu() {
@@ -1163,7 +1145,12 @@ index 0000000000000..f688820f42d13
 +      OnOpenInNewTab();
 +      break;
 +    case IDC_CLASH_OF_GPTS:
-+      chrome::ExecuteCommand(&GetBrowser(), IDC_OPEN_CLASH_OF_GPTS);
++      if (Browser* browser = BrowserList::GetInstance()->GetLastActive()) {
++        if (auto* coordinator =
++                browser->browser_window_features()->clash_of_gpts_coordinator()) {
++          coordinator->Show();
++        }
++      }
 +      break;
 +  }
 +}

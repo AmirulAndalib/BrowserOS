@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/ui/views/side_panel/third_party_llm/third_party_llm_panel_coordinator.h b/chrome/browser/ui/views/side_panel/third_party_llm/third_party_llm_panel_coordinator.h
 new file mode 100644
-index 0000000000000..e0731e13146b8
+index 0000000000000..ef7c13f156ea7
 --- /dev/null
 +++ b/chrome/browser/ui/views/side_panel/third_party_llm/third_party_llm_panel_coordinator.h
-@@ -0,0 +1,234 @@
+@@ -0,0 +1,237 @@
 +// Copyright 2026 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -15,6 +15,7 @@ index 0000000000000..e0731e13146b8
 +#include <string>
 +
 +#include "base/memory/raw_ptr.h"
++#include "base/memory/raw_ref.h"
 +#include "base/memory/weak_ptr.h"
 +#include "base/scoped_multi_source_observation.h"
 +#include "base/scoped_observation.h"
@@ -39,11 +40,11 @@ index 0000000000000..e0731e13146b8
 +class Image;
 +}  // namespace gfx
 +
-+class Browser;
 +class BrowserList;
 +class Profile;
 +class SidePanelEntryScope;
 +class SidePanelRegistry;
++class TabStripModel;
 +
 +namespace input {
 +struct NativeWebKeyboardEvent;
@@ -89,20 +90,21 @@ index 0000000000000..e0731e13146b8
 +      public views::ViewObserver,
 +      public ui::SimpleMenuModel::Delegate {
 + public:
-+  explicit ThirdPartyLlmPanelCoordinator(Browser* browser);
++  ThirdPartyLlmPanelCoordinator(Profile* profile, TabStripModel* tab_strip_model);
 +  ThirdPartyLlmPanelCoordinator(const ThirdPartyLlmPanelCoordinator&) = delete;
 +  ThirdPartyLlmPanelCoordinator& operator=(const ThirdPartyLlmPanelCoordinator&) = delete;
 +  ~ThirdPartyLlmPanelCoordinator() override;
 +
 +  void CreateAndRegisterEntry(SidePanelRegistry* global_registry);
-+  
++
 +  // Registers user preferences
 +  static void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry);
-+  
++
 +  // Cycles to the next LLM provider
 +  void CycleProvider();
 +
-+  Browser& GetBrowser() const;
++  Profile* GetProfile() const { return &profile_.get(); }
++  TabStripModel* GetTabStripModel() const { return &tab_strip_model_.get(); }
 +  
 +  // content::WebContentsDelegate:
 +  bool HandleKeyboardEvent(content::WebContents* source,
@@ -184,7 +186,8 @@ index 0000000000000..e0731e13146b8
 +  // Clean up WebContents early to avoid shutdown crashes.
 +  void CleanupWebContents();
 +
-+  raw_ptr<Browser> browser_ = nullptr;
++  const raw_ref<Profile> profile_;
++  const raw_ref<TabStripModel> tab_strip_model_;
 +
 +  // Provider list and current selection
 +  std::vector<LlmProviderInfo> providers_;

@@ -1,5 +1,5 @@
 diff --git a/chrome/browser/ui/browser_window/internal/browser_window_features.cc b/chrome/browser/ui/browser_window/internal/browser_window_features.cc
-index 8c4ecc7069f8f..af3549174bd0c 100644
+index 8c4ecc7069f8f..ab415e928c23d 100644
 --- a/chrome/browser/ui/browser_window/internal/browser_window_features.cc
 +++ b/chrome/browser/ui/browser_window/internal/browser_window_features.cc
 @@ -88,12 +88,14 @@
@@ -17,15 +17,27 @@ index 8c4ecc7069f8f..af3549174bd0c 100644
  #include "chrome/browser/ui/views/tabs/recent_activity_bubble_dialog_view.h"
  #include "chrome/browser/ui/views/tabs/tab_strip_action_container.h"
  #include "chrome/browser/ui/views/toolbar/chrome_labs/chrome_labs_coordinator.h"
-@@ -527,6 +529,12 @@ void BrowserWindowFeatures::InitPostWindowConstruction(Browser* browser) {
+@@ -322,6 +324,12 @@ void BrowserWindowFeatures::Init(BrowserWindowInterface* browser) {
+   bookmarks_side_panel_coordinator_ =
+       std::make_unique<BookmarksSidePanelCoordinator>();
+ 
++  if (base::FeatureList::IsEnabled(features::kThirdPartyLlmPanel)) {
++    third_party_llm_panel_coordinator_ =
++        std::make_unique<ThirdPartyLlmPanelCoordinator>(
++            profile, browser->GetTabStripModel());
++  }
++
+   signin_view_controller_ = std::make_unique<SigninViewController>(
+       browser, profile, tab_strip_model_);
+ 
+@@ -527,6 +535,11 @@ void BrowserWindowFeatures::InitPostWindowConstruction(Browser* browser) {
    incognito_clear_browsing_data_dialog_coordinator_ =
        std::make_unique<IncognitoClearBrowsingDataDialogCoordinator>(profile);
  
-+  third_party_llm_panel_coordinator_ =
-+      std::make_unique<ThirdPartyLlmPanelCoordinator>(browser);
-+
-+  clash_of_gpts_coordinator_ =
-+      std::make_unique<ClashOfGptsCoordinator>(browser);
++  if (base::FeatureList::IsEnabled(features::kClashOfGpts)) {
++    clash_of_gpts_coordinator_ =
++        std::make_unique<ClashOfGptsCoordinator>(browser);
++  }
 +
    if (auto* browser_view = BrowserView::GetBrowserViewForBrowser(browser)) {
      color_provider_browser_helper_ =

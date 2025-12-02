@@ -1,24 +1,13 @@
 diff --git a/chrome/browser/ui/browser_actions.cc b/chrome/browser/ui/browser_actions.cc
-index fb3dba200be8c..87ca8bd207bb1 100644
+index fb3dba200be8c..f437fadeb7790 100644
 --- a/chrome/browser/ui/browser_actions.cc
 +++ b/chrome/browser/ui/browser_actions.cc
-@@ -206,6 +206,10 @@ void BrowserActions::InitializeBrowserActions() {
-   Profile* const profile = base::to_address(profile_);
-   TabStripModel* const tab_strip_model = bwi_->GetTabStripModel();
-   BrowserWindowInterface* const bwi = base::to_address(bwi_);
-+  Browser* const browser =
-+      BrowserView::GetBrowserViewForBrowser(bwi)
-+          ? BrowserView::GetBrowserViewForBrowser(bwi)->browser()
-+          : nullptr;
-   const bool is_guest_session = profile_->IsGuestSession();
- 
-   actions::ActionManager::Get().AddAction(
-@@ -253,6 +257,34 @@ void BrowserActions::InitializeBrowserActions() {
+@@ -253,6 +253,36 @@ void BrowserActions::InitializeBrowserActions() {
              .Build());
    }
  
 +  // Add third-party LLM panel if feature is enabled
-+  if (base::FeatureList::IsEnabled(features::kThirdPartyLlmPanel) && browser) {
++  if (base::FeatureList::IsEnabled(features::kThirdPartyLlmPanel)) {
 +    root_action_item_->AddChild(
 +        SidePanelAction(SidePanelEntryId::kThirdPartyLlm,
 +                        IDS_THIRD_PARTY_LLM_TITLE,
@@ -29,15 +18,17 @@ index fb3dba200be8c..87ca8bd207bb1 100644
 +  }
 +
 +  // Add Clash of GPTs action if feature is enabled
-+  if (base::FeatureList::IsEnabled(features::kClashOfGpts) && browser) {
++  if (base::FeatureList::IsEnabled(features::kClashOfGpts)) {
 +    root_action_item_->AddChild(
 +        ChromeMenuAction(
 +            base::BindRepeating(
-+                [](Browser* browser, actions::ActionItem* item,
++                [](BrowserWindowInterface* bwi, actions::ActionItem* item,
 +                   actions::ActionInvocationContext context) {
-+                  chrome::ExecuteCommand(browser, IDC_OPEN_CLASH_OF_GPTS);
++                  if (auto* browser_view = BrowserView::GetBrowserViewForBrowser(bwi)) {
++                    chrome::ExecuteCommand(browser_view->browser(), IDC_OPEN_CLASH_OF_GPTS);
++                  }
 +                },
-+                base::Unretained(browser)),
++                bwi),
 +            kActionSidePanelShowClashOfGpts,
 +            IDS_CLASH_OF_GPTS_TITLE,
 +            IDS_CLASH_OF_GPTS_TOOLTIP,
