@@ -1,8 +1,8 @@
-diff --git a/chrome/browser/ui/views/accelerator_table.cc b/chrome/browser/ui/views/accelerator_table.cc
-index 6db32fe196921..80af2177736e3 100644
---- a/chrome/browser/ui/views/accelerator_table.cc
-+++ b/chrome/browser/ui/views/accelerator_table.cc
-@@ -151,6 +151,10 @@ const AcceleratorMapping kAcceleratorMap[] = {
+diff --git a/chrome/browser/ui/accelerator_table.cc b/chrome/browser/ui/accelerator_table.cc
+index 171a1037969db..f33142fc82f47 100644
+--- a/chrome/browser/ui/accelerator_table.cc
++++ b/chrome/browser/ui/accelerator_table.cc
+@@ -155,6 +155,10 @@ const AcceleratorMapping kAcceleratorMap[] = {
      {ui::VKEY_F11, ui::EF_NONE, IDC_FULLSCREEN},
      {ui::VKEY_M, ui::EF_SHIFT_DOWN | ui::EF_PLATFORM_ACCELERATOR,
       IDC_SHOW_AVATAR_MENU},

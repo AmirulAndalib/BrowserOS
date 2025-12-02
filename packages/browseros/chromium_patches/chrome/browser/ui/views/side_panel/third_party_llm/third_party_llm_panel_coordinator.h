@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/ui/views/side_panel/third_party_llm/third_party_llm_panel_coordinator.h b/chrome/browser/ui/views/side_panel/third_party_llm/third_party_llm_panel_coordinator.h
 new file mode 100644
-index 0000000000000..f931b40df2743
+index 0000000000000..e0731e13146b8
 --- /dev/null
 +++ b/chrome/browser/ui/views/side_panel/third_party_llm/third_party_llm_panel_coordinator.h
-@@ -0,0 +1,230 @@
+@@ -0,0 +1,234 @@
 +// Copyright 2026 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -14,12 +14,12 @@ index 0000000000000..f931b40df2743
 +#include <map>
 +#include <string>
 +
++#include "base/memory/raw_ptr.h"
 +#include "base/memory/weak_ptr.h"
-+#include "base/supports_user_data.h"
 +#include "base/scoped_multi_source_observation.h"
 +#include "base/scoped_observation.h"
++#include "base/timer/timer.h"
 +#include "chrome/browser/ui/browser_list_observer.h"
-+#include "chrome/browser/ui/browser_user_data.h"
 +#include "chrome/browser/profiles/profile_observer.h"
 +#include "components/prefs/pref_change_registrar.h"
 +#include "content/public/browser/media_stream_request.h"
@@ -82,8 +82,7 @@ index 0000000000000..f931b40df2743
 +// ThirdPartyLlmPanelCoordinator handles the creation and registration of the
 +// third-party LLM SidePanelEntry.
 +class ThirdPartyLlmPanelCoordinator
-+    : public BrowserUserData<ThirdPartyLlmPanelCoordinator>,
-+      public BrowserListObserver,
++    : public BrowserListObserver,
 +      public ProfileObserver,
 +      public content::WebContentsDelegate,
 +      public content::WebContentsObserver,
@@ -102,6 +101,8 @@ index 0000000000000..f931b40df2743
 +  
 +  // Cycles to the next LLM provider
 +  void CycleProvider();
++
++  Browser& GetBrowser() const;
 +  
 +  // content::WebContentsDelegate:
 +  bool HandleKeyboardEvent(content::WebContents* source,
@@ -143,9 +144,6 @@ index 0000000000000..f931b40df2743
 +  void ExecuteCommand(int command_id, int event_flags) override;
 +
 + private:
-+  friend class BrowserUserData<ThirdPartyLlmPanelCoordinator>;
-+
-+  BROWSER_USER_DATA_KEY_DECL();
 +
 +  // Menu command IDs
 +  enum MenuCommands {
@@ -166,6 +164,10 @@ index 0000000000000..f931b40df2743
 +  void OnScreenshotContent();
 +  void OnAccessibilityTreeReceived(ui::AXTreeUpdate& update);
 +  void OnScreenshotCaptured(const gfx::Image& image);
++  void ExtractTextFromNodeData(
++      const ui::AXNodeData* node,
++      const std::map<ui::AXNodeID, const ui::AXNodeData*>& node_map,
++      std::u16string* output);
 +  void HideFeedbackLabel();
 +  void ShowOptionsMenu();
 +
@@ -181,6 +183,8 @@ index 0000000000000..f931b40df2743
 +
 +  // Clean up WebContents early to avoid shutdown crashes.
 +  void CleanupWebContents();
++
++  raw_ptr<Browser> browser_ = nullptr;
 +
 +  // Provider list and current selection
 +  std::vector<LlmProviderInfo> providers_;
