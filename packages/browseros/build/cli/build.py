@@ -13,7 +13,7 @@ import typer
 from ..common.context import Context
 from ..common.config import load_config, validate_required_envs
 from ..common.pipeline import validate_pipeline, show_available_modules
-from ..common.args import BuildArgsResolver, PipelineResolver
+from ..common.resolver import resolve_config, resolve_pipeline
 from ..common.notify import (
     notify_pipeline_start,
     notify_pipeline_end,
@@ -29,7 +29,6 @@ from ..common.utils import (
     IS_MACOS,
     IS_WINDOWS,
     IS_LINUX,
-    get_platform_arch,
 )
 
 # Import all module classes
@@ -334,6 +333,24 @@ def main(
         log_error("  browseros build --config release.yaml")
         raise typer.Exit(1)
 
+    # CONFIG MODE validation: YAML controls everything, CLI build flags not allowed
+    if has_config:
+        conflicting_flags = []
+        if arch is not None:
+            conflicting_flags.append("--arch")
+        if build_type is not None:
+            conflicting_flags.append("--build-type")
+        if chromium_src is not None:
+            conflicting_flags.append("--chromium-src")
+
+        if conflicting_flags:
+            log_error(
+                f"CONFIG MODE: Cannot use {', '.join(conflicting_flags)} with --config"
+            )
+            log_error("When using --config, ALL build parameters come from YAML")
+            log_error("Remove the conflicting flags or don't use --config")
+            raise typer.Exit(1)
+
     log_info("🚀 BrowserOS Build System")
     log_info("=" * 70)
 
@@ -355,17 +372,16 @@ def main(
         "upload": upload,
     }
 
-    # Resolve build context using BuildArgsResolver (handles all precedence)
+    # Resolve build context (CONFIG mode or DIRECT mode)
     try:
-        resolver = BuildArgsResolver(cli_args, config_data, root_dir=root_dir)
-        ctx = resolver.resolve()
+        ctx = resolve_config(cli_args, config_data, root_dir=root_dir)
     except ValueError as e:
         log_error(str(e))
         raise typer.Exit(1)
 
-    # Resolve pipeline using PipelineResolver (handles all modes)
+    # Resolve pipeline (CONFIG mode or DIRECT mode)
     try:
-        pipeline = PipelineResolver.resolve(
+        pipeline = resolve_pipeline(
             cli_args,
             config_data,
             execution_order=EXECUTION_ORDER,

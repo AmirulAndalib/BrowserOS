@@ -7,7 +7,6 @@ All build modules should inherit from BuildModule and implement validate() and e
 """
 
 from typing import List
-from pathlib import Path
 
 
 class ValidationError(Exception):

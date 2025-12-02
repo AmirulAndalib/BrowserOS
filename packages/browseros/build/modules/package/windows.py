@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 """Windows packaging module for BrowserOS"""
 
-import os
-import sys
 import shutil
 import zipfile
 from pathlib import Path
-from typing import Optional, List
+from typing import List
 from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
 from ...common.utils import (
@@ -262,7 +260,6 @@ def create_files_cfg_package(ctx: Context) -> bool:
     """Create package using Chromium's FILES.cfg approach (alternative method)"""
     log_info("\n📦 Creating FILES.cfg-based package...")
 
-    build_output_dir = join_paths(ctx.chromium_src, ctx.out_dir)
     files_cfg_path = (
         ctx.chromium_src / "chrome" / "tools" / "build" / "win" / "FILES.cfg"
     )

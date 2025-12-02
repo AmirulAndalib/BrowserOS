@@ -7,7 +7,6 @@ It provides type-safe access, defaults, and clear documentation of what each var
 """
 
 import os
-from pathlib import Path
 from typing import Optional
 
 

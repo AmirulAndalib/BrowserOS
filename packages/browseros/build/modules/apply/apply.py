@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import List, Tuple, Optional
 from ...common.context import Context
 from ...common.module import CommandModule, ValidationError
-from .utils import run_git_command, GitError
+from .utils import run_git_command
 from ...common.utils import log_info, log_error, log_success, log_warning
 
 

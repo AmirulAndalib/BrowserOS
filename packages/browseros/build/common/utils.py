@@ -10,14 +10,11 @@ import yaml
 import shutil
 from pathlib import Path
 from typing import Optional, List, Dict, Union
-from datetime import datetime
 
 # Import logging functions from logger module (will use our platform detection)
 from .logger import (
     log_info,
-    log_warning,
     log_error,
-    log_success,
     _log_to_file,  # Internal function for run_command
 )
 
@@ -227,7 +224,7 @@ def safe_rmtree(path: Union[str, Path]) -> None:
             if path.is_symlink() or (path.is_dir() and os.path.islink(str(path))):
                 path.unlink()
                 return
-        except:
+        except Exception:
             pass
 
         # Fall back to rmtree with error handler

@@ -2,7 +2,6 @@
 """String replacement module for BrowserOS build system"""
 
 import re
-from pathlib import Path
 from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
 from ...common.utils import log_info, log_success, log_error, log_warning
@@ -84,7 +83,7 @@ def apply_string_replacements_impl(ctx: Context) -> bool:
                     f.write(content)
                 log_success(f"    Updated with {replacement_count} total replacements")
             else:
-                log_info(f"    No replacements needed")
+                log_info("    No replacements needed")
 
         except Exception as e:
             log_error(f"    Error processing {file_path}: {e}")

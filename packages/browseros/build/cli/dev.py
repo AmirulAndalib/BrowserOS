@@ -6,7 +6,6 @@ A git-like patch management system for maintaining patches against Chromium.
 Enables extracting, applying, and managing patches across Chromium upgrades.
 """
 
-import sys
 import yaml
 from pathlib import Path
 from typing import Optional
@@ -16,7 +15,7 @@ from typer import Typer, Option, Argument
 
 # Import from common and utils
 from ..common.context import Context
-from ..common.utils import log_info, log_error, log_success, log_warning, join_paths
+from ..common.utils import log_info, log_error, log_success, log_warning
 
 
 def create_build_context(chromium_src: Optional[Path] = None) -> Optional[Context]:
@@ -167,6 +166,11 @@ def extract_commit(
     interactive: bool = Option(
         True, "--interactive/--no-interactive", "-i/-n", help="Interactive mode"
     ),
+    force: bool = Option(False, "--force", "-f", help="Overwrite existing patches"),
+    include_binary: bool = Option(False, "--include-binary", help="Include binary files"),
+    base: Optional[str] = Option(
+        None, "--base", help="Extract full diff from base commit for files in COMMIT"
+    ),
 ):
     """Extract patches from a single commit"""
     ctx = create_build_context(state.chromium_src)
@@ -178,7 +182,16 @@ def extract_commit(
     module = ExtractCommitModule()
     try:
         module.validate(ctx)
-        module.execute(ctx, commit=commit, output=output, interactive=interactive)
+        module.execute(
+            ctx,
+            commit=commit,
+            output=output,
+            interactive=interactive,
+            verbose=state.verbose,
+            force=force,
+            include_binary=include_binary,
+            base=base,
+        )
     except Exception as e:
         log_error(f"Failed to extract commit: {e}")
         raise typer.Exit(1)
@@ -192,6 +205,14 @@ def extract_range(
     interactive: bool = Option(
         True, "--interactive/--no-interactive", "-i/-n", help="Interactive mode"
     ),
+    force: bool = Option(False, "--force", "-f", help="Overwrite existing patches"),
+    include_binary: bool = Option(False, "--include-binary", help="Include binary files"),
+    squash: bool = Option(False, "--squash", help="Squash all commits into single patches"),
+    base: Optional[str] = Option(
+        None,
+        "--base",
+        help="Use different base for diff (full diff from base for files in range)",
+    ),
 ):
     """Extract patches from a range of commits"""
     ctx = create_build_context(state.chromium_src)
@@ -204,7 +225,16 @@ def extract_range(
     try:
         module.validate(ctx)
         module.execute(
-            ctx, start=start, end=end, output=output, interactive=interactive
+            ctx,
+            start=start,
+            end=end,
+            output=output,
+            interactive=interactive,
+            verbose=state.verbose,
+            force=force,
+            include_binary=include_binary,
+            squash=squash,
+            base=base,
         )
     except Exception as e:
         log_error(f"Failed to extract range: {e}")

@@ -65,7 +65,7 @@ def show_available_modules(available_modules: Dict[str, Type[CommandModule]]) ->
     ungrouped = sorted(set(available_modules.keys()) - all_grouped)
 
     if ungrouped:
-        log_info(f"\nOther:")
+        log_info("\nOther:")
         log_info("-" * 70)
         for module_name in ungrouped:
             module_class = available_modules[module_name]

@@ -4,7 +4,6 @@
 import subprocess
 import tarfile
 import urllib.request
-from pathlib import Path
 from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
 from ...common.utils import run_command, log_info, log_error, log_success, IS_WINDOWS, safe_rmtree
