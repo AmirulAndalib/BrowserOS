@@ -62,5 +62,14 @@ skip_glob = ["env/*", "chromium_src/*", "chromium_src_bak/*", "third_party/*"]
 [dependency-groups]
 dev = [
     "ruff>=0.14.7",
+    "pyright>=1.1.390",
 ]
+
+[tool.pyright]
+include = ["build"]
+exclude = ["**/__pycache__", "chromium_src", "chromium_src_bak", "third_party"]
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+reportMissingImports = true
+reportMissingModuleSource = true
 
