@@ -150,6 +150,24 @@ def validate_commit_exists(commit_hash: str, chromium_src: Path) -> bool:
         return False
 
 
+def file_exists_in_commit(file_path: str, commit: str, chromium_src: Path) -> bool:
+    """Check if file exists in a commit."""
+    result = run_git_command(
+        ["git", "cat-file", "-e", f"{commit}:{file_path}"],
+        cwd=chromium_src,
+    )
+    return result.returncode == 0
+
+
+def reset_file_to_commit(file_path: str, commit: str, chromium_src: Path) -> bool:
+    """Reset a single file to a specific commit state."""
+    result = run_git_command(
+        ["git", "checkout", commit, "--", file_path],
+        cwd=chromium_src,
+    )
+    return result.returncode == 0
+
+
 def get_commit_changed_files(commit_hash: str, chromium_src: Path) -> List[str]:
     """Get list of files changed in a commit"""
     try:

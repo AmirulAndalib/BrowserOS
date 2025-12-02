@@ -248,6 +248,9 @@ def apply_all(
         True, "--interactive/--no-interactive", "-i/-n", help="Interactive mode"
     ),
     commit: bool = Option(False, "--commit", "-c", help="Commit after each patch"),
+    reset_to: Optional[str] = Option(
+        None, "--reset-to", "-r", help="Reset files to this commit before applying patches"
+    ),
 ):
     """Apply all patches from chromium_patches/"""
     ctx = create_build_context(state.chromium_src)
@@ -259,7 +262,7 @@ def apply_all(
     module = ApplyAllModule()
     try:
         module.validate(ctx)
-        module.execute(ctx, interactive=interactive, commit=commit)
+        module.execute(ctx, interactive=interactive, commit=commit, reset_to=reset_to)
     except Exception as e:
         log_error(f"Failed to apply patches: {e}")
         raise typer.Exit(1)
@@ -272,6 +275,9 @@ def apply_feature(
         True, "--interactive/--no-interactive", "-i/-n", help="Interactive mode"
     ),
     commit: bool = Option(False, "--commit", "-c", help="Commit after applying"),
+    reset_to: Optional[str] = Option(
+        None, "--reset-to", "-r", help="Reset files to this commit before applying patches"
+    ),
 ):
     """Apply patches for a specific feature"""
     ctx = create_build_context(state.chromium_src)
@@ -284,11 +290,33 @@ def apply_feature(
     try:
         module.validate(ctx)
         module.execute(
-            ctx, feature_name=feature_name, interactive=interactive, commit=commit
+            ctx, feature_name=feature_name, interactive=interactive, commit=commit, reset_to=reset_to
         )
     except Exception as e:
         log_error(f"Failed to apply feature: {e}")
         raise typer.Exit(1)
+
+
+@apply_app.command(name="patch")
+def apply_patch_cmd(
+    chromium_path: str = Argument(..., help="Chromium file path (e.g., chrome/common/foo.h)"),
+    reset_to: Optional[str] = Option(
+        None, "--reset-to", "-r", help="Reset file to this commit before applying patch"
+    ),
+    dry_run: bool = Option(False, "--dry-run", help="Test without applying"),
+):
+    """Apply patch for a specific file"""
+    ctx = create_build_context(state.chromium_src)
+    if not ctx:
+        raise typer.Exit(1)
+
+    from ..modules.apply.apply import apply_single_file_patch
+
+    success, error = apply_single_file_patch(ctx, chromium_path, reset_to, dry_run)
+    if not success:
+        log_error(error)
+        raise typer.Exit(1)
+    log_success(f"Successfully applied patch for: {chromium_path}")
 
 
 # Feature commands

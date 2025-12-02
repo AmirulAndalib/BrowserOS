@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import List, Tuple, Optional
 from ...common.context import Context
 from ...common.module import CommandModule, ValidationError
-from .utils import run_git_command
+from .utils import run_git_command, file_exists_in_commit, reset_file_to_commit
 from ...common.utils import log_info, log_error, log_success, log_warning
 
 
@@ -45,6 +45,7 @@ def apply_single_patch(
     chromium_src: Path,
     dry_run: bool = False,
     relative_to: Optional[Path] = None,
+    reset_to: Optional[str] = None,
 ) -> Tuple[bool, Optional[str]]:
     """Apply a single patch file.
 
@@ -53,11 +54,19 @@ def apply_single_patch(
         chromium_src: Chromium source directory
         dry_run: If True, only check if patch would apply
         relative_to: Base path for displaying relative paths (optional)
+        reset_to: Commit to reset file to before applying (optional)
 
     Returns:
         Tuple of (success: bool, error_message: Optional[str])
     """
     display_path = patch_path.relative_to(relative_to) if relative_to else patch_path
+
+    # Reset file to base commit if requested
+    if reset_to and not dry_run:
+        file_path = str(display_path)
+        if file_exists_in_commit(file_path, reset_to, chromium_src):
+            log_info(f"  Resetting to {reset_to[:8]}: {file_path}")
+            reset_file_to_commit(file_path, reset_to, chromium_src)
 
     if dry_run:
         # Just check if patch would apply
@@ -152,6 +161,7 @@ def process_patch_list(
     dry_run: bool = False,
     interactive: bool = False,
     feature_name: Optional[str] = None,
+    reset_to: Optional[str] = None,
 ) -> Tuple[int, List[str]]:
     """Process a list of patches.
 
@@ -163,6 +173,7 @@ def process_patch_list(
         dry_run: Only check if patches would apply
         interactive: Ask for confirmation before each patch
         feature_name: Optional feature name for commit messages
+        reset_to: Commit to reset files to before applying (optional)
 
     Returns:
         Tuple of (applied_count, failed_list)
@@ -206,7 +217,7 @@ def process_patch_list(
 
         # Apply the patch
         success, error = apply_single_patch(
-            patch_path, chromium_src, dry_run, patches_dir
+            patch_path, chromium_src, dry_run, patches_dir, reset_to
         )
 
         if success:
@@ -251,6 +262,7 @@ def apply_all_patches(
     commit_each: bool = False,
     dry_run: bool = False,
     interactive: bool = False,
+    reset_to: Optional[str] = None,
 ) -> Tuple[int, List[str]]:
     """Apply all patches from patches directory.
 
@@ -259,6 +271,7 @@ def apply_all_patches(
         commit_each: Create a commit after each patch
         dry_run: Only check if patches would apply
         interactive: Ask for confirmation before each patch
+        reset_to: Commit to reset files to before applying (optional)
 
     Returns:
         Tuple of (applied_count, failed_list)
@@ -292,6 +305,7 @@ def apply_all_patches(
         commit_each,
         dry_run,
         interactive,
+        reset_to=reset_to,
     )
 
     # Summary
@@ -310,6 +324,7 @@ def apply_feature_patches(
     feature_name: str,
     commit_each: bool = False,
     dry_run: bool = False,
+    reset_to: Optional[str] = None,
 ) -> Tuple[int, List[str]]:
     """Apply patches for a specific feature.
 
@@ -318,6 +333,7 @@ def apply_feature_patches(
         feature_name: Name of the feature
         commit_each: Create a commit after each patch
         dry_run: Only check if patches would apply
+        reset_to: Commit to reset files to before applying (optional)
 
     Returns:
         Tuple of (applied_count, failed_list)
@@ -367,6 +383,7 @@ def apply_feature_patches(
         dry_run,
         interactive=False,  # Feature patches don't support interactive mode
         feature_name=feature_name,
+        reset_to=reset_to,
     )
 
     # Summary
@@ -378,6 +395,41 @@ def apply_feature_patches(
             log_error(f"  - {p}")
 
     return applied, failed
+
+
+def apply_single_file_patch(
+    build_ctx: Context,
+    chromium_path: str,
+    reset_to: Optional[str] = None,
+    dry_run: bool = False,
+) -> Tuple[bool, Optional[str]]:
+    """Apply patch for a single chromium file.
+
+    Args:
+        build_ctx: Build context
+        chromium_path: Path to file in chromium (e.g., chrome/common/foo.h)
+        reset_to: Commit to reset file to before applying
+        dry_run: If True, only check if patch would apply
+
+    Returns:
+        Tuple of (success: bool, error_message: Optional[str])
+    """
+    patch_path = build_ctx.get_patch_path_for_file(chromium_path)
+
+    if not patch_path.exists():
+        return False, f"No patch found for: {chromium_path}"
+
+    log_info(f"Applying patch for: {chromium_path}")
+    if dry_run:
+        log_info("DRY RUN - No changes will be made")
+
+    return apply_single_patch(
+        patch_path,
+        build_ctx.chromium_src,
+        dry_run=dry_run,
+        relative_to=build_ctx.get_dev_patches_dir(),
+        reset_to=reset_to,
+    )
 
 
 # CLI Commands - Thin wrappers around core functions
@@ -461,18 +513,20 @@ class ApplyAllModule(CommandModule):
         if not ctx.chromium_src.exists():
             raise ValidationError(f"Chromium source not found: {ctx.chromium_src}")
 
-    def execute(self, ctx: Context, interactive: bool = True, commit: bool = False, **kwargs) -> None:
+    def execute(self, ctx: Context, interactive: bool = True, commit: bool = False, reset_to: Optional[str] = None, **kwargs) -> None:
         """Execute apply all patches
 
         Args:
             interactive: Interactive mode (ask before each patch)
             commit: Create git commit after each patch
+            reset_to: Commit to reset files to before applying (optional)
         """
         applied, failed = apply_all_patches(
             ctx,
             commit_each=commit,
             dry_run=False,
-            interactive=interactive
+            interactive=interactive,
+            reset_to=reset_to,
         )
         if failed:
             raise RuntimeError(f"Failed to apply {len(failed)} patches")
@@ -492,19 +546,21 @@ class ApplyFeatureModule(CommandModule):
         if not ctx.chromium_src.exists():
             raise ValidationError(f"Chromium source not found: {ctx.chromium_src}")
 
-    def execute(self, ctx: Context, feature_name: str, interactive: bool = True, commit: bool = False, **kwargs) -> None:
+    def execute(self, ctx: Context, feature_name: str, interactive: bool = True, commit: bool = False, reset_to: Optional[str] = None, **kwargs) -> None:
         """Execute apply feature patches
 
         Args:
             feature_name: Name of the feature to apply
             interactive: Interactive mode (ask before each patch)
             commit: Create git commit after applying
+            reset_to: Commit to reset files to before applying (optional)
         """
         applied, failed = apply_feature_patches(
             ctx,
             feature_name,
             commit_each=commit,
-            dry_run=False
+            dry_run=False,
+            reset_to=reset_to,
         )
         if failed:
             raise RuntimeError(f"Failed to apply {len(failed)} patches for feature '{feature_name}'")
