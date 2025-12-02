@@ -314,7 +314,7 @@ def apply_patch_cmd(
 
     success, error = apply_single_file_patch(ctx, chromium_path, reset_to, dry_run)
     if not success:
-        log_error(error)
+        log_error(error or "Unknown error")
         raise typer.Exit(1)
     log_success(f"Successfully applied patch for: {chromium_path}")
 
