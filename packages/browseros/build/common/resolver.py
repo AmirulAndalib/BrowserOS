@@ -52,28 +52,31 @@ def resolve_config(
     root_dir = root_dir or Path.cwd()
 
     if yaml_config:
-        return _resolve_config_mode(yaml_config, root_dir)
+        return _resolve_config_mode(yaml_config, cli_args, root_dir)
     else:
         return _resolve_direct_mode(cli_args, root_dir)
 
 
-def _resolve_config_mode(yaml_config: Dict[str, Any], root_dir: Path) -> Context:
-    """CONFIG MODE: YAML is authoritative.
+def _resolve_config_mode(
+    yaml_config: Dict[str, Any], cli_args: Dict[str, Any], root_dir: Path
+) -> Context:
+    """CONFIG MODE: YAML is base, CLI can override.
 
     Args:
         yaml_config: YAML configuration dictionary
+        cli_args: CLI arguments (can override YAML values)
         root_dir: Project root directory
 
     Returns:
-        Context with values from YAML
+        Context with values from YAML, optionally overridden by CLI
 
     Raises:
-        ValueError: If required YAML fields missing
+        ValueError: If required fields missing from both YAML and CLI
     """
     build_section = yaml_config.get("build", {})
 
-    # chromium_src: Required in YAML
-    chromium_src_str = build_section.get("chromium_src")
+    # chromium_src: CLI override > YAML > error
+    chromium_src_str = cli_args.get("chromium_src") or build_section.get("chromium_src")
     if not chromium_src_str:
         raise ValueError(
             "CONFIG MODE: chromium_src required in YAML!\n"
@@ -83,6 +86,7 @@ def _resolve_config_mode(yaml_config: Dict[str, Any], root_dir: Path) -> Context
         )
 
     chromium_src = Path(chromium_src_str)
+    chromium_src_source = "cli" if cli_args.get("chromium_src") else "yaml"
 
     # Validate chromium_src exists
     if not chromium_src.exists():
@@ -91,18 +95,25 @@ def _resolve_config_mode(yaml_config: Dict[str, Any], root_dir: Path) -> Context
             f"Expected directory with Chromium source code"
         )
 
-    # architecture: Optional in YAML, defaults to platform
-    architecture = build_section.get("architecture") or build_section.get("arch")
+    # architecture: CLI override > YAML > platform default
+    architecture = (
+        cli_args.get("arch")
+        or build_section.get("architecture")
+        or build_section.get("arch")
+    )
+    arch_source = "cli" if cli_args.get("arch") else "yaml"
     if not architecture:
         architecture = get_platform_arch()
+        arch_source = "default"
         log_info(f"CONFIG MODE: Using platform default architecture: {architecture}")
 
-    # build_type: Optional in YAML, defaults to debug
-    build_type = build_section.get("type", "debug")
+    # build_type: CLI override > YAML > debug
+    build_type = cli_args.get("build_type") or build_section.get("type", "debug")
+    build_type_source = "cli" if cli_args.get("build_type") else "yaml"
 
-    log_info(f"✓ CONFIG MODE: chromium_src={chromium_src} (yaml)")
-    log_info(f"✓ CONFIG MODE: architecture={architecture} (yaml)")
-    log_info(f"✓ CONFIG MODE: build_type={build_type} (yaml)")
+    log_info(f"✓ CONFIG MODE: chromium_src={chromium_src} ({chromium_src_source})")
+    log_info(f"✓ CONFIG MODE: architecture={architecture} ({arch_source})")
+    log_info(f"✓ CONFIG MODE: build_type={build_type} ({build_type_source})")
 
     return Context(
         root_dir=root_dir,
