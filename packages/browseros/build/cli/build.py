@@ -20,6 +20,7 @@ from ..common.notify import (
     notify_pipeline_error,
     notify_module_start,
     notify_module_completion,
+    set_build_context,
 )
 from ..common.module import ValidationError
 from ..common.utils import (
@@ -433,6 +434,10 @@ def main(
     log_info(f"📍 Output: {ctx.out_dir}")
     log_info(f"📍 Pipeline: {' → '.join(pipeline)}")
     log_info("=" * 70)
+
+    # Set notification context for OS and architecture
+    os_name = "macOS" if IS_MACOS() else "Windows" if IS_WINDOWS() else "Linux"
+    set_build_context(os_name, ctx.architecture)
 
     # Execute pipeline
     execute_pipeline(ctx, pipeline, AVAILABLE_MODULES, pipeline_name="build")

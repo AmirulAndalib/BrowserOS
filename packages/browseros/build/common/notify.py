@@ -5,6 +5,29 @@ import os
 import threading
 from typing import Optional, Dict, Any
 
+# Build context (set once at pipeline start)
+_build_context: Dict[str, str] = {}
+
+
+def set_build_context(os_name: str, arch: str) -> None:
+    """Set build context for all notifications"""
+    _build_context["os"] = os_name
+    _build_context["arch"] = arch
+
+
+def _get_context_prefix() -> str:
+    """Get [arch] prefix if context is set"""
+    if "arch" in _build_context:
+        return f"[{_build_context['arch']}] "
+    return ""
+
+
+def _get_context_footer() -> str:
+    """Get OS footer if context is set"""
+    if "os" in _build_context:
+        return f"BrowserOS Build System - {_build_context['os']}"
+    return "BrowserOS Build System"
+
 
 class Notifier:
     """Fire-and-forget notification system"""
@@ -57,6 +80,20 @@ class Notifier:
                     "fields": fields
                 })
 
+            # Add context footer
+            payload["blocks"].append({
+                "type": "context",
+                "elements": [
+                    {
+                        "type": "mrkdwn",
+                        "text": f"🍎 {_get_context_footer()}" if _build_context.get("os") == "macOS"
+                                else f"🪟 {_get_context_footer()}" if _build_context.get("os") == "Windows"
+                                else f"🐧 {_get_context_footer()}" if _build_context.get("os") == "Linux"
+                                else _get_context_footer()
+                    }
+                ]
+            })
+
             requests.post(
                 self.slack_webhook_url,
                 json=payload,
@@ -85,7 +122,7 @@ def notify_pipeline_start(pipeline_name: str, modules: list) -> None:
     """Notify that pipeline has started"""
     notifier = get_notifier()
     notifier.notify(
-        "Pipeline Started",
+        "🚀 Pipeline Started",
         "Build pipeline started",
         {"Modules": ", ".join(modules)}
     )
@@ -97,7 +134,7 @@ def notify_pipeline_end(pipeline_name: str, duration: float) -> None:
     mins = int(duration / 60)
     secs = int(duration % 60)
     notifier.notify(
-        "Pipeline Completed ✅",
+        "🏁 Pipeline Completed",
         "Build pipeline completed successfully",
         {"Duration": f"{mins}m {secs}s"}
     )
@@ -107,7 +144,7 @@ def notify_pipeline_error(pipeline_name: str, error: str) -> None:
     """Notify that pipeline failed with error"""
     notifier = get_notifier()
     notifier.notify(
-        "Pipeline Failed ❌",
+        "❌ Pipeline Failed",
         "Build pipeline failed",
         {"Error": error}
     )
@@ -116,9 +153,10 @@ def notify_pipeline_error(pipeline_name: str, error: str) -> None:
 def notify_module_start(module_name: str) -> None:
     """Notify that a module started executing"""
     notifier = get_notifier()
+    prefix = _get_context_prefix()
     notifier.notify(
-        "Module Started",
-        f"Module '{module_name}' started",
+        "▶️ Module Started",
+        f"{prefix}Module '{module_name}' started",
         None
     )
 
@@ -126,8 +164,9 @@ def notify_module_start(module_name: str) -> None:
 def notify_module_completion(module_name: str, duration: float) -> None:
     """Notify that a module completed successfully"""
     notifier = get_notifier()
+    prefix = _get_context_prefix()
     notifier.notify(
-        "Module Completed",
-        f"Module '{module_name}' completed",
+        "✅ Module Completed",
+        f"{prefix}Module '{module_name}' completed",
         {"Duration": f"{duration:.1f}s"}
     )
