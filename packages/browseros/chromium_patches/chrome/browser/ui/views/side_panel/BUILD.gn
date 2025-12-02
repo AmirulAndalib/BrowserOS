@@ -2,7 +2,16 @@ diff --git a/chrome/browser/ui/views/side_panel/BUILD.gn b/chrome/browser/ui/vie
 index 55cfc94371d78..754fda27e0015 100644
 --- a/chrome/browser/ui/views/side_panel/BUILD.gn
 +++ b/chrome/browser/ui/views/side_panel/BUILD.gn
-@@ -89,6 +89,16 @@ source_set("side_panel") {
+@@ -14,6 +14,8 @@ source_set("side_panel") {
+   sources = [
+     "bookmarks/bookmarks_side_panel_coordinator.cc",
+     "bookmarks/bookmarks_side_panel_coordinator.h",
++    "browseros_simple_page_extractor.cc",
++    "browseros_simple_page_extractor.h",
+     "customize_chrome/customize_chrome_utils.cc",
+     "customize_chrome/customize_chrome_utils.h",
+     "customize_chrome/side_panel_controller_views.cc",
+@@ -89,6 +91,16 @@ source_set("side_panel") {
      "side_panel_util.h",
      "side_panel_web_ui_view.cc",
      "side_panel_web_ui_view.h",
@@ -19,7 +28,7 @@ index 55cfc94371d78..754fda27e0015 100644
    ]
    if (enable_glic) {
      sources += [
-@@ -177,6 +187,7 @@ source_set("side_panel") {
+@@ -177,6 +189,7 @@ source_set("side_panel") {
      "//components/keyed_service/core",
      "//components/language/core/browser",
      "//components/language/core/common",
