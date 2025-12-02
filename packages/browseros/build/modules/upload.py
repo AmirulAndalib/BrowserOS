@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Google Cloud Storage upload module for BrowserOS build artifacts"""
 
-import os
-import sys
 from pathlib import Path
 from typing import List, Optional, Tuple
 from ..common.module import CommandModule, ValidationError
@@ -15,7 +13,6 @@ from ..common.utils import (
     log_warning,
     IS_WINDOWS,
     IS_MACOS,
-    IS_LINUX,
     join_paths,
 )
 

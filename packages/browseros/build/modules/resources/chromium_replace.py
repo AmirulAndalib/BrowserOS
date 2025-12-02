@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """Chromium file replacement module for BrowserOS build system"""
 
-import sys
 import shutil
 from pathlib import Path
 from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
-from ...common.utils import log_info, log_success, log_error, log_warning
+from ...common.utils import log_info, log_success, log_error
 
 
 class ChromiumReplaceModule(CommandModule):
@@ -123,7 +122,7 @@ def add_file_to_replacements(
     replacement_dir = ctx.get_chromium_replace_files_dir()
     dest_file = replacement_dir / relative_path
 
-    log_info(f"📂 Adding file to replacements:")
+    log_info("📂 Adding file to replacements:")
     log_info(f"  Source: {file_path}")
     log_info(f"  Destination: {dest_file}")
 
@@ -136,7 +135,7 @@ def add_file_to_replacements(
 
         log_success(f"✓ File added to chromium_files replacements: {relative_path}")
         log_info(
-            f"  This file will be replaced during builds with --chromium-replace flag"
+            "  This file will be replaced during builds with --chromium-replace flag"
         )
         return True
     except Exception as e:

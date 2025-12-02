@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """DMG creation and packaging module for BrowserOS"""
 
-import sys
 import shutil
 from pathlib import Path
 from typing import Optional, List

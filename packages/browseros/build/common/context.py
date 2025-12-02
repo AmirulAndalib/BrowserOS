@@ -12,8 +12,6 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 from .utils import (
-    log_error,
-    log_warning,
     get_platform,
     get_platform_arch,
     get_executable_extension,
@@ -283,21 +281,7 @@ class Context:
         self.build.browseros_version = self.browseros_version
         self.build.browseros_chromium_version = self.browseros_chromium_version
 
-        # Determine chromium source directory
-        if self.chromium_src and self.chromium_src.exists():
-            log_warning(f"📁 Using provided Chromium source: {self.chromium_src}")
-        else:
-            log_warning(f"⚠️  Provided path does not exist: {self.chromium_src}")
-            self.chromium_src = join_paths(self.root_dir, "chromium_src")
-            if not self.chromium_src.exists():
-                log_error(
-                    f"⚠️  Default Chromium source path does not exist: {self.chromium_src}"
-                )
-                raise FileNotFoundError(
-                    f"Chromium source path does not exist: {self.chromium_src}"
-                )
-
-        # Sync chromium_src with PathConfig
+        # Sync chromium_src with PathConfig (validation done by resolver)
         self.paths.chromium_src = self.chromium_src
 
         self.start_time = time.time()
@@ -310,7 +294,6 @@ class Context:
         Initialize context from config
         Replaces __post_init__ logic for better testability
         """
-        from typing import Any
 
         root_dir = Path(config.get("root_dir", Path.cwd()))
         chromium_src = (

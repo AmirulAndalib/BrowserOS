@@ -4,7 +4,6 @@
 import os
 import sys
 import subprocess
-import glob
 import shutil
 from pathlib import Path
 from typing import Optional, List, Dict, Tuple
@@ -841,7 +840,7 @@ def sign_universal(contexts: List[Context]) -> bool:
             str(universal_app_path),
         ]
 
-        log_info(f"Running universalizer...")
+        log_info("Running universalizer...")
         log_info(f"Command: {' '.join(cmd)}")
         run_command(cmd)
 

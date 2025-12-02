@@ -2,7 +2,6 @@
 """Patch management module for BrowserOS build system"""
 
 import shutil
-from pathlib import Path
 from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
 from ...common.utils import log_info, log_error

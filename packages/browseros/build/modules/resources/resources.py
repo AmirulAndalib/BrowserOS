@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Resource management module for BrowserOS build system"""
 
-import sys
 import glob
 import shutil
 import yaml

@@ -2,11 +2,8 @@
 """Notification system for BrowserOS build pipeline"""
 
 import os
-import json
 import threading
 from typing import Optional, Dict, Any
-from pathlib import Path
-from .utils import log_info, log_warning, log_error
 
 
 class Notifier:
@@ -89,7 +86,7 @@ def notify_pipeline_start(pipeline_name: str, modules: list) -> None:
     notifier = get_notifier()
     notifier.notify(
         "Pipeline Started",
-        f"Build pipeline started",
+        "Build pipeline started",
         {"Modules": ", ".join(modules)}
     )
 
@@ -101,7 +98,7 @@ def notify_pipeline_end(pipeline_name: str, duration: float) -> None:
     secs = int(duration % 60)
     notifier.notify(
         "Pipeline Completed ✅",
-        f"Build pipeline completed successfully",
+        "Build pipeline completed successfully",
         {"Duration": f"{mins}m {secs}s"}
     )
 
@@ -111,7 +108,7 @@ def notify_pipeline_error(pipeline_name: str, error: str) -> None:
     notifier = get_notifier()
     notifier.notify(
         "Pipeline Failed ❌",
-        f"Build pipeline failed",
+        "Build pipeline failed",
         {"Error": error}
     )
 

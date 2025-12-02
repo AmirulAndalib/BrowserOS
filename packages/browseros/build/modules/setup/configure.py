@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Build configuration module for BrowserOS build system"""
 
-from pathlib import Path
-from typing import Optional
 from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
 from ...common.utils import run_command, log_info, log_success, join_paths, IS_WINDOWS

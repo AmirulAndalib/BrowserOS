@@ -6,16 +6,14 @@ and patch management with comprehensive error handling.
 """
 
 import subprocess
-import sys
-import time
 import click
 import re
 from pathlib import Path
-from typing import Optional, List, Dict, Tuple, NamedTuple
+from typing import Optional, List, Dict, Tuple
 from enum import Enum
 from dataclasses import dataclass
 from ...common.context import Context
-from ...common.utils import log_info, log_error, log_success, log_warning
+from ...common.utils import log_error, log_success, log_warning
 
 
 class FileOperation(Enum):
@@ -220,7 +218,7 @@ def parse_diff_output(diff_output: str) -> Dict[str, FilePatch]:
             # Parse file paths from diff line
             match = re.match(r"diff --git a/(.*) b/(.*)", line)
             if match:
-                old_file = match.group(1)
+                _old_file = match.group(1)
                 new_file = match.group(2)
                 current_file = new_file
                 current_patch_lines = [line]

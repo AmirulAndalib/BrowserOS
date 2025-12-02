@@ -29,11 +29,10 @@ Then merge the results.
 """
 
 from pathlib import Path
-from typing import Optional
 
 from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
-from ...common.utils import log_info, log_success, log_warning, log_error, IS_MACOS
+from ...common.utils import log_info, log_success, IS_MACOS
 
 # Architectures to build for universal binary
 UNIVERSAL_ARCHITECTURES = ["arm64", "x64"]

@@ -6,9 +6,8 @@ repository, storing them as individual file diffs that can be re-applied.
 """
 
 import click
-import sys
 from pathlib import Path
-from typing import Optional, List, Dict
+from typing import Optional, Dict
 from ...common.context import Context
 from ...common.module import CommandModule, ValidationError
 from .utils import (
@@ -176,7 +175,7 @@ def extract_range(
         if extracted > 0:
             log_success(f"Successfully extracted {extracted} patches from range")
         else:
-            log_warning(f"No patches extracted from range")
+            log_warning("No patches extracted from range")
 
     except GitError as e:
         log_error(f"Git error: {e}")
@@ -701,7 +700,10 @@ class ExtractCommitModule(CommandModule):
         commit: str,
         output: Optional[Path] = None,
         interactive: bool = True,
-        **kwargs
+        verbose: bool = False,
+        force: bool = False,
+        include_binary: bool = False,
+        base: Optional[str] = None,
     ) -> None:
         """Execute extract commit
 
@@ -709,15 +711,19 @@ class ExtractCommitModule(CommandModule):
             commit: Git commit reference (e.g., HEAD)
             output: Output directory (unused, kept for compatibility)
             interactive: Interactive mode (unused, kept for compatibility)
+            verbose: Show detailed output
+            force: Overwrite existing patches
+            include_binary: Include binary files
+            base: Extract full diff from base commit for files in COMMIT
         """
         try:
             count = extract_single_commit(
                 ctx,
                 commit_hash=commit,
-                verbose=False,
-                force=False,
-                include_binary=False,
-                base=None
+                verbose=verbose,
+                force=force,
+                include_binary=include_binary,
+                base=base,
             )
             if count == 0:
                 log_warning(f"No patches extracted from {commit}")
@@ -748,7 +754,11 @@ class ExtractRangeModule(CommandModule):
         end: str,
         output: Optional[Path] = None,
         interactive: bool = True,
-        **kwargs
+        verbose: bool = False,
+        force: bool = False,
+        include_binary: bool = False,
+        squash: bool = False,
+        base: Optional[str] = None,
     ) -> None:
         """Execute extract range
 
@@ -757,18 +767,33 @@ class ExtractRangeModule(CommandModule):
             end: End commit (inclusive)
             output: Output directory (unused, kept for compatibility)
             interactive: Interactive mode (unused, kept for compatibility)
+            verbose: Show detailed output
+            force: Overwrite existing patches
+            include_binary: Include binary files
+            squash: Squash all commits into single patches
+            base: Use different base for diff (full diff from base for files in range)
         """
         try:
-            count = extract_commit_range(
-                ctx,
-                base_commit=start,
-                head_commit=end,
-                verbose=False,
-                force=False,
-                include_binary=False,
-                squash=False,
-                base=None
-            )
+            if squash:
+                count = extract_commit_range(
+                    ctx,
+                    base_commit=start,
+                    head_commit=end,
+                    verbose=verbose,
+                    force=force,
+                    include_binary=include_binary,
+                    custom_base=base,
+                )
+            else:
+                count = extract_commits_individually(
+                    ctx,
+                    base_commit=start,
+                    head_commit=end,
+                    verbose=verbose,
+                    force=force,
+                    include_binary=include_binary,
+                    custom_base=base,
+                )
             if count == 0:
                 log_warning(f"No patches extracted from range {start}..{end}")
             else:

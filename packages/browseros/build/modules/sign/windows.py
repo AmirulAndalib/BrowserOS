@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """Windows signing module for BrowserOS"""
 
-import os
 import subprocess
 from pathlib import Path
-from typing import Optional, List
+from typing import List
 from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
 from ...common.env import EnvConfig
 from ...common.utils import (
-    run_command,
     log_info,
     log_error,
     log_success,
@@ -127,7 +125,7 @@ def sign_with_codesigntool(binaries: List[Path]) -> bool:
     codesigntool_path = Path(env.code_sign_tool_path) / "CodeSignTool.bat"
     if not codesigntool_path.exists():
         log_error(f"CodeSignTool.bat not found at: {codesigntool_path}")
-        log_error(f"Make sure CODE_SIGN_TOOL_PATH points to the CodeSignTool directory")
+        log_error("Make sure CODE_SIGN_TOOL_PATH points to the CodeSignTool directory")
         return False
 
     if not all([env.esigner_username, env.esigner_password, env.esigner_totp_secret]):
@@ -206,7 +204,7 @@ def sign_with_codesigntool(binaries: List[Path]) -> bool:
 
             try:
                 temp_output_dir.rmdir()
-            except:
+            except Exception:
                 pass
 
             verify_cmd = [
@@ -225,7 +223,7 @@ def sign_with_codesigntool(binaries: List[Path]) -> bool:
                         f"✗ {binary.name} signing verification failed - Status: {verify_result.stdout.strip()}"
                     )
                     all_success = False
-            except:
+            except Exception:
                 log_warning(f"Could not verify signature for {binary.name}")
 
         except Exception as e:

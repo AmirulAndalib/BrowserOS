@@ -5,11 +5,10 @@ Simple feature management with YAML persistence.
 """
 
 import yaml
-from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from ...common.context import Context
 from ...common.module import CommandModule, ValidationError
-from ..extract.utils import get_commit_changed_files, run_git_command
+from ..extract.utils import get_commit_changed_files
 from ...common.utils import log_info, log_error, log_success, log_warning
 
 

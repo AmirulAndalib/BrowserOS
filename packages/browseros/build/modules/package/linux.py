@@ -5,11 +5,10 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import List, Optional
 
 from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
-from ...common.env import EnvConfig
 from ...common.utils import (
     log_info,
     log_error,

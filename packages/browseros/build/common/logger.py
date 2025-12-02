@@ -4,11 +4,9 @@ Logging utilities for the build system
 Provides consistent logging with Typer output and file logging
 """
 
-import sys
 import typer
 from pathlib import Path
 from datetime import datetime
-from typing import Optional
 
 # Global log file handle
 _log_file = None

@@ -4,13 +4,11 @@ Universal binary merge module for Nxtscape Browser
 Provides functions to merge two architecture builds into a universal binary
 """
 
-import os
 import sys
 import shutil
 from pathlib import Path
-from typing import List
 from ...common.context import Context
-from ...common.utils import run_command, log_info, log_error, log_success, log_warning
+from ...common.utils import run_command, log_info, log_error, log_success
 
 
 def merge_architectures(
@@ -74,7 +72,7 @@ def merge_architectures(
             str(output_path),
         ]
 
-        log_info(f"Running universalizer...")
+        log_info("Running universalizer...")
         log_info(f"Command: {' '.join(cmd)}")
         run_command(cmd)
 
