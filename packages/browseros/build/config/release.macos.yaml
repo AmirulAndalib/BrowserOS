@@ -26,15 +26,16 @@ modules:
   - string_replaces
   - patches
 
-  # Phase 3: Universal Build (builds arm64 + x64, then merges)
+  # Phase 3: Universal Build (full pipeline)
+  # This module handles:
+  #   - Build arm64 -> sign -> package -> upload
+  #   - Build x64 -> sign -> package -> upload
+  #   - Merge -> sign universal -> package -> upload
+  # Output: 3 DMGs uploaded to GCS (arm64, x64, universal)
   - universal_build
 
-  # Phase 4: Sign & Package
-  - sign_macos
-  - package_macos
-
-  # Phase 5: Upload
-  - upload_gcs
+  # NOTE: sign_macos, package_macos, upload_gcs are now internal to universal_build
+  # For single-arch builds, use the standard pipeline with those modules
 
 # Required environment variables
 # Note: CHROMIUM_SRC can be provided via --chromium-src CLI flag, YAML config, or env var

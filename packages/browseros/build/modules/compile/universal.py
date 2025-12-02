@@ -1,16 +1,24 @@
 #!/usr/bin/env python3
 """
-Universal Build Module - Build universal binary (arm64 + x64) for macOS
+Universal Build Module - Build, sign, package, and upload universal binary for macOS
 
-This module orchestrates building both architectures and merging them into
-a universal binary. It replicates the logic from the old build.py.backup
-universal build flow.
+This module orchestrates building both architectures (arm64 + x64), signing each,
+packaging each into DMGs, uploading each, then merging into a universal binary
+and signing/packaging/uploading that as well.
 
 Design:
-    1. Build arm64: resources → configure → compile
-    2. Build x64: resources → configure → compile
-    3. Merge using universalizer_patched.py
-    4. Output: out/Default_universal/BrowserOS.app
+    For each arch (arm64, x64):
+        1. resources -> configure -> compile
+        2. sign -> package -> upload
+
+    Then:
+        3. Merge arm64 + x64 into universal
+        4. sign universal -> package -> upload
+
+    Output: 3 DMGs uploaded to GCS:
+        - BrowserOS_{version}_arm64_signed.dmg
+        - BrowserOS_{version}_x64_signed.dmg
+        - BrowserOS_{version}_universal_signed.dmg
 
 Prerequisites (must run BEFORE this module):
     - clean (optional)
@@ -20,38 +28,47 @@ Prerequisites (must run BEFORE this module):
     - string_replaces
     - patches
 
-This module will run (for EACH architecture):
+This module internally runs (for EACH architecture):
     - resources (arch-specific binaries)
     - configure (GN configuration)
     - compile (ninja build)
+    - sign_macos (code signing + notarization)
+    - package_macos (DMG creation)
+    - upload_gcs (GCS upload)
 
-Then merge the results.
+Then merges and processes the universal binary.
 """
 
 from pathlib import Path
 
 from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
-from ...common.utils import log_info, log_success, IS_MACOS
+from ...common.utils import log_info, log_success, log_warning, IS_MACOS
 
 # Architectures to build for universal binary
 UNIVERSAL_ARCHITECTURES = ["arm64", "x64"]
 
 
 class UniversalBuildModule(CommandModule):
-    """Build universal binary (arm64 + x64) for macOS
+    """Build, sign, package, and upload universal binary (arm64 + x64) for macOS
 
-    This module handles the complete multi-architecture build and merge workflow.
-    It internally creates separate contexts for arm64 and x64, builds each,
-    then merges them into a universal binary.
+    This module handles the complete multi-architecture build, sign, package,
+    and upload workflow. It internally creates separate contexts for arm64 and x64,
+    builds each, signs each, packages each into DMGs, uploads each, then merges
+    them into a universal binary and processes that as well.
 
     The base context passed to this module can have any architecture value -
     it will be ignored and arm64/x64 will be built explicitly.
+
+    Output artifacts (all uploaded to GCS):
+        - BrowserOS_{version}_arm64_signed.dmg
+        - BrowserOS_{version}_x64_signed.dmg
+        - BrowserOS_{version}_universal_signed.dmg
     """
 
-    produces = []
+    produces = ["dmg_arm64", "dmg_x64", "dmg_universal"]
     requires = []
-    description = "Build universal binary (arm64 + x64) for macOS"
+    description = "Build, sign, package, and upload universal binary (arm64 + x64) for macOS"
 
     def validate(self, ctx: Context) -> None:
         """Validate universal build can run"""
@@ -63,39 +80,54 @@ class UniversalBuildModule(CommandModule):
         if not universalizer.exists():
             raise ValidationError(f"Universalizer script not found: {universalizer}")
 
+        # Fail fast: check signing environment is configured
+        from ..sign.macos import check_signing_environment
+
+        if not check_signing_environment():
+            raise ValidationError(
+                "Signing environment not configured. "
+                "Required: MACOS_CERTIFICATE_NAME, notarization credentials"
+            )
+
     def execute(self, ctx: Context) -> None:
-        """Build arm64 + x64, then merge into universal binary"""
+        """Build arm64 + x64, sign/package/upload each, then merge and process universal"""
 
         log_info("\n" + "=" * 70)
-        log_info("🔄 Universal Build Mode")
-        log_info("Building arm64 + x64, then merging...")
+        log_info("🔄 Universal Build Mode (Full Pipeline)")
+        log_info("Building arm64 + x64, signing, packaging, uploading each...")
+        log_info("Then merging into universal and processing that too.")
         log_info("=" * 70)
 
-        # Import modules we'll use
+        # Import build modules
         from ..resources.resources import ResourcesModule
         from ..setup.configure import ConfigureModule
         from .standard import CompileModule
+
+        # Import sign/package/upload modules
+        from ..sign.macos import MacOSSignModule
+        from ..package.macos import MacOSPackageModule
+        from ..upload import GCSUploadModule
 
         # Clean all build directories before starting
         self._clean_build_directories(ctx)
 
         built_apps = []
 
-        # Build each architecture
+        # Build + Sign + Package + Upload each architecture
         for arch in UNIVERSAL_ARCHITECTURES:
             log_info("\n" + "=" * 70)
-            log_info(f"🏗️  Building for architecture: {arch}")
+            log_info(f"🏗️  Processing architecture: {arch}")
             log_info("=" * 70)
 
-            # Create architecture-specific context
+            # Create architecture-specific context with fixed app path
             arch_ctx = self._create_arch_context(ctx, arch)
 
             log_info(f"📍 Chromium: {arch_ctx.chromium_version}")
             log_info(f"📍 BrowserOS: {arch_ctx.browseros_version}")
             log_info(f"📍 Output directory: {arch_ctx.out_dir}")
 
+            # === BUILD PHASE ===
             # Copy resources (arch-specific binaries like browseros_server, codex)
-            # The ResourcesModule reads copy_resources.yaml which filters by arch
             log_info(f"\n📦 Copying resources for {arch}...")
             ResourcesModule().execute(arch_ctx)
 
@@ -116,7 +148,25 @@ class UniversalBuildModule(CommandModule):
             log_success(f"✅ {arch} build complete: {app_path}")
             built_apps.append(app_path)
 
-        # Merge architectures into universal binary
+            # === SIGN PHASE ===
+            log_info(f"\n🔏 Signing {arch} build...")
+            MacOSSignModule().execute(arch_ctx)
+            log_success(f"✅ {arch} signing complete")
+
+            # === PACKAGE PHASE ===
+            log_info(f"\n📦 Packaging {arch} build...")
+            MacOSPackageModule().execute(arch_ctx)
+            log_success(f"✅ {arch} packaging complete")
+
+            # === UPLOAD PHASE ===
+            log_info(f"\n☁️  Uploading {arch} artifacts...")
+            try:
+                GCSUploadModule().execute(arch_ctx)
+                log_success(f"✅ {arch} upload complete")
+            except Exception as e:
+                log_warning(f"⚠️  {arch} upload failed (non-fatal): {e}")
+
+        # === MERGE INTO UNIVERSAL ===
         log_info("\n" + "=" * 70)
         log_info("🔄 Merging into universal binary...")
         log_info("=" * 70)
@@ -129,6 +179,38 @@ class UniversalBuildModule(CommandModule):
             raise RuntimeError(f"Universal binary not found: {universal_app}")
 
         log_success(f"✅ Universal binary created: {universal_app}")
+
+        # === SIGN + PACKAGE + UPLOAD UNIVERSAL ===
+        log_info("\n" + "=" * 70)
+        log_info("🔏 Processing universal binary...")
+        log_info("=" * 70)
+
+        universal_ctx = self._create_universal_context(ctx)
+
+        # Sign universal
+        log_info("\n🔏 Signing universal build...")
+        MacOSSignModule().execute(universal_ctx)
+        log_success("✅ Universal signing complete")
+
+        # Package universal
+        log_info("\n📦 Packaging universal build...")
+        MacOSPackageModule().execute(universal_ctx)
+        log_success("✅ Universal packaging complete")
+
+        # Upload universal
+        log_info("\n☁️  Uploading universal artifacts...")
+        try:
+            GCSUploadModule().execute(universal_ctx)
+            log_success("✅ Universal upload complete")
+        except Exception as e:
+            log_warning(f"⚠️  Universal upload failed (non-fatal): {e}")
+
+        log_info("\n" + "=" * 70)
+        log_success("✅ Universal build pipeline complete!")
+        log_info("Artifacts created:")
+        log_info(f"  - arm64 DMG: {ctx.get_dist_dir() / ctx.get_dmg_name(signed=True).replace('universal', 'arm64')}")
+        log_info(f"  - x64 DMG: {ctx.get_dist_dir() / ctx.get_dmg_name(signed=True).replace('universal', 'x64')}")
+        log_info(f"  - universal DMG: {ctx.get_dist_dir() / universal_ctx.get_dmg_name(signed=True)}")
         log_info("=" * 70)
 
     def _clean_build_directories(self, ctx: Context) -> None:
@@ -164,14 +246,41 @@ class UniversalBuildModule(CommandModule):
             arch: Architecture to build (arm64 or x64)
 
         Returns:
-            New Context object with architecture set
+            New Context object with architecture set and fixed app path
+            to prevent universal auto-detection
         """
-        return Context(
+        ctx = Context(
             root_dir=base_ctx.root_dir,
             chromium_src=base_ctx.chromium_src,
             architecture=arch,
             build_type=base_ctx.build_type,
         )
+        # Set fixed app path to prevent universal auto-detection in get_app_path()
+        # This is critical: after arm64 is built, get_app_path() would otherwise
+        # try to detect the universal dir for x64 context
+        ctx._fixed_app_path = ctx.chromium_src / f"out/Default_{arch}" / ctx.BROWSEROS_APP_NAME
+        return ctx
+
+    def _create_universal_context(self, base_ctx: Context) -> Context:
+        """Create a new context for the universal binary
+
+        Args:
+            base_ctx: Base context with common settings
+
+        Returns:
+            New Context object configured for universal binary
+        """
+        ctx = Context(
+            root_dir=base_ctx.root_dir,
+            chromium_src=base_ctx.chromium_src,
+            architecture="universal",
+            build_type=base_ctx.build_type,
+        )
+        # Set fixed app path to the universal binary
+        ctx._fixed_app_path = ctx.chromium_src / "out/Default_universal" / ctx.BROWSEROS_APP_NAME
+        # Override out_dir for universal
+        ctx.out_dir = "out/Default_universal"
+        return ctx
 
     def _merge_universal(
         self,

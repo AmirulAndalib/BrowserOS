@@ -209,6 +209,10 @@ class Context:
     # New code should use ctx.artifacts (ArtifactRegistry) instead
     artifacts: Dict[str, List[Path]] = field(default_factory=dict)
 
+    # Fixed app path - used by UniversalBuildModule to prevent auto-detection
+    # When set, get_app_path() returns this directly instead of auto-detecting
+    _fixed_app_path: Optional[Path] = None
+
     # New sub-components (initialized in __post_init__)
     paths: PathConfig = field(init=False)
     build: BuildConfig = field(init=False)
@@ -392,7 +396,14 @@ class Context:
 
         This allows downstream modules (sign, package) to work on the universal
         binary after UniversalBuildModule has run.
+
+        Note: If _fixed_app_path is set, returns that directly (used by
+        UniversalBuildModule to prevent auto-detection during arch-specific ops).
         """
+        # If fixed path is set (for arch-specific operations), use it directly
+        if self._fixed_app_path:
+            return self._fixed_app_path
+
         # Check for universal binary first (macOS only)
         if IS_MACOS():
             universal_app = join_paths(
