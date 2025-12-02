@@ -368,10 +368,6 @@ class Context:
         """Get patches directory"""
         return join_paths(self.root_dir, "patches")
 
-    def get_browseros_patches_dir(self) -> Path:
-        """Get browseros specific patches directory"""
-        return join_paths(self.get_patches_dir(), "browseros")
-
     def get_sparkle_dir(self) -> Path:
         """Get Sparkle directory"""
         return join_paths(self.chromium_src, "third_party", "sparkle")
