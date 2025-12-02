@@ -46,7 +46,7 @@ def apply_patches_impl(
         raise RuntimeError("Git not found in PATH")
 
     # Import apply module via package path so relative imports work
-    from build.modules.apply.apply import apply_all_patches
+    from build.modules.apply.apply_all import apply_all_patches
 
     # Call the dev CLI function directly
     _, failed = apply_all_patches(
