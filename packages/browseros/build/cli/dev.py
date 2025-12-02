@@ -197,6 +197,26 @@ def extract_commit(
         raise typer.Exit(1)
 
 
+@extract_app.command(name="patch")
+def extract_patch_cmd(
+    chromium_path: str = Argument(..., help="Chromium file path (e.g., chrome/common/foo.h)"),
+    base: str = Option(..., "--base", "-b", help="Base commit to diff against"),
+    force: bool = Option(False, "--force", "-f", help="Overwrite existing patch without prompting"),
+):
+    """Extract patch for a specific file"""
+    ctx = create_build_context(state.chromium_src)
+    if not ctx:
+        raise typer.Exit(1)
+
+    from ..modules.extract import extract_single_file_patch
+
+    success, error = extract_single_file_patch(ctx, chromium_path, base, force)
+    if not success:
+        log_error(error or "Unknown error")
+        raise typer.Exit(1)
+    log_success(f"Successfully extracted patch for: {chromium_path}")
+
+
 @extract_app.command(name="range")
 def extract_range(
     start: str = Argument(..., help="Start commit (exclusive)"),
