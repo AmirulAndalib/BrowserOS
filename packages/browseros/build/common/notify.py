@@ -65,32 +65,19 @@ class Notifier:
                 else f"🐧 {_get_context_footer()}" if _build_context.get("os") == "Linux" \
                 else _get_context_footer()
 
-            # Use attachments for colored bar on left side
+            # Use legacy attachment format for colored sidebar
             attachment = {
                 "color": color,
-                "blocks": [
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": f"*{event}*\n{message}"
-                        }
-                    }
-                ],
+                "mrkdwn_in": ["text", "fields"],
+                "text": f"*{event}*\n{message}",
                 "footer": footer
             }
 
             if details:
-                fields = []
-                for key, value in details.items():
-                    fields.append({
-                        "type": "mrkdwn",
-                        "text": f"*{key}:*\n{value}"
-                    })
-                attachment["blocks"].append({
-                    "type": "section",
-                    "fields": fields
-                })
+                attachment["fields"] = [
+                    {"title": key, "value": str(value), "short": True}
+                    for key, value in details.items()
+                ]
 
             payload = {"attachments": [attachment]}
 
