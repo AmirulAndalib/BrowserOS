@@ -340,8 +340,6 @@ def main(
             conflicting_flags.append("--arch")
         if build_type is not None:
             conflicting_flags.append("--build-type")
-        if chromium_src is not None:
-            conflicting_flags.append("--chromium-src")
 
         if conflicting_flags:
             log_error(
