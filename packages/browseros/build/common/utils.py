@@ -11,11 +11,13 @@ import shutil
 from pathlib import Path
 from typing import Optional, List, Dict, Union
 
-# Import logging functions from logger module (will use our platform detection)
-from .logger import (
+# Import logging functions from logger module - re-exported for other modules
+from .logger import (  # noqa: F401
     log_info,
     log_error,
-    _log_to_file,  # Internal function for run_command
+    log_warning,
+    log_success,
+    _log_to_file,
 )
 
 
