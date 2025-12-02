@@ -177,7 +177,7 @@ def extract_commit(
     if not ctx:
         raise typer.Exit(1)
 
-    from ..modules.extract.extract import ExtractCommitModule
+    from ..modules.extract import ExtractCommitModule
 
     module = ExtractCommitModule()
     try:
@@ -219,7 +219,7 @@ def extract_range(
     if not ctx:
         raise typer.Exit(1)
 
-    from ..modules.extract.extract import ExtractRangeModule
+    from ..modules.extract import ExtractRangeModule
 
     module = ExtractRangeModule()
     try:
@@ -257,7 +257,7 @@ def apply_all(
     if not ctx:
         raise typer.Exit(1)
 
-    from ..modules.apply.apply import ApplyAllModule
+    from ..modules.apply import ApplyAllModule
 
     module = ApplyAllModule()
     try:
@@ -284,7 +284,7 @@ def apply_feature(
     if not ctx:
         raise typer.Exit(1)
 
-    from ..modules.apply.apply import ApplyFeatureModule
+    from ..modules.apply import ApplyFeatureModule
 
     module = ApplyFeatureModule()
     try:
@@ -310,7 +310,7 @@ def apply_patch_cmd(
     if not ctx:
         raise typer.Exit(1)
 
-    from ..modules.apply.apply import apply_single_file_patch
+    from ..modules.apply import apply_single_file_patch
 
     success, error = apply_single_file_patch(ctx, chromium_path, reset_to, dry_run)
     if not success:
@@ -327,7 +327,7 @@ def feature_list():
     if not ctx:
         raise typer.Exit(1)
 
-    from ..modules.feature.feature import ListFeaturesModule
+    from ..modules.feature import ListFeaturesModule
 
     module = ListFeaturesModule()
     try:
@@ -347,7 +347,7 @@ def feature_show(
     if not ctx:
         raise typer.Exit(1)
 
-    from ..modules.feature.feature import ShowFeatureModule
+    from ..modules.feature import ShowFeatureModule
 
     module = ShowFeatureModule()
     try:
@@ -371,7 +371,7 @@ def feature_add(
     if not ctx:
         raise typer.Exit(1)
 
-    from ..modules.feature.feature import AddFeatureModule
+    from ..modules.feature import AddFeatureModule
 
     module = AddFeatureModule()
     try:
