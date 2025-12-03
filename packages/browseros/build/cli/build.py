@@ -437,6 +437,9 @@ def main(
     log_info(f"📍 Architecture: {ctx.architecture}")
     log_info(f"📍 Build type: {ctx.build_type}")
     log_info(f"📍 Output: {ctx.out_dir}")
+    log_info(f"📍 Semantic version: {ctx.semantic_version}")
+    log_info(f"📍 Chromium version: {ctx.chromium_version}")
+    log_info(f"📍 Build offset: {ctx.browseros_build_offset}")
     log_info(f"📍 Pipeline: {' → '.join(pipeline)}")
     log_info("=" * 70)
 
