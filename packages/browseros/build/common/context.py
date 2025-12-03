@@ -473,7 +473,7 @@ class Context:
 
     def get_features_yaml_path(self) -> Path:
         """Get features.yaml file path"""
-        return join_paths(self.root_dir, "features.yaml")
+        return join_paths(self.root_dir, "build", "features.yaml")
 
     def get_patch_path_for_file(self, file_path: str) -> Path:
         """Convert a chromium file path to patch file path"""
