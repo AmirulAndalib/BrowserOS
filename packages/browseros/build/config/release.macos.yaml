@@ -24,6 +24,7 @@ modules:
   # Phase 2: Patches & Resources
   - chromium_replace
   - string_replaces
+  - series_patches
   - patches
 
   # Phase 3: Universal Build (full pipeline)

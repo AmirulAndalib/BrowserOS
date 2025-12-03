@@ -478,3 +478,7 @@ class Context:
     def get_patch_path_for_file(self, file_path: str) -> Path:
         """Convert a chromium file path to patch file path"""
         return join_paths(self.get_dev_patches_dir(), file_path)
+
+    def get_series_patches_dir(self) -> Path:
+        """Get series patches directory (GNU Quilt format)"""
+        return join_paths(self.root_dir, "series_patches")

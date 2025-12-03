@@ -21,6 +21,7 @@ modules:
   - resources
   - chromium_replace
   - string_replaces
+  - series_patches
   - patches
 
   # Phase 3: Build

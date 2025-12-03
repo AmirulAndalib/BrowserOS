@@ -38,6 +38,7 @@ from ..modules.setup.git import GitSetupModule, SparkleSetupModule
 from ..modules.setup.configure import ConfigureModule
 from ..modules.compile import CompileModule, UniversalBuildModule
 from ..modules.patches.patches import PatchesModule
+from ..modules.patches.series_patches import SeriesPatchesModule
 from ..modules.resources.chromium_replace import ChromiumReplaceModule
 from ..modules.resources.string_replaces import StringReplacesModule
 from ..modules.resources.resources import ResourcesModule
@@ -59,6 +60,7 @@ AVAILABLE_MODULES = {
     "configure": ConfigureModule,
     # Patches & Resources
     "patches": PatchesModule,
+    "series_patches": SeriesPatchesModule,
     "chromium_replace": ChromiumReplaceModule,
     "string_replaces": StringReplacesModule,
     "resources": ResourcesModule,
@@ -111,8 +113,9 @@ EXECUTION_ORDER = [
     # Phase 2: Patches & Resources
     (
         "prep",
-        ["resources", "chromium_replace", "string_replaces", "patches"],
-    ),  # Phase 3: Configure & Build
+        ["resources", "chromium_replace", "string_replaces", "series_patches", "patches"],
+    ),
+    # Phase 3: Configure & Build
     ("build", ["configure", "compile"]),
     # Phase 4: Code Signing (platform-aware)
     ("sign", [_get_sign_module()]),
