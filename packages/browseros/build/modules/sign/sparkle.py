@@ -69,13 +69,8 @@ class SparkleSignModule(CommandModule):
             ctx.artifact_registry.add(f"sparkle_sig_{filename}", Path(filename))
             log_info(f"  {filename}: sig={sig[:20]}... length={length}")
 
-        # Also store as a combined dict for easy access
-        # The upload module will access this via ctx
+        # Store signatures for upload module to access via ctx.artifacts
         ctx.artifacts["sparkle_signatures"] = signatures
-
-        # Debug: confirm storage
-        log_info(f"DEBUG: Stored sparkle_signatures in ctx.artifacts")
-        log_info(f"DEBUG: ctx.artifacts keys after = {list(ctx.artifacts.keys())}")
 
         log_success(f"✅ Signed {len(signatures)} DMG(s) with Sparkle")
 

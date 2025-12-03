@@ -63,14 +63,17 @@ class UploadModule(CommandModule):
     def execute(self, ctx: Context) -> None:
         log_info("\n☁️  Uploading package artifacts to R2...")
 
-        # Get sparkle signatures if available (from SparkleSignModule)
+        # Build extra metadata from sparkle signatures if available
+        extra_metadata = {}
         sparkle_signatures = ctx.artifacts.get("sparkle_signatures")
+        if sparkle_signatures:
+            for filename, (sig, length) in sparkle_signatures.items():
+                extra_metadata[filename] = {
+                    "sparkle_signature": sig,
+                    "sparkle_length": length,
+                }
 
-        # Debug: show what we have
-        log_info(f"DEBUG: ctx.artifacts keys = {list(ctx.artifacts.keys())}")
-        log_info(f"DEBUG: sparkle_signatures = {sparkle_signatures}")
-
-        success, release_json = upload_release_artifacts(ctx, sparkle_signatures)
+        success, release_json = upload_release_artifacts(ctx, extra_metadata)
         if not success:
             raise RuntimeError("Failed to upload artifacts to R2")
 
@@ -135,7 +138,7 @@ def generate_release_json(
 
     Args:
         ctx: Build context
-        artifacts: List of artifact dicts with filename, size, and optional sparkle_signature
+        artifacts: List of artifact dicts with filename, size, and any extra fields
         platform: Platform name (macos, win, linux)
 
     Returns:
@@ -163,17 +166,18 @@ def generate_release_json(
         filename = artifact["filename"]
         artifact_key = _get_artifact_key(filename, platform)
 
-        release_data["artifacts"][artifact_key] = {
+        # Start with base fields
+        artifact_data = {
             "filename": filename,
             "url": f"{base_url}{filename}",
-            "size": artifact["size"],
         }
 
-        # Add Sparkle signature if present (macOS only)
-        if "sparkle_signature" in artifact:
-            release_data["artifacts"][artifact_key]["sparkle_signature"] = artifact[
-                "sparkle_signature"
-            ]
+        # Add all other fields from artifact metadata
+        for key, value in artifact.items():
+            if key != "filename":  # filename already handled
+                artifact_data[key] = value
+
+        release_data["artifacts"][artifact_key] = artifact_data
 
     return release_data
 
@@ -240,14 +244,14 @@ def detect_artifacts(ctx: Context) -> List[Path]:
 
 def upload_release_artifacts(
     ctx: Context,
-    sparkle_signatures: Optional[Dict[str, Tuple[str, int]]] = None,
+    extra_metadata: Optional[Dict[str, Dict[str, any]]] = None,
 ) -> Tuple[bool, Optional[Dict]]:
     """Upload release artifacts to R2 and generate release.json
 
     Args:
         ctx: Build context
-        sparkle_signatures: Optional dict mapping filename to (signature, length) tuple
-                           Used for macOS DMGs signed with Sparkle
+        extra_metadata: Optional dict mapping filename to extra metadata fields
+                       e.g. {"file.dmg": {"sparkle_signature": "...", "sparkle_length": 123}}
 
     Returns:
         (success, release_json_data) tuple
@@ -296,15 +300,9 @@ def upload_release_artifacts(
             "size": artifact_path.stat().st_size,
         }
 
-        # Add Sparkle signature if available
-        if sparkle_signatures and artifact_path.name in sparkle_signatures:
-            sig, length = sparkle_signatures[artifact_path.name]
-            metadata["sparkle_signature"] = sig
-            # Use Sparkle-reported length if different
-            if length != metadata["size"]:
-                log_warning(
-                    f"Sparkle length ({length}) differs from file size ({metadata['size']})"
-                )
+        # Merge extra metadata if available for this file
+        if extra_metadata and artifact_path.name in extra_metadata:
+            metadata.update(extra_metadata[artifact_path.name])
 
         artifact_metadata.append(metadata)
 
