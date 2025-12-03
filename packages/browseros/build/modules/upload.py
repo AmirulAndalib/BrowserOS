@@ -62,7 +62,11 @@ class UploadModule(CommandModule):
 
     def execute(self, ctx: Context) -> None:
         log_info("\n☁️  Uploading package artifacts to R2...")
-        success, release_json = upload_release_artifacts(ctx)
+
+        # Get sparkle signatures if available (from SparkleSignModule)
+        sparkle_signatures = ctx.artifacts.get("sparkle_signatures")
+
+        success, release_json = upload_release_artifacts(ctx, sparkle_signatures)
         if not success:
             raise RuntimeError("Failed to upload artifacts to R2")
 
