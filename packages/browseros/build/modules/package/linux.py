@@ -494,9 +494,7 @@ def package_appimage(ctx: Context, package_dir: Path) -> Optional[Path]:
         safe_rmtree(appdir)
         return None
 
-    version = ctx.get_semantic_version() or ctx.get_browseros_chromium_version()
-    arch_suffix = "x86_64" if ctx.architecture == "x64" else "arm64"
-    filename = f"{ctx.BROWSEROS_APP_BASE_NAME}_v{version}_{ctx.architecture}.AppImage"
+    filename = ctx.get_artifact_name("appimage")
     output_path = Path(join_paths(package_dir, filename))
 
     success = create_appimage(ctx, appdir, output_path)
@@ -526,9 +524,7 @@ def package_deb(ctx: Context, package_dir: Path) -> Optional[Path]:
         safe_rmtree(debdir)
         return None
 
-    version = ctx.get_semantic_version() or ctx.get_browseros_chromium_version()
-    arch_suffix = "amd64" if ctx.architecture == "x64" else "arm64"
-    filename = f"browseros_{version}_{arch_suffix}.deb"
+    filename = ctx.get_artifact_name("deb")
     output_path = Path(join_paths(package_dir, filename))
 
     success = create_deb(ctx, debdir, output_path)

@@ -729,7 +729,7 @@ def sign_app(ctx: Context, create_dmg: bool = True) -> bool:
     dmg_path = None
     if create_dmg:
         dmg_dir = ctx.get_dist_dir()
-        dmg_name = ctx.get_dmg_name(True)
+        dmg_name = ctx.get_artifact_name("dmg")
         dmg_path = join_paths(dmg_dir, dmg_name)
 
     # Verify app exists

@@ -176,11 +176,6 @@ class BuildConfig:
             self.BROWSEROS_APP_NAME = self.BROWSEROS_APP_BASE_NAME.lower()
 
 
-# =============================================================================
-# Legacy BuildContext - Maintained for backward compatibility
-# =============================================================================
-
-
 @dataclass
 class Context:
     """
@@ -193,7 +188,7 @@ class Context:
     architecture: str = ""  # Will be set in __post_init__
     build_type: str = "debug"
     chromium_version: str = ""
-    browseros_version: str = ""
+    browseros_build_offset: str = ""
     browseros_chromium_version: str = ""
     semantic_version: str = ""  # e.g., "0.31.0" from resources/BROWSEROS_VERSION
     start_time: float = 0.0
@@ -272,22 +267,24 @@ class Context:
             # If chromium_version was provided, we still need to parse it for version_dict
             version_dict = {}
 
-        if not self.browseros_version:
-            self.browseros_version = self._load_browseros_version(self.root_dir)
+        if not self.browseros_build_offset:
+            self.browseros_build_offset = self._load_browseros_build_offset(
+                self.root_dir
+            )
 
         # Load semantic version from resources/BROWSEROS_VERSION
         if not self.semantic_version:
             self.semantic_version = self._load_semantic_version(self.root_dir)
 
         # Set nxtscape_chromium_version as chromium version with BUILD + nxtscape_version
-        if self.chromium_version and self.browseros_version and version_dict:
+        if self.chromium_version and self.browseros_build_offset and version_dict:
             # Calculate new BUILD number by adding nxtscape_version to original BUILD
-            new_build = int(version_dict["BUILD"]) + int(self.browseros_version)
+            new_build = int(version_dict["BUILD"]) + int(self.browseros_build_offset)
             self.browseros_chromium_version = f"{version_dict['MAJOR']}.{version_dict['MINOR']}.{new_build}.{version_dict['PATCH']}"
 
         # Sync versions with BuildConfig
         self.build.chromium_version = self.chromium_version
-        self.build.browseros_version = self.browseros_version
+        self.build.browseros_version = self.browseros_build_offset
         self.build.browseros_chromium_version = self.browseros_chromium_version
 
         # Sync chromium_src with PathConfig (validation done by resolver)
@@ -346,7 +343,7 @@ class Context:
         return "", version_dict
 
     @staticmethod
-    def _load_browseros_version(root_dir: Path) -> str:
+    def _load_browseros_build_offset(root_dir: Path) -> str:
         """Load browseros build offset from config/BROWSEROS_BUILD_OFFSET"""
         version_file = join_paths(root_dir, "build", "config", "BROWSEROS_BUILD_OFFSET")
         if version_file.exists():
@@ -473,13 +470,36 @@ class Context:
         """Get notarization zip path (macOS only)"""
         return join_paths(self.chromium_src, self.out_dir, "notarize.zip")
 
-    def get_dmg_name(self) -> str:
-        """Get DMG filename with semantic version and architecture
+    def get_artifact_name(self, artifact_type: str) -> str:
+        """Get standardized artifact filename
 
-        Example: BrowserOS_v0.31.0_arm64.dmg
+        Args:
+            artifact_type: One of "dmg", "appimage", "deb", "installer", "installer_zip"
+
+        Returns:
+            Standardized filename, e.g., "BrowserOS_v0.31.0_arm64.dmg"
         """
-        version = self.semantic_version or self.browseros_chromium_version
-        return f"{self.BROWSEROS_APP_BASE_NAME}_v{version}_{self.architecture}.dmg"
+        if not self.semantic_version:
+            raise ValueError("semantic_version is not set to generate artifact name")
+
+        version = self.semantic_version
+        base = self.BROWSEROS_APP_BASE_NAME
+        arch = self.architecture
+
+        match artifact_type:
+            case "dmg":
+                return f"{base}_v{version}_{arch}.dmg"
+            case "appimage":
+                return f"{base}_v{version}_{arch}.AppImage"
+            case "deb":
+                deb_arch = {"x64": "amd64", "arm64": "arm64"}.get(arch, arch)
+                return f"{base}_v{version}_{deb_arch}.deb"
+            case "installer":
+                return f"{base}_v{version}_{arch}_installer.exe"
+            case "installer_zip":
+                return f"{base}_v{version}_{arch}_installer.zip"
+            case _:
+                raise ValueError(f"Unknown artifact type: {artifact_type}")
 
     def get_browseros_chromium_version(self) -> str:
         """Get browseros chromium version string"""
@@ -487,7 +507,7 @@ class Context:
 
     def get_browseros_version(self) -> str:
         """Get browseros version string (build offset)"""
-        return self.browseros_version
+        return self.browseros_build_offset
 
     def get_semantic_version(self) -> str:
         """Get semantic version from resources/BROWSEROS_VERSION
@@ -504,6 +524,7 @@ class Context:
         """
         if not self.browseros_chromium_version:
             raise ValueError("browseros_chromium_version is not set")
+
         parts = self.browseros_chromium_version.split(".")
         if len(parts) < 4:
             raise ValueError(

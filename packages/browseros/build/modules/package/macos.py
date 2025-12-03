@@ -27,7 +27,7 @@ class MacOSPackageModule(CommandModule):
 
         app_path = ctx.get_app_path()
         dmg_dir = ctx.get_dist_dir()
-        dmg_name = ctx.get_dmg_name()
+        dmg_name = ctx.get_artifact_name("dmg")
         dmg_path = dmg_dir / dmg_name
         pkg_dmg_path = ctx.get_pkg_dmg_path()
 
@@ -317,7 +317,7 @@ def package_universal(contexts: List[Context]) -> bool:
     dmg_dir.mkdir(parents=True, exist_ok=True)
 
     # Use context's DMG naming
-    dmg_name = universal_ctx.get_dmg_name()
+    dmg_name = universal_ctx.get_artifact_name("dmg")
     dmg_path = dmg_dir / dmg_name
 
     # Get pkg-dmg tool

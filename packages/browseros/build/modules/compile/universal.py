@@ -208,9 +208,9 @@ class UniversalBuildModule(CommandModule):
         log_info("\n" + "=" * 70)
         log_success("✅ Universal build pipeline complete!")
         log_info("Artifacts created:")
-        log_info(f"  - arm64 DMG: {ctx.get_dist_dir() / ctx.get_dmg_name(signed=True).replace('universal', 'arm64')}")
-        log_info(f"  - x64 DMG: {ctx.get_dist_dir() / ctx.get_dmg_name(signed=True).replace('universal', 'x64')}")
-        log_info(f"  - universal DMG: {ctx.get_dist_dir() / universal_ctx.get_dmg_name(signed=True)}")
+        log_info(f"  - arm64 DMG: {ctx.get_dist_dir() / ctx.get_artifact_name('dmg').replace('universal', 'arm64')}")
+        log_info(f"  - x64 DMG: {ctx.get_dist_dir() / ctx.get_artifact_name('dmg').replace('universal', 'x64')}")
+        log_info(f"  - universal DMG: {ctx.get_dist_dir() / universal_ctx.get_artifact_name('dmg')}")
         log_info("=" * 70)
 
     def _clean_build_directories(self, ctx: Context) -> None:
