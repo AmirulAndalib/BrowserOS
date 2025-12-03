@@ -4,10 +4,40 @@ Environment variable configuration for BrowserOS build system
 
 This module provides centralized access to all environment variables used by the build system.
 It provides type-safe access, defaults, and clear documentation of what each variable is for.
+
+The module automatically loads .env files from the project root on import.
 """
 
 import os
+from pathlib import Path
 from typing import Optional
+
+from dotenv import load_dotenv
+
+
+def _load_dotenv_file():
+    """Load .env file from project root (packages/browseros parent directory)"""
+    # Find project root by going up from this file's location
+    # This file is at: packages/browseros/build/common/env.py
+    # Project root is at: packages/browseros/../../ (the repo root)
+    current_dir = Path(__file__).parent  # common/
+    browseros_root = current_dir.parent.parent  # packages/browseros/
+    project_root = browseros_root.parent.parent  # repo root
+
+    # Try loading .env from multiple locations (most specific first)
+    env_locations = [
+        browseros_root / ".env",  # packages/browseros/.env
+        project_root / ".env",  # repo root .env
+    ]
+
+    for env_path in env_locations:
+        if env_path.exists():
+            load_dotenv(env_path)
+            return
+
+
+# Load .env on module import
+_load_dotenv_file()
 
 
 class EnvConfig:
