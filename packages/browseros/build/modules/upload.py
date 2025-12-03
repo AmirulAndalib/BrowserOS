@@ -66,6 +66,10 @@ class UploadModule(CommandModule):
         # Get sparkle signatures if available (from SparkleSignModule)
         sparkle_signatures = ctx.artifacts.get("sparkle_signatures")
 
+        # Debug: show what we have
+        log_info(f"DEBUG: ctx.artifacts keys = {list(ctx.artifacts.keys())}")
+        log_info(f"DEBUG: sparkle_signatures = {sparkle_signatures}")
+
         success, release_json = upload_release_artifacts(ctx, sparkle_signatures)
         if not success:
             raise RuntimeError("Failed to upload artifacts to R2")
