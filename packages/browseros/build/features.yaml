@@ -333,6 +333,15 @@ features:
       - components/content_settings/core/browser/cookie_settings.cc
       - components/payments/core/payment_prefs.cc
       - components/performance_manager/user_tuning/prefs.cc
+  browseros-version:
+    description: "patch: browseros version"
+    files:
+      - base/version_info/BUILD.gn
+      - base/version_info/version_info.h
+      - base/version_info/version_info_values.h.version
+      - chrome/BROWSEROS_VERSION
+      - chrome/browser/resources/settings/about_page/about_page.html
+      - chrome/browser/ui/webui/settings/settings_localized_strings_provider.cc
   misc:
     description: miscellaneous patches
     files:
