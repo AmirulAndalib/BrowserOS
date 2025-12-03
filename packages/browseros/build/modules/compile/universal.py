@@ -15,7 +15,7 @@ Design:
         3. Merge arm64 + x64 into universal
         4. sign universal -> package -> upload
 
-    Output: 3 DMGs uploaded to GCS:
+    Output: 3 DMGs uploaded:
         - BrowserOS_{version}_arm64_signed.dmg
         - BrowserOS_{version}_x64_signed.dmg
         - BrowserOS_{version}_universal_signed.dmg
@@ -34,7 +34,7 @@ This module internally runs (for EACH architecture):
     - compile (ninja build)
     - sign_macos (code signing + notarization)
     - package_macos (DMG creation)
-    - upload_gcs (GCS upload)
+    - upload (artifact upload)
 
 Then merges and processes the universal binary.
 """
@@ -60,7 +60,7 @@ class UniversalBuildModule(CommandModule):
     The base context passed to this module can have any architecture value -
     it will be ignored and arm64/x64 will be built explicitly.
 
-    Output artifacts (all uploaded to GCS):
+    Output artifacts:
         - BrowserOS_{version}_arm64_signed.dmg
         - BrowserOS_{version}_x64_signed.dmg
         - BrowserOS_{version}_universal_signed.dmg
@@ -108,7 +108,7 @@ class UniversalBuildModule(CommandModule):
         # Import sign/package/upload modules
         from ..sign.macos import MacOSSignModule
         from ..package.macos import MacOSPackageModule
-        from ..upload import GCSUploadModule
+        from ..upload import UploadModule
 
         # Clean all build directories before starting
         self._clean_build_directories(ctx)
@@ -163,7 +163,7 @@ class UniversalBuildModule(CommandModule):
             # === UPLOAD PHASE ===
             log_info(f"\n☁️  Uploading {arch} artifacts...")
             try:
-                GCSUploadModule().execute(arch_ctx)
+                UploadModule().execute(arch_ctx)
                 log_success(f"✅ {arch} upload complete")
             except Exception as e:
                 log_warning(f"⚠️  {arch} upload failed (non-fatal): {e}")
@@ -202,7 +202,7 @@ class UniversalBuildModule(CommandModule):
         # Upload universal
         log_info("\n☁️  Uploading universal artifacts...")
         try:
-            GCSUploadModule().execute(universal_ctx)
+            UploadModule().execute(universal_ctx)
             log_success("✅ Universal upload complete")
         except Exception as e:
             log_warning(f"⚠️  Universal upload failed (non-fatal): {e}")

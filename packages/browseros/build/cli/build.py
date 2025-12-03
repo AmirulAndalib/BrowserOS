@@ -42,7 +42,7 @@ from ..modules.patches.series_patches import SeriesPatchesModule
 from ..modules.resources.chromium_replace import ChromiumReplaceModule
 from ..modules.resources.string_replaces import StringReplacesModule
 from ..modules.resources.resources import ResourcesModule
-from ..modules.upload import R2UploadModule
+from ..modules.upload import UploadModule
 
 # Platform-specific modules (imported unconditionally - validation handles platform checks)
 from ..modules.sign.macos import MacOSSignModule
@@ -78,7 +78,7 @@ AVAILABLE_MODULES = {
     "package_windows": WindowsPackageModule,
     "package_linux": LinuxPackageModule,
     # Upload
-    "upload_r2": R2UploadModule,
+    "upload": UploadModule,
 }
 
 
@@ -130,7 +130,7 @@ EXECUTION_ORDER = [
     # Phase 5: Packaging (platform-aware)
     ("package", [_get_package_module()]),
     # Phase 6: Upload
-    ("upload", ["upload_r2"]),
+    ("upload", ["upload"]),
 ]
 
 # Modules that trigger Slack notifications (to reduce verbosity)
@@ -139,7 +139,10 @@ NOTIFY_MODULES = [
     "sign_macos",
     "sign_windows",
     "sign_linux",
-    "upload_r2",
+    "package_macos",
+    "package_windows",
+    "package_linux",
+    "upload",
 ]
 
 
@@ -280,7 +283,7 @@ def main(
     upload: bool = typer.Option(
         False,
         "--upload",
-        help="Run upload phase (upload_gcs)",
+        help="Run upload phase (upload artifacts)",
     ),
     # Global options that override config
     arch: Optional[str] = typer.Option(

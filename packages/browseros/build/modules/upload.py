@@ -41,7 +41,7 @@ def _get_platform() -> str:
         return "linux"
 
 
-class R2UploadModule(CommandModule):
+class UploadModule(CommandModule):
     """Upload build artifacts to Cloudflare R2"""
 
     produces = []
@@ -320,8 +320,7 @@ def upload_release_artifacts(
     # Send Slack notification with artifact URLs
     notifier = get_notifier()
     artifact_urls = [
-        f"{a['filename']}: {a['url']}"
-        for a in release_data["artifacts"].values()
+        f"{a['filename']}: {a['url']}" for a in release_data["artifacts"].values()
     ]
     notifier.notify(
         "☁️ Upload Complete",

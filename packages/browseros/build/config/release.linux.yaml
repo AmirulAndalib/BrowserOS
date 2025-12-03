@@ -32,7 +32,7 @@ modules:
   - package_linux
 
   # Phase 5: Upload
-  - upload_r2
+  - upload
 
 # Required environment variables
 # Note: CHROMIUM_SRC can be provided via --chromium-src CLI flag, YAML config, or env var
