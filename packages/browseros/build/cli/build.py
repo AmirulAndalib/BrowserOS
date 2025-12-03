@@ -42,12 +42,13 @@ from ..modules.patches.series_patches import SeriesPatchesModule
 from ..modules.resources.chromium_replace import ChromiumReplaceModule
 from ..modules.resources.string_replaces import StringReplacesModule
 from ..modules.resources.resources import ResourcesModule
-from ..modules.upload import GCSUploadModule
+from ..modules.upload import R2UploadModule
 
 # Platform-specific modules (imported unconditionally - validation handles platform checks)
 from ..modules.sign.macos import MacOSSignModule
 from ..modules.sign.windows import WindowsSignModule
 from ..modules.sign.linux import LinuxSignModule
+from ..modules.sign.sparkle import SparkleSignModule
 from ..modules.package.macos import MacOSPackageModule
 from ..modules.package.windows import WindowsPackageModule
 from ..modules.package.linux import LinuxPackageModule
@@ -71,12 +72,13 @@ AVAILABLE_MODULES = {
     "sign_macos": MacOSSignModule,
     "sign_windows": WindowsSignModule,
     "sign_linux": LinuxSignModule,
+    "sparkle_sign": SparkleSignModule,  # macOS Sparkle signing for auto-update
     # Package (platform-specific, validated at runtime)
     "package_macos": MacOSPackageModule,
     "package_windows": WindowsPackageModule,
     "package_linux": LinuxPackageModule,
     # Upload
-    "upload_gcs": GCSUploadModule,
+    "upload_r2": R2UploadModule,
 }
 
 
@@ -122,7 +124,7 @@ EXECUTION_ORDER = [
     # Phase 5: Packaging (platform-aware)
     ("package", [_get_package_module()]),
     # Phase 6: Upload
-    ("upload", ["upload_gcs"]),
+    ("upload", ["upload_r2"]),
 ]
 
 

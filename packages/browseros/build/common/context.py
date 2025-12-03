@@ -195,6 +195,7 @@ class Context:
     chromium_version: str = ""
     browseros_version: str = ""
     browseros_chromium_version: str = ""
+    semantic_version: str = ""  # e.g., "0.31.0" from resources/BROWSEROS_VERSION
     start_time: float = 0.0
 
     # App names - will be set based on platform
@@ -274,6 +275,10 @@ class Context:
         if not self.browseros_version:
             self.browseros_version = self._load_browseros_version(self.root_dir)
 
+        # Load semantic version from resources/BROWSEROS_VERSION
+        if not self.semantic_version:
+            self.semantic_version = self._load_semantic_version(self.root_dir)
+
         # Set nxtscape_chromium_version as chromium version with BUILD + nxtscape_version
         if self.chromium_version and self.browseros_version and version_dict:
             # Calculate new BUILD number by adding nxtscape_version to original BUILD
@@ -347,6 +352,43 @@ class Context:
         if version_file.exists():
             return version_file.read_text().strip()
         return ""
+
+    @staticmethod
+    def _load_semantic_version(root_dir: Path) -> str:
+        """Load semantic version from resources/BROWSEROS_VERSION
+
+        File format:
+            BROWSEROS_MAJOR=0
+            BROWSEROS_MINOR=31
+            BROWSEROS_BUILD=0
+            BROWSEROS_PATCH=0
+
+        Returns: "0.31.0" (PATCH only included if non-zero)
+        """
+        version_file = join_paths(root_dir, "resources", "BROWSEROS_VERSION")
+        if not version_file.exists():
+            return ""
+
+        version_dict = {}
+        for line in version_file.read_text().strip().split("\n"):
+            line = line.strip()
+            if not line or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            version_dict[key.strip()] = value.strip()
+
+        major = version_dict.get("BROWSEROS_MAJOR", "0")
+        minor = version_dict.get("BROWSEROS_MINOR", "0")
+        build = version_dict.get("BROWSEROS_BUILD", "0")
+        patch = version_dict.get("BROWSEROS_PATCH", "0")
+
+        # Include patch only if non-zero
+        if patch != "0":
+            return f"{major}.{minor}.{build}.{patch}"
+        elif build != "0":
+            return f"{major}.{minor}.{build}"
+        else:
+            return f"{major}.{minor}.0"
 
     # Path getter methods
     def get_config_dir(self) -> Path:
@@ -431,32 +473,61 @@ class Context:
         """Get notarization zip path (macOS only)"""
         return join_paths(self.chromium_src, self.out_dir, "notarize.zip")
 
-    def get_dmg_name(self, signed=False) -> str:
-        """Get DMG filename with architecture suffix"""
-        if self.architecture == "universal":
-            if signed:
-                return f"{self.BROWSEROS_APP_BASE_NAME}_{self.browseros_chromium_version}_universal_signed.dmg"
-            return f"{self.BROWSEROS_APP_BASE_NAME}_{self.browseros_chromium_version}_universal.dmg"
-        else:
-            if signed:
-                return f"{self.BROWSEROS_APP_BASE_NAME}_{self.browseros_chromium_version}_{self.architecture}_signed.dmg"
-            return f"{self.BROWSEROS_APP_BASE_NAME}_{self.browseros_chromium_version}_{self.architecture}.dmg"
+    def get_dmg_name(self) -> str:
+        """Get DMG filename with semantic version and architecture
+
+        Example: BrowserOS_v0.31.0_arm64.dmg
+        """
+        version = self.semantic_version or self.browseros_chromium_version
+        return f"{self.BROWSEROS_APP_BASE_NAME}_v{version}_{self.architecture}.dmg"
 
     def get_browseros_chromium_version(self) -> str:
         """Get browseros chromium version string"""
         return self.browseros_chromium_version
 
     def get_browseros_version(self) -> str:
-        """Get browseros version string"""
+        """Get browseros version string (build offset)"""
         return self.browseros_version
+
+    def get_semantic_version(self) -> str:
+        """Get semantic version from resources/BROWSEROS_VERSION
+
+        Returns: e.g., "0.31.0"
+        """
+        return self.semantic_version
+
+    def get_sparkle_version(self) -> str:
+        """Get Sparkle-compatible version from browseros_chromium_version
+
+        Sparkle uses BUILD.PATCH format for version comparison.
+        Returns: e.g., "7231.69"
+        """
+        if not self.browseros_chromium_version:
+            raise ValueError("browseros_chromium_version is not set")
+        parts = self.browseros_chromium_version.split(".")
+        if len(parts) < 4:
+            raise ValueError(
+                f"Invalid browseros_chromium_version format: {self.browseros_chromium_version}"
+            )
+        return f"{parts[2]}.{parts[3]}"
+
+    def get_release_path(self, platform: str) -> str:
+        """Get R2 path for release artifacts
+
+        Args:
+            platform: "macos", "win", or "linux"
+
+        Returns: e.g., "releases/0.31.0/macos/"
+        """
+        return f"releases/{self.semantic_version}/{platform}/"
 
     def get_app_base_name(self) -> str:
         """Get app base name without extension"""
         return self.BROWSEROS_APP_BASE_NAME
 
     def get_dist_dir(self) -> Path:
-        """Get distribution output directory with version"""
-        return join_paths(self.root_dir, "dist", self.browseros_version)
+        """Get distribution output directory with semantic version"""
+        return join_paths(self.root_dir, "releases", self.semantic_version)
 
     # Dev CLI specific methods
     def get_patches_dir(self) -> Path:
