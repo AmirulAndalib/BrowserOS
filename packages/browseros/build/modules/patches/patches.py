@@ -14,9 +14,11 @@ class PatchesModule(CommandModule):
 
     def validate(self, ctx: Context) -> None:
         if not shutil.which("git"):
-            raise ValidationError("Git is not available in PATH - required for applying patches")
+            raise ValidationError(
+                "Git is not available in PATH - required for applying patches"
+            )
 
-        patches_dir = ctx.get_dev_patches_dir()
+        patches_dir = ctx.get_patches_dir()
         if not patches_dir.exists():
             raise ValidationError(f"Patches directory not found: {patches_dir}")
 

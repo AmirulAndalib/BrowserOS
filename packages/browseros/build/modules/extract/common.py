@@ -90,7 +90,7 @@ def write_patches(
                     fail_count += 1
             else:
                 # Pure rename - create marker
-                marker_path = ctx.get_dev_patches_dir() / file_path
+                marker_path = ctx.get_patches_dir() / file_path
                 marker_path = marker_path.with_suffix(marker_path.suffix + ".rename")
                 marker_path.parent.mkdir(parents=True, exist_ok=True)
                 try:

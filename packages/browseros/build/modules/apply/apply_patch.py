@@ -39,6 +39,6 @@ def apply_single_file_patch(
         patch_path,
         build_ctx.chromium_src,
         dry_run=dry_run,
-        relative_to=build_ctx.get_dev_patches_dir(),
+        relative_to=build_ctx.get_patches_dir(),
         reset_to=reset_to,
     )

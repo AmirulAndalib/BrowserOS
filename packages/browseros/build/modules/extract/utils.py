@@ -348,7 +348,7 @@ def create_deletion_marker(ctx: Context, file_path: str) -> bool:
     Returns:
         True if successful, False otherwise
     """
-    marker_path = ctx.get_dev_patches_dir() / file_path
+    marker_path = ctx.get_patches_dir() / file_path
     marker_path = marker_path.with_suffix(marker_path.suffix + ".deleted")
 
     marker_path.parent.mkdir(parents=True, exist_ok=True)
@@ -377,7 +377,7 @@ def create_binary_marker(
     Returns:
         True if successful, False otherwise
     """
-    marker_path = ctx.get_dev_patches_dir() / file_path
+    marker_path = ctx.get_patches_dir() / file_path
     marker_path = marker_path.with_suffix(marker_path.suffix + ".binary")
 
     marker_path.parent.mkdir(parents=True, exist_ok=True)

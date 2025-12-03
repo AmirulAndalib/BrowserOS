@@ -60,7 +60,7 @@ def apply_feature_patches(
         log_info("DRY RUN - No changes will be made")
 
     # Create patch list
-    patches_dir = build_ctx.get_dev_patches_dir()
+    patches_dir = build_ctx.get_patches_dir()
     patch_list = []
     for file_path in file_list:
         patch_path = build_ctx.get_patch_path_for_file(file_path)
@@ -91,6 +91,7 @@ def apply_feature_patches(
 
 class ApplyFeatureModule(CommandModule):
     """Apply patches for a specific feature"""
+
     produces = []
     requires = []
     description = "Apply patches for a specific feature"
@@ -98,12 +99,21 @@ class ApplyFeatureModule(CommandModule):
     def validate(self, ctx: Context) -> None:
         """Validate git is available"""
         import shutil
+
         if not shutil.which("git"):
             raise ValidationError("Git is not available in PATH")
         if not ctx.chromium_src.exists():
             raise ValidationError(f"Chromium source not found: {ctx.chromium_src}")
 
-    def execute(self, ctx: Context, feature_name: str, interactive: bool = True, commit: bool = False, reset_to: Optional[str] = None, **kwargs) -> None:
+    def execute(
+        self,
+        ctx: Context,
+        feature_name: str,
+        interactive: bool = True,
+        commit: bool = False,
+        reset_to: Optional[str] = None,
+        **kwargs,
+    ) -> None:
         """Execute apply feature patches
 
         Args:
@@ -120,4 +130,6 @@ class ApplyFeatureModule(CommandModule):
             reset_to=reset_to,
         )
         if failed:
-            raise RuntimeError(f"Failed to apply {len(failed)} patches for feature '{feature_name}'")
+            raise RuntimeError(
+                f"Failed to apply {len(failed)} patches for feature '{feature_name}'"
+            )

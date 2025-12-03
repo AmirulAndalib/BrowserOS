@@ -368,10 +368,6 @@ class Context:
         """Get copy resources configuration file"""
         return join_paths(self.get_config_dir(), "copy_resources.yaml")
 
-    def get_patches_dir(self) -> Path:
-        """Get patches directory"""
-        return join_paths(self.root_dir, "patches")
-
     def get_sparkle_dir(self) -> Path:
         """Get Sparkle directory"""
         return join_paths(self.chromium_src, "third_party", "sparkle")
@@ -463,7 +459,7 @@ class Context:
         return join_paths(self.root_dir, "dist", self.browseros_version)
 
     # Dev CLI specific methods
-    def get_dev_patches_dir(self) -> Path:
+    def get_patches_dir(self) -> Path:
         """Get individual patches directory"""
         return join_paths(self.root_dir, "chromium_patches")
 
@@ -477,7 +473,7 @@ class Context:
 
     def get_patch_path_for_file(self, file_path: str) -> Path:
         """Convert a chromium file path to patch file path"""
-        return join_paths(self.get_dev_patches_dir(), file_path)
+        return join_paths(self.get_patches_dir(), file_path)
 
     def get_series_patches_dir(self) -> Path:
         """Get series patches directory (GNU Quilt format)"""

@@ -29,7 +29,7 @@ def apply_all_patches(
     Returns:
         Tuple of (applied_count, failed_list)
     """
-    patches_dir = build_ctx.get_dev_patches_dir()
+    patches_dir = build_ctx.get_patches_dir()
 
     if not patches_dir.exists():
         log_warning(f"Patches directory does not exist: {patches_dir}")
@@ -74,6 +74,7 @@ def apply_all_patches(
 
 class ApplyAllModule(CommandModule):
     """Apply all patches from chromium_patches/"""
+
     produces = []
     requires = []
     description = "Apply all patches from chromium_patches/"
@@ -81,12 +82,20 @@ class ApplyAllModule(CommandModule):
     def validate(self, ctx: Context) -> None:
         """Validate git is available"""
         import shutil
+
         if not shutil.which("git"):
             raise ValidationError("Git is not available in PATH")
         if not ctx.chromium_src.exists():
             raise ValidationError(f"Chromium source not found: {ctx.chromium_src}")
 
-    def execute(self, ctx: Context, interactive: bool = True, commit: bool = False, reset_to: Optional[str] = None, **kwargs) -> None:
+    def execute(
+        self,
+        ctx: Context,
+        interactive: bool = True,
+        commit: bool = False,
+        reset_to: Optional[str] = None,
+        **kwargs,
+    ) -> None:
         """Execute apply all patches
 
         Args:
