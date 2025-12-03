@@ -342,8 +342,8 @@ class Context:
 
     @staticmethod
     def _load_browseros_version(root_dir: Path) -> str:
-        """Load browseros version from config/BROWSEROS_VERSION"""
-        version_file = join_paths(root_dir, "build", "config", "BROWSEROS_VERSION")
+        """Load browseros build offset from config/BROWSEROS_BUILD_OFFSET"""
+        version_file = join_paths(root_dir, "build", "config", "BROWSEROS_BUILD_OFFSET")
         if version_file.exists():
             return version_file.read_text().strip()
         return ""
