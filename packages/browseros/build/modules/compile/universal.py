@@ -68,7 +68,9 @@ class UniversalBuildModule(CommandModule):
 
     produces = ["dmg_arm64", "dmg_x64", "dmg_universal"]
     requires = []
-    description = "Build, sign, package, and upload universal binary (arm64 + x64) for macOS"
+    description = (
+        "Build, sign, package, and upload universal binary (arm64 + x64) for macOS"
+    )
 
     def validate(self, ctx: Context) -> None:
         """Validate universal build can run"""
@@ -123,7 +125,7 @@ class UniversalBuildModule(CommandModule):
             arch_ctx = self._create_arch_context(ctx, arch)
 
             log_info(f"📍 Chromium: {arch_ctx.chromium_version}")
-            log_info(f"📍 BrowserOS: {arch_ctx.browseros_version}")
+            log_info(f"📍 BrowserOS: {arch_ctx.browseros_build_offset}")
             log_info(f"📍 Output directory: {arch_ctx.out_dir}")
 
             # === BUILD PHASE ===
@@ -208,9 +210,15 @@ class UniversalBuildModule(CommandModule):
         log_info("\n" + "=" * 70)
         log_success("✅ Universal build pipeline complete!")
         log_info("Artifacts created:")
-        log_info(f"  - arm64 DMG: {ctx.get_dist_dir() / ctx.get_artifact_name('dmg').replace('universal', 'arm64')}")
-        log_info(f"  - x64 DMG: {ctx.get_dist_dir() / ctx.get_artifact_name('dmg').replace('universal', 'x64')}")
-        log_info(f"  - universal DMG: {ctx.get_dist_dir() / universal_ctx.get_artifact_name('dmg')}")
+        log_info(
+            f"  - arm64 DMG: {ctx.get_dist_dir() / ctx.get_artifact_name('dmg').replace('universal', 'arm64')}"
+        )
+        log_info(
+            f"  - x64 DMG: {ctx.get_dist_dir() / ctx.get_artifact_name('dmg').replace('universal', 'x64')}"
+        )
+        log_info(
+            f"  - universal DMG: {ctx.get_dist_dir() / universal_ctx.get_artifact_name('dmg')}"
+        )
         log_info("=" * 70)
 
     def _clean_build_directories(self, ctx: Context) -> None:
@@ -258,7 +266,9 @@ class UniversalBuildModule(CommandModule):
         # Set fixed app path to prevent universal auto-detection in get_app_path()
         # This is critical: after arm64 is built, get_app_path() would otherwise
         # try to detect the universal dir for x64 context
-        ctx._fixed_app_path = ctx.chromium_src / f"out/Default_{arch}" / ctx.BROWSEROS_APP_NAME
+        ctx._fixed_app_path = (
+            ctx.chromium_src / f"out/Default_{arch}" / ctx.BROWSEROS_APP_NAME
+        )
         return ctx
 
     def _create_universal_context(self, base_ctx: Context) -> Context:
@@ -277,7 +287,9 @@ class UniversalBuildModule(CommandModule):
             build_type=base_ctx.build_type,
         )
         # Set fixed app path to the universal binary
-        ctx._fixed_app_path = ctx.chromium_src / "out/Default_universal" / ctx.BROWSEROS_APP_NAME
+        ctx._fixed_app_path = (
+            ctx.chromium_src / "out/Default_universal" / ctx.BROWSEROS_APP_NAME
+        )
         # Override out_dir for universal
         ctx.out_dir = "out/Default_universal"
         return ctx
@@ -309,7 +321,9 @@ class UniversalBuildModule(CommandModule):
         universal_app = universal_dir / "BrowserOS.app"
 
         # Find universalizer script
-        universalizer_script = ctx.root_dir / "build/modules/package/universalizer_patched.py"
+        universalizer_script = (
+            ctx.root_dir / "build/modules/package/universalizer_patched.py"
+        )
 
         log_info(f"📱 Input 1 (arm64): {arm64_app}")
         log_info(f"📱 Input 2 (x64): {x64_app}")

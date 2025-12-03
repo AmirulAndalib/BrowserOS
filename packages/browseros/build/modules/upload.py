@@ -19,6 +19,7 @@ from ..common.utils import (
     IS_MACOS,
     IS_LINUX,
 )
+from ..common.notify import get_notifier, COLOR_GREEN
 
 # Try to import boto3 for R2 (S3-compatible)
 try:
@@ -315,6 +316,23 @@ def upload_release_artifacts(
     if platform == "macos":
         log_info(f"  Sparkle version: {release_data.get('sparkle_version', 'N/A')}")
     log_info(f"  Artifacts: {list(release_data['artifacts'].keys())}")
+
+    # Send Slack notification with artifact URLs
+    notifier = get_notifier()
+    artifact_urls = [
+        f"{a['filename']}: {a['url']}"
+        for a in release_data["artifacts"].values()
+    ]
+    notifier.notify(
+        "☁️ Upload Complete",
+        f"Uploaded {len(artifacts)} artifact(s) to R2",
+        {
+            "Version": release_data["version"],
+            "Platform": platform,
+            "Artifacts": "\n".join(artifact_urls),
+        },
+        color=COLOR_GREEN,
+    )
 
     return True, release_data
 

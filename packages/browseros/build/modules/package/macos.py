@@ -7,6 +7,7 @@ from typing import Optional, List
 from ...common.module import CommandModule, ValidationError
 from ...common.context import Context
 from ...common.utils import run_command, log_info, log_error, log_success, IS_MACOS
+from ...common.notify import get_notifier, COLOR_GREEN
 
 
 class MacOSPackageModule(CommandModule):
@@ -40,6 +41,19 @@ class MacOSPackageModule(CommandModule):
 
         ctx.artifact_registry.add("dmg", dmg_path)
         log_success(f"DMG created: {dmg_name}")
+
+        # Send Slack notification
+        notifier = get_notifier()
+        notifier.notify(
+            "📀 Package Created",
+            f"DMG package created successfully",
+            {
+                "Artifact": dmg_name,
+                "Version": ctx.semantic_version,
+                "Path": str(dmg_path),
+            },
+            color=COLOR_GREEN,
+        )
 
     def _create_dmg(self, app_path: Path, dmg_path: Path, pkg_dmg_path: Path) -> None:
         if not create_dmg(app_path, dmg_path, "BrowserOS", pkg_dmg_path):

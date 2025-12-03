@@ -16,6 +16,7 @@ from ...common.utils import (
     join_paths,
     IS_WINDOWS,
 )
+from ...common.notify import get_notifier, COLOR_GREEN
 
 
 class WindowsPackageModule(CommandModule):
@@ -43,6 +44,18 @@ class WindowsPackageModule(CommandModule):
         ctx.artifact_registry.add("installer_zip", zip_path)
 
         log_success("Windows packages created successfully")
+
+        # Send Slack notification
+        notifier = get_notifier()
+        notifier.notify(
+            "📦 Package Created",
+            f"Windows packages created successfully",
+            {
+                "Artifacts": f"{installer_path.name}, {zip_path.name}",
+                "Version": ctx.semantic_version,
+            },
+            color=COLOR_GREEN,
+        )
 
     def _create_installer(self, ctx: Context) -> Path:
         build_output_dir = join_paths(ctx.chromium_src, ctx.out_dir)

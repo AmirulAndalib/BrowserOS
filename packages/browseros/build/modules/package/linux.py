@@ -19,6 +19,7 @@ from ...common.utils import (
     join_paths,
     IS_LINUX,
 )
+from ...common.notify import get_notifier, COLOR_GREEN
 
 
 class LinuxPackageModule(CommandModule):
@@ -62,6 +63,23 @@ class LinuxPackageModule(CommandModule):
             log_warning("   Only AppImage created (.deb failed)")
         elif deb_path:
             log_warning("   Only .deb created (AppImage failed)")
+
+        # Send Slack notification
+        notifier = get_notifier()
+        artifacts = []
+        if appimage_path:
+            artifacts.append(appimage_path.name)
+        if deb_path:
+            artifacts.append(deb_path.name)
+        notifier.notify(
+            "📦 Package Created",
+            f"Linux packages created successfully",
+            {
+                "Artifacts": ", ".join(artifacts),
+                "Version": ctx.semantic_version,
+            },
+            color=COLOR_GREEN,
+        )
 
     def _package_appimage(self, ctx: Context, package_dir: Path) -> Optional[Path]:
         return package_appimage(ctx, package_dir)

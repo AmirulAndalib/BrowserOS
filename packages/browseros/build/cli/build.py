@@ -115,7 +115,13 @@ EXECUTION_ORDER = [
     # Phase 2: Patches & Resources
     (
         "prep",
-        ["resources", "chromium_replace", "string_replaces", "series_patches", "patches"],
+        [
+            "resources",
+            "chromium_replace",
+            "string_replaces",
+            "series_patches",
+            "patches",
+        ],
     ),
     # Phase 3: Configure & Build
     ("build", ["configure", "compile"]),
@@ -125,6 +131,15 @@ EXECUTION_ORDER = [
     ("package", [_get_package_module()]),
     # Phase 6: Upload
     ("upload", ["upload_r2"]),
+]
+
+# Modules that trigger Slack notifications (to reduce verbosity)
+NOTIFY_MODULES = [
+    "compile",
+    "sign_macos",
+    "sign_windows",
+    "sign_linux",
+    "upload_r2",
 ]
 
 
@@ -165,8 +180,9 @@ def execute_pipeline(
             module_class = available_modules[module_name]
             module = module_class()
 
-            # Notify module start and track timing
-            notify_module_start(module_name)
+            # Notify module start and track timing (only for key modules)
+            if module_name in NOTIFY_MODULES:
+                notify_module_start(module_name)
             module_start = time.time()
 
             # Validate right before executing (fail fast)
@@ -183,7 +199,8 @@ def execute_pipeline(
             try:
                 module.execute(ctx)
                 module_duration = time.time() - module_start
-                notify_module_completion(module_name, module_duration)
+                if module_name in NOTIFY_MODULES:
+                    notify_module_completion(module_name, module_duration)
                 log_success(f"Module {module_name} completed in {module_duration:.1f}s")
             except Exception as e:
                 log_error(f"Module {module_name} failed: {e}")
