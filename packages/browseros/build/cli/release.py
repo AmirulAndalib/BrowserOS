@@ -1,23 +1,21 @@
 #!/usr/bin/env python3
-"""Release CLI - Thin CLI layer for release automation"""
+"""Release CLI - Modular release automation for BrowserOS"""
 
+from pathlib import Path
 from typing import Optional
 
 import typer
 
-from ..common.env import EnvConfig
-from ..common.utils import log_info, log_error, log_success, log_warning
+from ..common.context import Context
+from ..common.module import ValidationError
+from ..common.utils import log_info, log_error, log_success
+
 from ..modules.release import (
-    PLATFORMS,
-    PLATFORM_DISPLAY_NAMES,
-    fetch_all_release_metadata,
-    format_size,
-    generate_appcast_item,
-    generate_release_notes,
-    get_repo_from_git,
-    check_gh_cli,
-    create_github_release,
-    download_and_upload_artifacts,
+    AVAILABLE_MODULES,
+    ListModule,
+    AppcastModule,
+    GithubModule,
+    PublishModule,
 )
 
 app = typer.Typer(
@@ -26,180 +24,168 @@ app = typer.Typer(
     pretty_exceptions_show_locals=False,
 )
 
+# GitHub sub-app for complex operations
+github_app = typer.Typer(
+    help="GitHub release operations",
+    pretty_exceptions_enable=False,
+    pretty_exceptions_show_locals=False,
+)
+app.add_typer(github_app, name="github")
 
-@app.command("list")
-def list_artifacts(
-    version: str = typer.Option(..., "--version", "-v", help="Version to list (e.g., 0.31.0)"),
+
+def create_release_context(
+    version: str,
+    repo: Optional[str] = None,
+) -> Context:
+    """Create Context for release operations"""
+    ctx = Context(
+        root_dir=Path.cwd(),
+        chromium_src=Path.cwd(),  # Not used for release ops
+        architecture="",
+        build_type="release",
+    )
+    ctx.release_version = version
+    ctx.github_repo = repo or ""
+    return ctx
+
+
+def execute_module(ctx: Context, module) -> None:
+    """Execute a single module with validation"""
+    try:
+        module.validate(ctx)
+        module.execute(ctx)
+    except ValidationError as e:
+        log_error(f"Validation failed: {e}")
+        raise typer.Exit(1)
+    except Exception as e:
+        log_error(f"Module failed: {e}")
+        raise typer.Exit(1)
+
+
+@app.callback(invoke_without_command=True)
+def main(
+    ctx: typer.Context,
+    version: Optional[str] = typer.Option(
+        None, "--version", "-v", help="Version to operate on (e.g., 0.31.0)"
+    ),
+    list_artifacts: bool = typer.Option(
+        False, "--list", "-l", help="List artifacts for version from R2"
+    ),
+    appcast: bool = typer.Option(
+        False, "--appcast", "-a", help="Generate appcast XML snippets"
+    ),
+    publish: bool = typer.Option(
+        False, "--publish", "-p", help="Publish to download/ paths (make live)"
+    ),
+    show_modules: bool = typer.Option(
+        False, "--show-modules", help="Show available modules and exit"
+    ),
 ):
-    """List artifacts for a version from R2"""
-    env = EnvConfig()
+    """Release automation for BrowserOS
 
-    if not env.has_r2_config():
-        log_error("R2 configuration not set")
+    \b
+    Quick Operations (Flags):
+      browseros release --version 0.31.0 --list       # List artifacts
+      browseros release --version 0.31.0 --appcast    # Generate appcast XML
+      browseros release --version 0.31.0 --publish    # Publish to download/ paths
+
+    \b
+    GitHub Release (Sub-command):
+      browseros release github create --version 0.31.0
+      browseros release github create --version 0.31.0 --publish
+
+    \b
+    Show Available Modules:
+      browseros release --show-modules
+    """
+    if show_modules:
+        log_info("\n📦 Available Release Modules:")
+        log_info("-" * 50)
+        for name, module_class in AVAILABLE_MODULES.items():
+            log_info(f"  {name}: {module_class.description}")
+        log_info("-" * 50)
+        return
+
+    # If subcommand invoked, let it handle things
+    if ctx.invoked_subcommand is not None:
+        return
+
+    # Check if any flags specified
+    has_flags = any([list_artifacts, appcast, publish])
+
+    if not has_flags:
+        typer.echo(
+            "Error: Specify a flag (--list, --appcast, --publish) or use a sub-command\n"
+        )
+        typer.echo("Use --help for usage information")
+        typer.echo("Use --show-modules to see available modules")
         raise typer.Exit(1)
 
-    metadata = fetch_all_release_metadata(version, env)
-
-    if not metadata:
-        log_error(f"No release metadata found for version {version}")
+    # Version is required for flag operations
+    if not version:
+        log_error("--version is required for release operations")
         raise typer.Exit(1)
 
-    log_info(f"\n{'='*60}")
-    log_info(f"Release: v{version}")
-    log_info(f"{'='*60}")
+    # Create context
+    release_ctx = create_release_context(version)
 
-    for platform in PLATFORMS:
-        if platform not in metadata:
-            continue
+    # Execute requested modules
+    if list_artifacts:
+        log_info(f"📋 Listing artifacts for v{version}")
+        execute_module(release_ctx, ListModule())
 
-        release = metadata[platform]
-        log_info(f"\n{PLATFORM_DISPLAY_NAMES[platform]}:")
-        log_info(f"  Build Date: {release.get('build_date', 'N/A')}")
-        log_info(f"  Chromium: {release.get('chromium_version', 'N/A')}")
+    if appcast:
+        log_info(f"📝 Generating appcast for v{version}")
+        execute_module(release_ctx, AppcastModule())
 
-        if platform == "macos" and "sparkle_version" in release:
-            log_info(f"  Sparkle Version: {release['sparkle_version']}")
-
-        for key, artifact in release.get("artifacts", {}).items():
-            size = format_size(artifact.get("size", 0))
-            sig_indicator = " [signed]" if "sparkle_signature" in artifact else ""
-            log_info(f"  - {key}: {artifact['filename']} ({size}){sig_indicator}")
-
-    log_info(f"\n{'='*60}")
+    if publish:
+        log_info(f"🚀 Publishing v{version} to download/ paths")
+        execute_module(release_ctx, PublishModule())
 
 
-@app.command()
-def appcast(
-    version: str = typer.Option(..., "--version", "-v", help="Version to generate appcast for"),
+@github_app.command("create")
+def github_create(
+    version: str = typer.Option(
+        ..., "--version", "-v", help="Version to release (e.g., 0.31.0)"
+    ),
+    draft: bool = typer.Option(
+        True, "--draft/--publish", help="Create as draft (default: draft)"
+    ),
+    repo: Optional[str] = typer.Option(
+        None, "--repo", "-r", help="GitHub repo (owner/name)"
+    ),
+    skip_upload: bool = typer.Option(
+        False, "--skip-upload", help="Skip uploading artifacts to GitHub"
+    ),
+    title: Optional[str] = typer.Option(
+        None, "--title", "-t", help="Release title (default: v{version})"
+    ),
+    publish_to_download: bool = typer.Option(
+        False, "--publish", "-p", help="Also publish to download/ paths after creating release"
+    ),
 ):
-    """Generate appcast XML snippets for macOS auto-update"""
-    env = EnvConfig()
+    """Create GitHub release from R2 artifacts
 
-    if not env.has_r2_config():
-        log_error("R2 configuration not set")
-        raise typer.Exit(1)
+    \b
+    Examples:
+      browseros release github create --version 0.31.0
+      browseros release github create --version 0.31.0 --publish  # Also publish to download/
+      browseros release github create --version 0.31.0 --no-draft # Create published release
+    """
+    ctx = create_release_context(version, repo)
 
-    metadata = fetch_all_release_metadata(version, env)
+    log_info(f"🚀 Creating GitHub release for v{version}")
+    module = GithubModule(
+        draft=draft,
+        skip_upload=skip_upload,
+        title=title,
+    )
+    execute_module(ctx, module)
 
-    if "macos" not in metadata:
-        log_error(f"No macOS release metadata found for version {version}")
-        raise typer.Exit(1)
-
-    release = metadata["macos"]
-    sparkle_version = release.get("sparkle_version", "")
-    build_date = release.get("build_date", "")
-    artifacts = release.get("artifacts", {})
-
-    log_info(f"\n{'='*60}")
-    log_info(f"APPCAST SNIPPETS FOR v{version}")
-    log_info(f"{'='*60}")
-
-    arch_to_file = {
-        "arm64": "appcast.xml",
-        "x64": "appcast-x86_64.xml",
-        "universal": "appcast.xml",
-    }
-
-    for arch in ["arm64", "x64", "universal"]:
-        if arch not in artifacts:
-            continue
-
-        artifact = artifacts[arch]
-        if "sparkle_signature" not in artifact:
-            log_warning(f"{arch} artifact missing sparkle_signature")
-
-        log_info(f"\n{arch_to_file[arch]} ({arch}):")
-        print(generate_appcast_item(artifact, version, sparkle_version, build_date))
-
-    log_info(f"\n{'='*60}")
+    if publish_to_download:
+        log_info(f"\n🚀 Publishing v{version} to download/ paths")
+        execute_module(ctx, PublishModule())
 
 
-@app.command()
-def create(
-    version: str = typer.Option(..., "--version", "-v", help="Version to release"),
-    draft: bool = typer.Option(True, "--draft/--publish", help="Create as draft (default: draft)"),
-    repo: Optional[str] = typer.Option(None, "--repo", "-r", help="GitHub repo (owner/name)"),
-    skip_upload: bool = typer.Option(False, "--skip-upload", help="Skip uploading artifacts to GitHub"),
-    title: Optional[str] = typer.Option(None, "--title", "-t", help="Release title (default: v{version})"),
-):
-    """Create GitHub release from R2 artifacts"""
-    env = EnvConfig()
-
-    if not env.has_r2_config():
-        log_error("R2 configuration not set")
-        raise typer.Exit(1)
-
-    # Check gh CLI
-    if not check_gh_cli():
-        log_error("gh CLI not found. Install from: https://cli.github.com")
-        raise typer.Exit(1)
-
-    # Fetch metadata
-    metadata = fetch_all_release_metadata(version, env)
-    if not metadata:
-        log_error(f"No release metadata found for version {version}")
-        raise typer.Exit(1)
-
-    log_info(f"\n{'='*60}")
-    log_info(f"Creating GitHub Release: v{version}")
-    log_info(f"{'='*60}")
-
-    for platform, release in metadata.items():
-        artifacts = release.get("artifacts", {})
-        log_info(f"  {PLATFORM_DISPLAY_NAMES[platform]}: {len(artifacts)} artifact(s)")
-
-    # Determine repo
-    if not repo:
-        repo = get_repo_from_git()
-        if not repo:
-            log_error("Could not detect repo from git remote. Use --repo flag.")
-            raise typer.Exit(1)
-
-    log_info(f"  Repo: {repo}")
-    log_info(f"  Draft: {draft}")
-
-    # Create release
-    release_title = title or f"v{version}"
-    notes = generate_release_notes(version, metadata)
-
-    log_info("\nCreating GitHub release...")
-    success, result = create_github_release(version, repo, release_title, notes, draft)
-
-    if success:
-        log_success(f"Release created: {result}")
-    else:
-        if "already exists" in result:
-            log_warning(result)
-        else:
-            log_error(f"Failed to create release: {result}")
-            raise typer.Exit(1)
-
-    # Upload artifacts
-    if not skip_upload:
-        log_info("\nUploading artifacts to GitHub release...")
-        results = download_and_upload_artifacts(version, repo, metadata)
-
-        failed = [f for f, ok in results if not ok]
-        if failed:
-            log_warning(f"Failed to upload: {', '.join(failed)}")
-
-    # Print appcast snippet
-    if "macos" in metadata:
-        log_info("\n" + "=" * 60)
-        log_info("APPCAST SNIPPET")
-        log_info("=" * 60)
-
-        release = metadata["macos"]
-        sparkle_version = release.get("sparkle_version", "")
-        build_date = release.get("build_date", "")
-
-        arch_to_file = {"arm64": "appcast.xml", "x64": "appcast-x86_64.xml", "universal": "appcast.xml"}
-
-        for arch in ["arm64", "x64", "universal"]:
-            if arch in release.get("artifacts", {}):
-                artifact = release["artifacts"][arch]
-                log_info(f"\n{arch_to_file[arch]} ({arch}):")
-                print(generate_appcast_item(artifact, version, sparkle_version, build_date))
-
-    log_info(f"\n{'='*60}")
-    log_success(f"Release v{version} complete!")
+if __name__ == "__main__":
+    app()

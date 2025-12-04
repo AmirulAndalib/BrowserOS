@@ -191,6 +191,8 @@ class Context:
     browseros_build_offset: str = ""
     browseros_chromium_version: str = ""
     semantic_version: str = ""  # e.g., "0.31.0" from resources/BROWSEROS_VERSION
+    release_version: str = ""  # Explicit version for release operations (overrides semantic_version)
+    github_repo: str = ""  # GitHub repo for release operations (owner/repo)
     start_time: float = 0.0
 
     # App names - will be set based on platform
