@@ -329,6 +329,8 @@ features:
       - chrome/browser/ui/browser_ui_prefs.cc
       - chrome/browser/ui/views/chrome_layout_provider.cc
       - chrome/browser/ui/views/infobars/infobar_container_view.cc
+      - chrome/browser/ui/views/new_tab_footer/
+      - chrome/browser/ui/webui/new_tab_footer/
       - components/bookmarks/browser/bookmark_utils.cc
       - components/content_settings/core/browser/cookie_settings.cc
       - components/payments/core/payment_prefs.cc
