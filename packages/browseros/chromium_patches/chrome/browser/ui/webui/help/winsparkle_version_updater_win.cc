@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/ui/webui/help/winsparkle_version_updater_win.cc b/chrome/browser/ui/webui/help/winsparkle_version_updater_win.cc
 new file mode 100644
-index 0000000000000..0c5c52b91b67c
+index 0000000000000..09692b4163719
 --- /dev/null
 +++ b/chrome/browser/ui/webui/help/winsparkle_version_updater_win.cc
-@@ -0,0 +1,117 @@
+@@ -0,0 +1,115 @@
 +// Copyright 2024 BrowserOS Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -11,6 +11,7 @@ index 0000000000000..0c5c52b91b67c
 +#include "chrome/browser/ui/webui/help/winsparkle_version_updater_win.h"
 +
 +#include "base/logging.h"
++#include "base/strings/string_number_conversions.h"
 +#include "base/strings/utf_string_conversions.h"
 +#include "chrome/browser/win/winsparkle_glue.h"
 +
@@ -43,10 +44,6 @@ index 0000000000000..0c5c52b91b67c
 +
 +  // Trigger the update check. WinSparkle will show its built-in UI.
 +  winsparkle_glue::CheckForUpdates();
-+}
-+
-+void WinSparkleVersionUpdater::PromoteUpdater() {
-+  // Not applicable for WinSparkle - no elevation/promotion needed.
 +}
 +
 +void WinSparkleVersionUpdater::OnWinSparkleStatusChanged(
@@ -104,7 +101,8 @@ index 0000000000000..0c5c52b91b67c
 +  VLOG(2) << "WinSparkleVersionUpdater: Progress " << percent_complete << "%";
 +
 +  std::u16string message =
-+      u"Downloading update: " + base::NumberToString16(percent_complete) + u"%";
++      u"Downloading update: " +
++      base::ASCIIToUTF16(base::NumberToString(percent_complete)) + u"%";
 +
 +  status_callback_.Run(UPDATING, percent_complete, false, false, std::string(),
 +                       0, message);

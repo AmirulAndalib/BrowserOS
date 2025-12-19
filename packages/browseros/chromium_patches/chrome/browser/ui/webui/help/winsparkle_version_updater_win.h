@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/ui/webui/help/winsparkle_version_updater_win.h b/chrome/browser/ui/webui/help/winsparkle_version_updater_win.h
 new file mode 100644
-index 0000000000000..7ee2b76db07a1
+index 0000000000000..300d67551ba31
 --- /dev/null
 +++ b/chrome/browser/ui/webui/help/winsparkle_version_updater_win.h
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,36 @@
 +// Copyright 2024 BrowserOS Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -28,7 +28,6 @@ index 0000000000000..7ee2b76db07a1
 +  // VersionUpdater implementation.
 +  void CheckForUpdate(StatusCallback status_callback,
 +                      PromoteCallback promote_callback) override;
-+  void PromoteUpdater() override;
 +
 +  // WinSparkleObserver implementation.
 +  void OnWinSparkleStatusChanged(
