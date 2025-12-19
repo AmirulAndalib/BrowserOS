@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/win/winsparkle_glue.cc b/chrome/browser/win/winsparkle_glue.cc
 new file mode 100644
-index 0000000000000..73f124831fb98
+index 0000000000000..0e6b6f176177a
 --- /dev/null
 +++ b/chrome/browser/win/winsparkle_glue.cc
-@@ -0,0 +1,272 @@
+@@ -0,0 +1,273 @@
 +// Copyright 2024 BrowserOS Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -18,6 +18,7 @@ index 0000000000000..73f124831fb98
 +#include "base/no_destructor.h"
 +#include "base/observer_list.h"
 +#include "base/strings/string_number_conversions.h"
++#include "base/time/time.h"
 +#include "base/version.h"
 +#include "chrome/browser/browser_process.h"
 +#include "chrome/browser/lifetime/application_lifetime_desktop.h"
