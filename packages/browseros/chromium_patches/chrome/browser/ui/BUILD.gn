@@ -1,5 +1,5 @@
 diff --git a/chrome/browser/ui/BUILD.gn b/chrome/browser/ui/BUILD.gn
-index f4531197ae5e1..027e77f1536c6 100644
+index f4531197ae5e1..863b7dbd3fa64 100644
 --- a/chrome/browser/ui/BUILD.gn
 +++ b/chrome/browser/ui/BUILD.gn
 @@ -1275,6 +1275,8 @@ static_library("ui") {
@@ -20,3 +20,18 @@ index f4531197ae5e1..027e77f1536c6 100644
        "webui/help/version_updater_mac.mm",
        "webui/settings/mac_system_settings_handler.cc",
        "webui/settings/mac_system_settings_handler.h",
+@@ -3297,7 +3301,13 @@ static_library("ui") {
+ 
+     libs += [ "crypt32.lib" ]
+ 
+-    if (is_chrome_branded) {
++    if (enable_winsparkle) {
++      sources += [
++        "webui/help/version_updater_winsparkle.cc",
++        "webui/help/winsparkle_version_updater_win.cc",
++        "webui/help/winsparkle_version_updater_win.h",
++      ]
++    } else if (is_chrome_branded) {
+       sources += [ "webui/help/version_updater_win.cc" ]
+       deps += [
+         "//chrome/browser/win/installer_downloader:prefs",

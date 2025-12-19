@@ -1,0 +1,29 @@
+diff --git a/third_party/winsparkle/README.chromium b/third_party/winsparkle/README.chromium
+new file mode 100644
+index 0000000000000..15efd723c27c2
+--- /dev/null
++++ b/third_party/winsparkle/README.chromium
+@@ -0,0 +1,23 @@
++Name: WinSparkle
++Short Name: winsparkle
++URL: https://github.com/vslavik/winsparkle
++Version: 0.9.2
++License: MIT
++License File: LICENSE
++Security Critical: yes
++Shipped: yes
++
++Description:
++WinSparkle is a software update framework for Windows, inspired by Sparkle for
++macOS. It provides automatic update checking, downloading, and installation
++functionality with built-in UI dialogs.
++
++Features used:
++- Automatic background update checking
++- EdDSA (ed25519) signature verification
++- Appcast XML feed parsing
++- Built-in update notification UI
++- Graceful shutdown callbacks for update installation
++
++Local Modifications:
++None. Using prebuilt binaries from official v0.9.2 release.

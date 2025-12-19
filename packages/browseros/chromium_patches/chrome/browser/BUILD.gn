@@ -1,5 +1,5 @@
 diff --git a/chrome/browser/BUILD.gn b/chrome/browser/BUILD.gn
-index 7280ef29b85c1..5a3690a409d58 100644
+index 7280ef29b85c1..ead21e35a8962 100644
 --- a/chrome/browser/BUILD.gn
 +++ b/chrome/browser/BUILD.gn
 @@ -12,6 +12,7 @@ import("//build/config/features.gni")
@@ -18,7 +18,19 @@ index 7280ef29b85c1..5a3690a409d58 100644
      "ENABLE_UPDATER=$enable_updater",
      "ENABLE_UPDATE_NOTIFICATIONS=$enable_update_notifications",
      "USE_MINIKIN_HYPHENATION=$use_minikin_hyphenation",
-@@ -1901,6 +1903,7 @@ static_library("browser") {
+@@ -105,7 +107,10 @@ buildflag_header("buildflags") {
+   ]
+ 
+   if (is_win) {
+-    flags += [ "ENABLE_SEGMENT_HEAP=$enable_segment_heap" ]
++    flags += [
++      "ENABLE_SEGMENT_HEAP=$enable_segment_heap",
++      "ENABLE_WINSPARKLE=$enable_winsparkle",
++    ]
+   }
+ 
+   # Android and ChromeOS don't support multiple browser processes, so they don't
+@@ -1901,6 +1906,7 @@ static_library("browser") {
      "//chrome/browser/bluetooth",
      "//chrome/browser/bluetooth:impl",
      "//chrome/browser/breadcrumbs",
@@ -26,7 +38,7 @@ index 7280ef29b85c1..5a3690a409d58 100644
      "//chrome/browser/browsing_data:constants",
      "//chrome/browser/chooser_controller",
      "//chrome/browser/commerce",
-@@ -6751,6 +6754,16 @@ static_library("browser") {
+@@ -6751,6 +6757,29 @@ static_library("browser") {
      ]
    }
  
@@ -38,6 +50,19 @@ index 7280ef29b85c1..5a3690a409d58 100644
 +
 +    # Headers config for compilation (linking handled by chrome_framework)
 +    public_configs = [ "//third_party/sparkle:sparkle_link_framework" ]
++  }
++
++  if (is_win && enable_winsparkle) {
++    sources += [
++      "win/chrome_browser_main_extra_parts_win.cc",
++      "win/chrome_browser_main_extra_parts_win.h",
++      "win/winsparkle_glue.cc",
++      "win/winsparkle_glue.h",
++    ]
++    deps += [
++      "//third_party/winsparkle",
++      "//third_party/winsparkle:winsparkle_dll",
++    ]
 +  }
 +
    if (is_android || is_mac || is_win || is_chromeos) {

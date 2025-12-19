@@ -1,0 +1,30 @@
+diff --git a/third_party/winsparkle/BUILD.gn b/third_party/winsparkle/BUILD.gn
+new file mode 100644
+index 0000000000000..f3b6c3c299786
+--- /dev/null
++++ b/third_party/winsparkle/BUILD.gn
+@@ -0,0 +1,24 @@
++# Copyright 2024 BrowserOS Authors. All rights reserved.
++# Use of this source code is governed by a BSD-style license that can be
++# found in the LICENSE file.
++
++assert(is_win)
++
++config("winsparkle_config") {
++  include_dirs = [ "include" ]
++}
++
++# Import library for linking against WinSparkle.dll
++source_set("winsparkle") {
++  sources = []
++  public_configs = [ ":winsparkle_config" ]
++
++  libs = [ "WinSparkle.lib" ]
++  lib_dirs = [ "x64/Release" ]
++}
++
++# Copy WinSparkle.dll to output directory so it's alongside chrome.exe
++copy("winsparkle_dll") {
++  sources = [ "x64/Release/WinSparkle.dll" ]
++  outputs = [ "$root_out_dir/WinSparkle.dll" ]
++}
