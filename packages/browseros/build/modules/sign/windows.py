@@ -64,7 +64,10 @@ class WindowsSignModule(CommandModule):
 
     def _sign_executables(self, build_output_dir: Path, env: EnvConfig) -> None:
         log_info("\nStep 1/3: Signing executables before packaging...")
-        binaries_to_sign_first = [build_output_dir / "chrome.exe"]
+        binaries_to_sign_first = [
+            build_output_dir / "chrome.exe",
+            build_output_dir / "WinSparkle.dll",
+        ]
         binaries_to_sign_first.extend(get_browseros_server_binary_paths(build_output_dir))
 
         existing_binaries = []
