@@ -16,6 +16,7 @@ modules:
   # Phase 1: Setup
   - clean
   - git_setup
+  - win_sparkle_setup
 
   # Phase 2: Patches & Resources
   - resources
@@ -32,7 +33,10 @@ modules:
   - sign_windows
   - package_windows
 
-  # Phase 5: Upload
+  # Phase 5: WinSparkle Sign (for auto-update)
+  - winsparkle_sign
+
+  # Phase 6: Upload
   - upload
 
 # Required environment variables

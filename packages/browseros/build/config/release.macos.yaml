@@ -19,7 +19,7 @@ modules:
   # Phase 1: Setup
   - clean
   - git_setup
-  - sparkle_setup
+  - mac_sparkle_setup
 
   # Phase 2: Patches & Resources
   - chromium_replace

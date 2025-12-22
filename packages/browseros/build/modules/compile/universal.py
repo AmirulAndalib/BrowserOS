@@ -23,7 +23,7 @@ Design:
 Prerequisites (must run BEFORE this module):
     - clean (optional)
     - git_setup
-    - sparkle_setup (macOS)
+    - mac_sparkle_setup (macOS)
     - chromium_replace
     - string_replaces
     - patches

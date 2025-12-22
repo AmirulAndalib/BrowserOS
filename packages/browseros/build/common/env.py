@@ -165,6 +165,13 @@ class EnvConfig:
         """Base64-encoded Sparkle Ed25519 private key for macOS auto-update signing"""
         return os.environ.get("SPARKLE_PRIVATE_KEY")
 
+    # === WinSparkle Signing (Windows) ===
+
+    @property
+    def winsparkle_private_key(self) -> Optional[str]:
+        """Ed25519 private key for Windows auto-update signing (falls back to SPARKLE_PRIVATE_KEY)"""
+        return os.environ.get("WINSPARKLE_PRIVATE_KEY") or os.environ.get("SPARKLE_PRIVATE_KEY")
+
     # === Notifications ===
 
     @property
@@ -254,3 +261,7 @@ class EnvConfig:
     def has_sparkle_key(self) -> bool:
         """Check if Sparkle private key is available"""
         return bool(self.sparkle_private_key)
+
+    def has_winsparkle_key(self) -> bool:
+        """Check if WinSparkle private key is available"""
+        return bool(self.winsparkle_private_key)

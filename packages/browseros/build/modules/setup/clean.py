@@ -29,11 +29,20 @@ class CleanModule(CommandModule):
         log_info("\n🧹 Cleaning Sparkle build artifacts...")
         self._clean_sparkle(ctx)
 
+        log_info("\n🧹 Cleaning WinSparkle build artifacts...")
+        self._clean_winsparkle(ctx)
+
     def _clean_sparkle(self, ctx: Context) -> None:
         sparkle_dir = ctx.get_sparkle_dir()
         if sparkle_dir.exists():
             safe_rmtree(sparkle_dir)
-        log_success("Cleaned Sparkle build directory")
+            log_success("Cleaned Sparkle directory")
+
+    def _clean_winsparkle(self, ctx: Context) -> None:
+        winsparkle_dir = ctx.get_winsparkle_dir()
+        if winsparkle_dir.exists():
+            safe_rmtree(winsparkle_dir)
+            log_success("Cleaned WinSparkle directory")
 
     def _git_reset(self, ctx: Context) -> None:
         run_command(["git", "reset", "--hard", "HEAD"], cwd=ctx.chromium_src)
