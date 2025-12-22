@@ -29,11 +29,6 @@ BROWSEROS_SERVER_BINARIES: Dict[str, Dict[str, str]] = {
         "options": "runtime",
         "entitlements": "browseros-executable-entitlements.plist",
     },
-    "codex": {
-        "identifier_suffix": "codex",
-        "options": "runtime",
-        "entitlements": "browseros-executable-entitlements.plist",
-    },
 }
 
 
