@@ -19,12 +19,15 @@ google_default_client_secret=""
 treat_warnings_as_errors=false
 use_official_google_api_keys=false
 use_unofficial_version_number=false
+proprietary_codecs = true
 
-target_cpu="x64"
 use_sysroot=false
 blink_symbol_level=0
 v8_symbol_level=0
 symbol_level=0
 
 ffmpeg_branding="Chrome"
+
+# Windows uses WinSparkle for updates
+enable_winsparkle = true
 
