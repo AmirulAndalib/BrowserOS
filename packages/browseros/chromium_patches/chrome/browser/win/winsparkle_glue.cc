@@ -1,9 +1,9 @@
 diff --git a/chrome/browser/win/winsparkle_glue.cc b/chrome/browser/win/winsparkle_glue.cc
 new file mode 100644
-index 0000000000000..0e6b6f176177a
+index 0000000000000..2add8ab388ba4
 --- /dev/null
 +++ b/chrome/browser/win/winsparkle_glue.cc
-@@ -0,0 +1,273 @@
+@@ -0,0 +1,282 @@
 +// Copyright 2024 BrowserOS Authors. All rights reserved.
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -256,8 +256,17 @@ index 0000000000000..0e6b6f176177a
 +    observer.OnWinSparkleStatusChanged(WinSparkleStatus::kChecking);
 +  }
 +
-+  // This shows WinSparkle's built-in update dialog.
-+  win_sparkle_check_update_with_ui();
++  // Post the WinSparkle call as a separate task to avoid blocking-disallowed
++  // scope issues. WinSparkle's win_sparkle_check_update_with_ui() may do
++  // blocking operations (window creation, etc.) that trigger DCHECK failures
++  // when called from within Mojo/WebUI handler contexts.
++  content::GetUIThreadTaskRunner({})->PostTask(
++      FROM_HERE,
++      base::BindOnce([]() {
++        if (g_initialized) {
++          win_sparkle_check_update_with_ui();
++        }
++      }));
 +}
 +
 +bool IsUpdateReady() {
